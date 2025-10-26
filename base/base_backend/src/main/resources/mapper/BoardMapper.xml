@@ -1,0 +1,1307 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.co.nextplayer.base.backend.mapper.BoardMapper">
+
+    <!-- qna 리스트 -->
+    <select id="selectQnaListCount" parameterType="hashmap" resultType="hashmap">
+        SELECT COUNT(*) AS totalCount
+        FROM Qna
+        WHERE use_flag = 0
+
+        <if test="sTitle != null and !sTitle.equals('') ">
+            AND title REGEXP (#{sTitle})
+        </if>
+    </select>
+
+    <select id="selectQnaList" parameterType="hashmap" resultType="hashmap">
+        SELECT qna_id, customer, phone, email, title, content,
+               DATE_FORMAT(reg_date, '%Y-%m-%d') AS reg_date
+        FROM Qna
+        WHERE
+            use_flag = 0
+            <if test="sTitle != null and !sTitle.equals('') ">
+            AND title REGEXP (#{sTitle})
+            </if>
+        ORDER BY qna_id DESC
+
+            LIMIT ${sRow}, ${eCount}
+    </select>
+
+    <!-- qna 상세 -->
+    <select id="selectQnaDet" parameterType="hashmap" resultType="hashmap">
+        SELECT qna_id, customer, phone, email, title, content,
+               DATE_FORMAT(reg_date, '%Y-%m-%d') AS reg_date
+        FROM Qna
+        WHERE qna_id = #{qnaId}
+    </select>
+
+    <!-- qna 삭제 -->
+    <update id="updateQnaUseFlag" parameterType="hashmap" >
+        UPDATE Qna
+        SET use_flag = 1
+        WHERE qna_id = #{qnaId}
+    </update>
+
+    <select id="selectReferenceListCnt" parameterType="hashmap" resultType="_int">
+        SELECT
+                COUNT(1) AS totalCount
+        FROM
+            Reference
+        WHERE
+            delete_flag = 0
+            <if test='searchKeyword != null and searchKeyword != ""'>
+                AND (title LIKE CONCAT('%',#{searchKeyword},'%') OR content LIKE CONCAT('%',#{searchKeyword},'%'))
+            </if>
+            <if test='sDate != null and sDate != "" and eDate != null and eDate != "" '>
+                AND reg_date BETWEEN DATE_FORMAT(#{sDate}, '%Y-%m-%d 00:00:00') AND DATE_FORMAT(#{eDate}, '%Y-%m-%d 23:59:59')
+            </if>
+
+    </select>
+
+    <resultMap id="referenceResultMap" type="java.util.HashMap">
+        <id property="reference_id" column="reference_id"/>
+        <result property="title" column="title"/>
+        <result property="content" column="content"/>
+        <result property="view_cnt" column="view_cnt"/>
+        <result property="reg_date" column="reg_date"/>
+        <collection property="files" ofType="java.util.HashMap" javaType="java.util.List">
+            <result property="file_save_name" column="file_save_name"/>
+            <result property="file_name" column="file_name"/>
+            <result property="file_ext" column="file_ext"/>
+        </collection>
+    </resultMap>
+    <select id="selectReferenceList" parameterType="hashmap" resultMap="referenceResultMap">
+        SELECT
+            A.reference_id,
+            A.title,
+            A.content,
+            A.view_cnt,
+            A.reg_date,
+            B.file_save_name,
+            B.file_name,
+            B.file_ext
+        FROM
+            Reference A
+            LEFT JOIN Public_File B ON foreign_type = 'Reference' AND A.reference_id = B.foreign_id AND B.use_flag = 0
+        WHERE
+            A.delete_flag = 0
+            <if test='searchKeyword != null and searchKeyword != ""'>
+                AND (title LIKE CONCAT('%',#{searchKeyword},'%') OR content LIKE CONCAT('%',#{searchKeyword},'%'))
+            </if>
+            <if test='sDate != null and sDate != "" and eDate != null and eDate != "" '>
+                AND reg_date BETWEEN DATE_FORMAT(#{sDate}, '%Y-%m-%d 00:00:00') AND DATE_FORMAT(#{eDate}, '%Y-%m-%d 23:59:59')
+            </if>
+        ORDER BY
+            A.reg_date DESC
+        LIMIT ${sRow}, ${eCount}
+    </select>
+
+    <insert id="insertReference" parameterType="hashmap">
+        INSERT INTO Reference(
+            title,
+            content,
+            reg_date
+        ) VALUES (
+            #{title},
+            #{content},
+            CURRENT_TIMESTAMP
+        )
+        <selectKey resultType="String" keyProperty="referenceId" order="AFTER">
+            SELECT LAST_INSERT_ID()
+        </selectKey>
+    </insert>
+
+    <insert id="insertReferenceCross" parameterType="hashmap">
+        <foreach item="item" index="index" collection="list" separator=";">
+            INSERT INTO Reference_Cross (
+            reference_id, foreign_id, foreign_type, use_flag
+            ) VALUES (
+            <choose>
+                <when test="insertType == 'excel'">
+                    #{item.referenceId},
+                </when>
+                <otherwise>
+                    #{referenceId},
+                </otherwise>
+            </choose>
+            #{item.foreignId}, #{item.foreignType}, '0'
+            )
+        </foreach>
+    </insert>
+
+    <select id="selectReferenceInfo" parameterType="hashmap" resultType="hashmap">
+        SELECT
+            reference_id,
+            title,
+            content,
+            view_cnt,
+            reg_date
+        FROM
+            Reference
+        WHERE
+            reference_id = #{referenceId}
+    </select>
+
+    <select id="selectReferenceChildList" parameterType="hashmap" resultType="hashmap">
+        SELECT
+            B.foreign_id AS foreignId,
+            B.foreign_type AS foreignTB
+        FROM
+            Reference A
+            INNER JOIN Reference_Cross B ON A.reference_id = B.reference_id
+        WHERE
+            A.reference_id = #{referenceId}
+    </select>
+
+    <update id="updateDeleteReference" parameterType="hashmap">
+        UPDATE
+            Reference
+        SET
+            delete_flag = '1'
+        WHERE
+            reference_id = #{referenceId}
+    </update>
+
+    <update id="updateDeleteReferenceCross" parameterType="hashmap">
+        UPDATE
+            Reference_Cross
+        SET
+            delete_flag = '1'
+        WHERE
+            reference_id = #{referenceId}
+    </update>
+
+    <update id="updateReference" parameterType="hashmap">
+        UPDATE
+            Reference
+        SET
+            <if test="title != null and title != ''">
+                title = #{title},
+            </if>
+            <if test="content != null and content != ''">
+                content = #{content}
+            </if>
+        WHERE
+            reference_id = #{referenceId}
+    </update>
+
+    <delete id="deleteReferenceCross" parameterType="hashmap">
+        DELETE
+        FROM
+            Reference_Cross
+        WHERE
+            reference_id = #{referenceId}
+    </delete>
+
+    <select id="selectRequestListCount" parameterType="hashmap" resultType="_int">
+        SELECT
+            COUNT(1) AS totalCount
+        FROM
+            Request
+        WHERE
+            use_flag = 0
+            <choose>
+                <when test="reqType == 'team'">
+                    AND foreign_parent_type = 'Team'
+                </when>
+                <when test="reqType == 'etc'">
+                    AND foreign_parent_type = 'Etc'
+                </when>
+                <otherwise>
+                    <choose>
+                        <when test="requestType == '0'.toString()">
+                            AND request_type = 0
+                        </when>
+                        <otherwise>
+                            AND request_type = 1
+                        </otherwise>
+                    </choose>
+                </otherwise>
+            </choose>
+        <if test='searchKeyword != null and searchKeyword != ""'>
+            AND content LIKE CONCAT('%',#{searchKeyword},'%')
+        </if>
+        <if test='sDate != null and sDate != "" and eDate != null and eDate != "" '>
+            AND reg_date BETWEEN DATE_FORMAT(#{sDate}, '%Y-%m-%d 00:00:00') AND DATE_FORMAT(#{eDate}, '%Y-%m-%d 23:59:59')
+        </if>
+    </select>
+
+    <select id="selectRequestList" parameterType="hashmap" resultType="hashmap">
+        SELECT
+            request_id,
+            B.member_cd,
+            B.member_nickname,
+            B.member_type,
+            C.member_name,
+            foreign_parent_id,
+            foreign_parent_type,
+            A.foreign_id,
+            A.foreign_type,
+            content,
+            A.use_flag,
+            upd_flag,
+            A.reg_date,
+            A.upd_date,
+            A.answer,
+            A.answer_flag,
+            A.answer_date
+        FROM
+            Request A
+            INNER JOIN member B ON A.member_cd = B.member_cd
+            INNER JOIN member_confirm C ON B.member_cd = C.member_cd
+        WHERE
+            A.use_flag = 0
+            <choose>
+                <when test="reqType == 'team'">
+            AND foreign_parent_type = 'Team'
+                </when>
+                <when test="reqType == 'etc'">
+            AND foreign_parent_type = 'Etc'
+                </when>
+                <otherwise>
+                    <choose>
+                        <when test="requestType == '0'.toString()">
+                            AND request_type = 0
+                        </when>
+                        <otherwise>
+                            AND request_type = 1
+                        </otherwise>
+                    </choose>
+                </otherwise>
+            </choose>
+            <if test='searchKeyword != null and searchKeyword != ""'>
+                AND content LIKE CONCAT('%',#{searchKeyword},'%')
+            </if>
+            <if test='sdate != null and sdate != "" and edate != null and edate != "" '>
+                AND A.reg_date BETWEEN DATE_FORMAT(#{sdate}, '%Y-%m-%d 00:00:00') AND DATE_FORMAT(#{edate}, '%Y-%m-%d 23:59:59')
+            </if>
+            <if test='sUpdFlag != null and sUpdFlag != ""'>
+                AND A.upd_flag = #{sUpdFlag}
+            </if>
+        ORDER BY
+            A.reg_date DESC
+        LIMIT ${sRow}, ${eCount}
+    </select>
+
+    <resultMap id="requestDetailMap" type="java.util.HashMap">
+        <id property="request_id" column="request_id"/>
+        <result property="member_cd" column="member_cd"/>
+        <result property="member_nickname" column="member_nickname"/>
+        <result property="member_type" column="member_type"/>
+        <result property="member_name" column="member_name"/>
+        <result property="foreign_parent_id" column="foreign_parent_id"/>
+        <result property="foreign_parent_type" column="foreign_parent_type"/>
+        <result property="foreign_id" column="foreign_id"/>
+        <result property="foreign_type" column="foreign_type"/>
+        <result property="content" column="content"/>
+        <result property="use_flag" column="use_flag"/>
+        <result property="upd_flag" column="upd_flag"/>
+        <result property="reg_date" column="reg_date"/>
+        <result property="upd_date" column="upd_date"/>
+        <result property="answer" column="answer"/>
+        <result property="answer_flag" column="answer_flag"/>
+        <result property="answer_date" column="answer_date"/>
+        <result property="request_type" column="request_type"/>
+        <collection property="files" ofType="java.util.HashMap" javaType="java.util.List">
+            <result property="file_id" column="file_id"/>
+            <result property="name" column="name"/>
+            <result property="original_name" column="original_name"/>
+            <result property="path" column="path"/>
+        </collection>
+    </resultMap>
+
+    <select id="selectRequestDetail" parameterType="hashmap" resultMap="requestDetailMap">
+        SELECT
+            request_id,
+            B.member_cd,
+            B.member_nickname,
+            B.member_type,
+            C.member_name,
+            foreign_parent_id,
+            foreign_parent_type,
+            A.foreign_id,
+            A.foreign_type,
+            content,
+            A.use_flag,
+            upd_flag,
+            A.reg_date,
+            A.upd_date,
+            A.answer,
+            A.answer_flag,
+            A.answer_date,
+            A.request_type,
+            D.id AS file_id,
+            D.name,
+            D.original_name,
+            D.path
+        FROM
+            Request A
+            INNER JOIN member B ON A.member_cd = B.member_cd
+            INNER JOIN member_confirm C ON B.member_cd = C.member_cd
+            LEFT OUTER JOIN media_file D ON D.foreign_type = 'request' AND A.request_id = D.foreign_id
+        WHERE
+            A.use_flag = 0
+            AND A.request_id = #{requestId}
+    </select>
+
+    <update id="updateModifyRequest" parameterType="hashmap">
+        UPDATE
+            Request
+        SET
+            <choose>
+                <when test="method == 'save' or method == 'modify'">
+                    upd_flag = '1'
+                </when>
+                <otherwise>
+                    upd_flag = '0'
+                </otherwise>
+            </choose>
+
+            <if test="answer != null and answer != ''">
+            , answer = #{answer}
+            , answer_flag = '1'
+            , answer_date = NOW()
+            </if>
+        WHERE
+            request_id = #{requestId}
+    </update>
+
+    <delete id="deleteRequest" parameterType="hashmap">
+        UPDATE
+            Request
+        SET
+            use_flag = '1'
+        WHERE
+            request_id = #{requestId}
+    </delete>
+
+    <update id="updateCancelAnswerRequest" parameterType="hashmap">
+        UPDATE
+            Request
+        SET
+            answer = NULL
+            , upd_flag = '0'
+            , answer_flag = '0'
+            , answer_date = NULL
+        WHERE
+            request_id = #{requestId}
+    </update>
+
+    <select id="selectOneToOneListCount" parameterType="hashmap" resultType="_int">
+        SELECT
+            COUNT(1) AS totalCount
+        FROM
+            Board
+        WHERE
+            use_flag = 0
+            AND board_type = '0'
+            <if test="answerFlag != null and answerFlag != ''">
+                AND answer_flag = #{answerFlag}
+            </if>
+            <if test="type != null and type != ''">
+                AND type= #{type}
+            </if>
+            <if test='searchKeyword != null and searchKeyword != ""'>
+                AND (content LIKE CONCAT('%',#{searchKeyword},'%') OR title LIKE CONCAT('%',#{searchKeyword},'%'))
+            </if>
+            <if test='sDate != null and sDate != "" and eDate != null and eDate != "" '>
+                AND reg_date BETWEEN DATE_FORMAT(#{sDate}, '%Y-%m-%d 00:00:00') AND DATE_FORMAT(#{eDate}, '%Y-%m-%d 23:59:59')
+            </if>
+    </select>
+
+    <select id="selectOneToOneList" parameterType="hashmap" resultType="hashmap">
+        SELECT
+            board_id,
+            B.member_cd,
+            B.member_nickname,
+            B.member_type,
+            C.member_name,
+            C.phone_no,
+            title,
+            content,
+            board_type,
+            type,
+            answer_flag,
+            A.reg_date,
+            A.answer_date
+        FROM
+            Board A
+            INNER JOIN member B ON A.member_cd = B.member_cd
+            INNER JOIN member_confirm C ON B.member_cd = C.member_cd
+        WHERE
+            A.use_flag = 0
+            AND board_type = '0'
+            <if test="answerFlag != null and answerFlag != ''">
+                AND answer_flag = #{answerFlag}
+            </if>
+            <if test="type != null and type != ''">
+                AND type= #{type}
+            </if>
+            <if test='searchKeyword != null and searchKeyword != ""'>
+                AND (content LIKE CONCAT('%',#{searchKeyword},'%') OR title LIKE CONCAT('%',#{searchKeyword},'%'))
+            </if>
+            <if test='sDate != null and sDate != "" and eDate != null and eDate != "" '>
+                AND reg_date BETWEEN DATE_FORMAT(#{sDate}, '%Y-%m-%d 00:00:00') AND DATE_FORMAT(#{eDate}, '%Y-%m-%d 23:59:59')
+            </if>
+        ORDER BY
+            A.reg_date DESC
+        LIMIT ${sRow}, ${eCount}
+    </select>
+
+    <resultMap id="oneToOneDetailMap" type="java.util.HashMap">
+        <id property="board_id" column="board_id"/>
+        <result property="member_cd" column="member_cd"/>
+        <result property="member_nickname" column="member_nickname"/>
+        <result property="member_type" column="member_type"/>
+        <result property="member_name" column="member_name"/>
+        <result property="phone_no" column="phone_no"/>
+        <result property="title" column="title"/>
+        <result property="content" column="content"/>
+        <result property="board_type" column="board_type"/>
+        <result property="type" column="type"/>
+        <result property="use_flag" column="use_flag"/>
+        <result property="upd_flag" column="upd_flag"/>
+        <result property="reg_date" column="reg_date"/>
+        <result property="upd_date" column="upd_date"/>
+        <result property="answer" column="answer"/>
+        <result property="answer_flag" column="answer_flag"/>
+        <result property="answer_date" column="answer_date"/>
+        <result property="request_type" column="request_type"/>
+        <collection property="files" ofType="java.util.HashMap" javaType="java.util.List">
+            <result property="file_id" column="file_id"/>
+            <result property="name" column="name"/>
+            <result property="original_name" column="original_name"/>
+            <result property="path" column="path"/>
+        </collection>
+    </resultMap>
+    <select id="selectOneToOneDetail" parameterType="hashmap" resultMap="oneToOneDetailMap">
+        SELECT
+            board_id,
+            B.member_cd,
+            B.member_nickname,
+            B.member_type,
+            C.member_name,
+            C.phone_no,
+            title,
+            content,
+            board_type,
+            A.type,
+            answer_flag,
+            answer,
+            A.reg_date,
+            A.answer_date,
+            D.id AS file_id,
+            D.name,
+            D.original_name,
+            D.path
+        FROM
+            Board A
+            INNER JOIN member B ON A.member_cd = B.member_cd
+            INNER JOIN member_confirm C ON B.member_cd = C.member_cd
+            LEFT OUTER JOIN media_file D ON D.foreign_type = 'board' AND A.board_id = D.foreign_id
+        WHERE
+            A.use_flag = 0
+          AND A.board_id = #{boardId}
+    </select>
+
+    <update id="updateSaveOneToOne" parameterType="hashmap">
+        UPDATE
+            Board
+        SET
+            answer = #{answer},
+            answer_date = NOW(),
+            answer_flag = '1'
+        WHERE
+            board_id = #{boardId}
+    </update>
+
+    <update id="deleteOneToOneData" parameterType="hashmap">
+        UPDATE
+            Board
+        SET
+            use_flag = 1
+        WHERE
+            board_id = #{boardId}
+    </update>
+
+    <resultMap id="noticeResultMap" type="kr.co.nextplayer.base.backend.dto.BoardDto">
+        <id property="board_id" column="board_id"/>
+        <result property="title" column="title"/>
+        <result property="content" column="content"/>
+        <result property="view_cnt" column="view_cnt"/>
+        <result property="reg_date" column="reg_date"/>
+		<result property="show_flag" column="show_flag"/>
+        <association property="files" javaType="kr.co.nextplayer.base.backend.dto.AttchFileInfoDto">
+            <result column="file_save_name" property="fileSaveName" />
+            <result column="file_name" property="fileName" />
+            <result column="file_ext" property="fileExt" />
+        </association>
+    </resultMap>
+
+    <select id="selectNoticeListCount" parameterType="hashmap" resultType="_int">
+        SELECT
+            COUNT(1) AS totalCount
+        FROM
+            Board
+        WHERE
+            use_flag = 0
+            AND board_type = '1'
+        <if test='searchKeyword != null and searchKeyword != ""'>
+            (AND content LIKE CONCAT('%',#{searchKeyword},'%') OR title LIKE CONCAT('%',#{searchKeyword},'%'))
+        </if>
+        <if test='sDate != null and sDate != "" and eDate != null and eDate != "" '>
+            AND reg_date BETWEEN DATE_FORMAT(#{sDate}, '%Y-%m-%d 00:00:00') AND DATE_FORMAT(#{eDate}, '%Y-%m-%d 23:59:59')
+        </if>
+		<if test='showFlag != null and showFlag != ""'>
+        	AND show_flag = #{showFlag}
+        </if>
+    </select>
+
+    <select id="selectNoticeList" parameterType="hashmap" resultMap="noticeResultMap">
+        SELECT
+            board_id,
+            title,
+            CASE
+                WHEN LENGTH(content) >= 20 THEN CONCAT(LEFT(content, 20), '...')
+                ELSE content
+            END AS content,
+            board_type,
+            view_cnt,
+            A.reg_date,
+            B.file_save_name,
+            B.file_name,
+            B.file_ext,
+			A.show_flag
+        FROM
+            Board A
+            LEFT JOIN Public_File B ON B.foreign_type = 'Notice' AND B.sub_type IS NULL AND A.board_id = B.foreign_id AND B.use_flag = 0
+        WHERE
+        A.use_flag = 0
+        AND board_type = '1'
+        <if test='searchKeyword != null and searchKeyword != ""'>
+            (AND content LIKE CONCAT('%',#{searchKeyword},'%') OR title LIKE CONCAT('%',#{searchKeyword},'%'))
+        </if>
+        <if test='sDate != null and sDate != "" and eDate != null and eDate != "" '>
+            AND reg_date BETWEEN DATE_FORMAT(#{sDate}, '%Y-%m-%d 00:00:00') AND DATE_FORMAT(#{eDate}, '%Y-%m-%d 23:59:59')
+        </if>
+		<if test='showFlag != null and showFlag != ""'>
+        	AND A.show_flag = #{showFlag}
+        </if>
+        ORDER BY
+            A.reg_date DESC
+        LIMIT ${sRow}, ${eCount}
+    </select>
+
+    <resultMap id="noticeDetailResultMap" type="kr.co.nextplayer.base.backend.dto.BoardDto">
+        <id property="board_id" column="board_id"/>
+        <result property="title" column="title"/>
+        <result property="content" column="content"/>
+        <result property="view_cnt" column="view_cnt"/>
+        <result property="reg_date" column="reg_date"/>
+		<result property="show_flag" column="show_flag"/>
+        <association property="imgFiles" javaType="kr.co.nextplayer.base.backend.dto.AttchFileInfoDto">
+            <result column="file_save_name" property="fileSaveName" />
+            <result column="file_save_path" property="fileSavePath" />
+            <result column="file_name" property="fileName" />
+            <result column="file_ext" property="fileExt" />
+        </association>
+    </resultMap>
+
+    <select id="selectNoticeDetail" parameterType="hashmap" resultMap="noticeDetailResultMap">
+        SELECT
+            A.board_id,
+            A.title,
+            A.content,
+            A.view_cnt,
+            A.reg_date,
+            B.file_name,
+            CONCAT('/', SUBSTRING(B.file_save_path, LENGTH('/content_nextplayer/') + 1)) AS file_save_path,
+			A.show_flag
+        FROM
+            Board A
+            LEFT OUTER JOIN Public_File B ON B.sub_type = 'imgFile' AND B.foreign_type = 'Notice' AND A.board_id = B.foreign_id AND B.use_flag = 0
+        WHERE
+            A.use_flag = 0
+            AND A.board_id = #{boardId}
+    </select>
+
+    <insert id="insertNotice" parameterType="hashmap">
+        INSERT INTO Board(
+            member_cd,
+            title,
+            content,
+            board_type,
+            reg_date,
+            show_flag
+        ) VALUES (
+            'admin',
+            #{title},
+            #{content},
+            '1',
+            CURRENT_TIMESTAMP,
+            ${showFlag}
+        )
+        <selectKey resultType="String" keyProperty="boardId" order="AFTER">
+            SELECT LAST_INSERT_ID()
+        </selectKey>
+    </insert>
+
+    <update id="updateNotice" parameterType="hashmap">
+        UPDATE
+            Board
+        SET
+            <if test="title != null and title != ''">
+                title = #{title},
+            </if>
+            <if test="content != null and content != ''">
+                content = #{content},
+            </if>
+            <if test="showFlag != null and showFlag != ''">
+                show_flag = #{showFlag}
+			</if>
+        WHERE
+            board_id = #{boardId}
+    </update>
+
+    <update id="updateDeleteNotice" parameterType="hashmap">
+        UPDATE
+            Board
+        SET
+            use_flag = '1'
+        WHERE
+            board_id = #{boardId}
+    </update>
+
+    <select id="selectSuggestListCount" parameterType="hashmap" resultType="_int">
+        SELECT
+            COUNT(1) AS totalCount
+        FROM
+            Suggest
+        WHERE
+            use_flag = 0
+            AND suggest_type = 0
+            <if test='searchKeyword != null and searchKeyword != ""'>
+            (AND content LIKE CONCAT('%',#{searchKeyword},'%') OR title LIKE CONCAT('%',#{searchKeyword},'%'))
+            </if>
+            <if test='sDate != null and sDate != "" and eDate != null and eDate != "" '>
+            AND reg_date BETWEEN DATE_FORMAT(#{sDate}, '%Y-%m-%d 00:00:00') AND DATE_FORMAT(#{eDate}, '%Y-%m-%d 23:59:59')
+            </if>
+    </select>
+
+    <select id="selectSuggestList" parameterType="hashmap" resultType="hashmap">
+        SELECT
+            suggest_id,
+            A.title,
+            A.content,
+            A.reg_date,
+            A.answer,
+            A.answer_flag,
+            A.answer_date,
+            B.member_cd,
+            B.member_nickname,
+            B.member_type,
+            C.member_name
+        FROM
+            Suggest A
+            INNER JOIN member B ON A.member_cd = B.member_cd
+            INNER JOIN member_confirm C ON B.member_cd = C.member_cd
+        WHERE
+            A.use_flag = 0
+            AND A.suggest_type = 0
+            <if test='searchKeyword != null and searchKeyword != ""'>
+            (AND A.content LIKE CONCAT('%',#{searchKeyword},'%') OR A.title LIKE CONCAT('%',#{searchKeyword},'%'))
+            </if>
+            <if test='sDate != null and sDate != "" and eDate != null and eDate != "" '>
+            AND A.reg_date BETWEEN DATE_FORMAT(#{sDate}, '%Y-%m-%d 00:00:00') AND DATE_FORMAT(#{eDate}, '%Y-%m-%d 23:59:59')
+            </if>
+        ORDER BY
+            A.suggest_id DESC
+        LIMIT ${sRow}, ${eCount}
+    </select>
+
+    <resultMap id="suggestDetailMap" type="java.util.HashMap">
+        <id property="suggest_id" column="suggest_id"/>
+        <result property="member_cd" column="member_cd"/>
+        <result property="member_nickname" column="member_nickname"/>
+        <result property="member_type" column="member_type"/>
+        <result property="member_name" column="member_name"/>
+        <result property="phone_no" column="phone_no"/>
+        <result property="title" column="title"/>
+        <result property="content" column="content"/>
+        <result property="use_flag" column="use_flag"/>
+        <result property="reg_date" column="reg_date"/>
+        <result property="answer" column="answer"/>
+        <result property="answer_flag" column="answer_flag"/>
+        <result property="answer_date" column="answer_date"/>
+        <collection property="files" ofType="java.util.HashMap" javaType="java.util.List">
+            <result property="file_id" column="file_id"/>
+            <result property="name" column="name"/>
+            <result property="original_name" column="original_name"/>
+            <result property="path" column="path"/>
+        </collection>
+    </resultMap>
+
+    <select id="selectSuggestDetail" parameterType="hashmap" resultMap="suggestDetailMap">
+        SELECT
+            A.suggest_id,
+            A.title,
+            A.content,
+            A.answer,
+            A.answer_flag,
+            A.answer_date,
+            B.member_cd,
+            B.member_nickname,
+            B.member_type,
+            C.member_name,
+            A.reg_date,
+            D.id AS file_id,
+            D.name,
+            D.original_name,
+            D.path
+        FROM
+            Suggest A
+            INNER JOIN member B ON A.member_cd = B.member_cd
+            INNER JOIN member_confirm C ON B.member_cd = C.member_cd
+            LEFT OUTER JOIN media_file D ON D.foreign_type = 'suggest' AND A.suggest_id = D.foreign_id
+        WHERE
+            A.use_flag = 0
+          AND suggest_id = #{suggestId}
+    </select>
+
+    <update id="updateSaveSuggest" parameterType="hashmap">
+        UPDATE
+            Suggest
+        SET
+            answer = #{answer},
+            answer_date = NOW(),
+            answer_flag = '1'
+        WHERE
+            suggest_id = #{suggestId}
+    </update>
+
+    <delete id="deleteSuggest" parameterType="hashmap">
+        UPDATE
+            suggest
+        SET
+            use_flag = '1'
+        WHERE
+            suggest_id = #{suggestId}
+    </delete>
+
+    <select id="selectPartnershipListCount" parameterType="hashmap" resultType="_int">
+        SELECT
+            COUNT(1) AS totalCount
+        FROM
+            Suggest
+        WHERE
+            use_flag = 0
+            AND suggest_type = 1
+        <if test='searchKeyword != null and searchKeyword != ""'>
+            (AND content LIKE CONCAT('%',#{searchKeyword},'%') OR title LIKE CONCAT('%',#{searchKeyword},'%'))
+        </if>
+        <if test='sDate != null and sDate != "" and eDate != null and eDate != "" '>
+            AND reg_date BETWEEN DATE_FORMAT(#{sDate}, '%Y-%m-%d 00:00:00') AND DATE_FORMAT(#{eDate}, '%Y-%m-%d 23:59:59')
+        </if>
+    </select>
+
+    <resultMap id="partnershipResultMap" type="kr.co.nextplayer.base.backend.dto.PartnershipDto">
+        <id property="suggest_id" column="suggest_id"/>
+        <result property="customer" column="customer"/>
+        <result property="phone" column="phone"/>
+        <result property="email" column="email"/>
+        <result property="content" column="content"/>
+        <result property="member_cd" column="member_cd"/>
+        <result property="member_nickname" column="member_nickname"/>
+        <result property="member_type" column="member_type"/>
+        <result property="member_name" column="member_name"/>
+        <result property="reg_date" column="reg_date"/>
+        <!--<collection property="files" ofType="java.util.HashMap" javaType="java.util.List">
+            <result property="file_id" column="file_id"/>
+            <result property="original_name" column="original_name"/>
+            <result property="name" column="name"/>
+            <result property="path" column="path"/>
+            <result property="file_ext" column="file_ext"/>
+        </collection>-->
+        <association property="files" javaType="kr.co.nextplayer.base.backend.dto.AttchFileInfoDto">
+            <result column="file_ext" property="fileExt" />
+        </association>
+    </resultMap>
+    <select id="selectPartnershipList" parameterType="hashmap" resultMap="partnershipResultMap">
+        SELECT
+            suggest_id,
+            A.customer,
+            A.phone,
+            A.email,
+            /*A.content,*/
+            CASE
+                WHEN LENGTH(A.content) >= 20 THEN CONCAT(LEFT(A.content, 20), '...')
+                ELSE A.content
+            END AS content,
+            A.reg_date,
+            B.member_cd,
+            B.member_nickname,
+            B.member_type,
+            C.member_name,
+            D.id AS file_id,
+            D.original_name,
+            D.name,
+            D.path,
+            SUBSTRING_INDEX(D.name, '.', -1) AS file_ext
+        FROM
+            Suggest A
+            INNER JOIN member B ON A.member_cd = B.member_cd
+            INNER JOIN member_confirm C ON B.member_cd = C.member_cd
+            LEFT OUTER JOIN media_file D ON D.foreign_type = 'suggest' AND A.suggest_id = D.foreign_id
+        WHERE
+            A.use_flag = 0
+            AND A.suggest_type = 1
+            <if test='searchKeyword != null and searchKeyword != ""'>
+            (AND A.content LIKE CONCAT('%',#{searchKeyword},'%') OR A.title LIKE CONCAT('%',#{searchKeyword},'%'))
+            </if>
+            <if test='sDate != null and sDate != "" and eDate != null and eDate != "" '>
+            AND A.reg_date BETWEEN DATE_FORMAT(#{sDate}, '%Y-%m-%d 00:00:00') AND DATE_FORMAT(#{eDate}, '%Y-%m-%d 23:59:59')
+            </if>
+        ORDER BY
+            A.suggest_id DESC
+        LIMIT ${sRow}, ${eCount}
+        <!--SELECT
+            t3.dense_rnk AS ROWNUM,
+            t3.suggest_id,
+            t3.customer,
+            t3.phone,
+            t3.email,
+            t3.content,
+            t3.reg_date,
+            t3.member_cd,
+            t3.member_nickname,
+            t3.member_type,
+            t3.member_name,
+            t3.file_id,
+            t3.original_name,
+            t3.name,
+            t3.path,
+            t3.file_ext
+        FROM
+            (
+            SELECT
+                t2.suggest_id,
+                t2.customer,
+                t2.phone,
+                t2.email,
+                t2.content,
+                t2.reg_date,
+                t2.member_cd,
+                t2.member_nickname,
+                t2.member_type,
+                t2.member_name,
+                t2.file_id,
+                t2.original_name,
+                t2.name,
+                t2.path,
+                t2.file_ext,
+                @RANK := IF(@BF_USER_DEPT = t2.suggest_id, @RANK, @RANK + 1) AS dense_rnk,
+                @BF_USER_DEPT := t2.suggest_id
+            FROM(
+                SELECT
+                    suggest_id,
+                    A.customer,
+                    A.phone,
+                    A.email,
+                    /*A.content,*/
+                    CASE
+                        WHEN LENGTH(A.content) >= 20 THEN CONCAT(LEFT(A.content, 20), '...')
+                        ELSE A.content
+                    END AS content,
+                    A.reg_date,
+                    B.member_cd,
+                    B.member_nickname,
+                    B.member_type,
+                    C.member_name,
+                    D.id AS file_id,
+                    D.original_name,
+                    D.name,
+                    D.path,
+                    SUBSTRING_INDEX(D.name, '.', -1) AS file_ext
+                FROM
+                    Suggest A
+                    INNER JOIN member B ON A.member_cd = B.member_cd
+                    INNER JOIN member_confirm C ON B.member_cd = C.member_cd
+                    LEFT OUTER JOIN media_file D ON D.foreign_type = 'suggest' AND A.suggest_id = D.foreign_id
+                WHERE
+                    A.use_flag = 0
+                    AND A.suggest_type = 1
+                    <if test='searchKeyword != null and searchKeyword != ""'>
+                        (AND A.content LIKE CONCAT('%',#{searchKeyword},'%') OR A.title LIKE CONCAT('%',#{searchKeyword},'%'))
+                    </if>
+                    <if test='sDate != null and sDate != "" and eDate != null and eDate != "" '>
+                        AND A.reg_date BETWEEN DATE_FORMAT(#{sDate}, '%Y-%m-%d 00:00:00') AND DATE_FORMAT(#{eDate}, '%Y-%m-%d 23:59:59')
+                    </if>
+                ORDER BY
+                    A.suggest_id DESC
+            ) t2
+            JOIN (SELECT @RANK := 0, @BF_USER_DEPT := '') tmp
+        ) t3
+        WHERE
+            t3.dense_rnk BETWEEN #{sRow} AND #{eCount}
+        ORDER BY
+            CAST(t3.dense_rnk AS unsigned) ASC-->
+    </select>
+
+    <delete id="deletePartnership" parameterType="hashmap">
+        UPDATE
+            suggest
+        SET
+            use_flag = '1'
+        WHERE
+            suggest_id = #{suggestId}
+    </delete>
+
+    <resultMap id="partnershipDetailMap" type="java.util.HashMap">
+        <id property="suggest_id" column="suggest_id"/>
+        <result property="member_cd" column="member_cd"/>
+        <result property="member_id" column="member_id"/>
+        <result property="member_nickname" column="member_nickname"/>
+        <result property="member_type" column="member_type"/>
+        <result property="member_name" column="member_name"/>
+        <result property="customer" column="customer"/>
+        <result property="phone" column="phone"/>
+        <result property="email" column="email"/>
+        <result property="content" column="content"/>
+        <result property="reg_date" column="reg_date"/>
+        <collection property="files" ofType="java.util.HashMap" javaType="java.util.List">
+            <result property="file_id" column="file_id"/>
+            <result property="name" column="name"/>
+            <result property="original_name" column="original_name"/>
+            <result property="path" column="path"/>
+            <result property="file_ext" column="file_ext"/>
+        </collection>
+    </resultMap>
+    <select id="selectPartnershipDetail" parameterType="hashmap" resultMap="partnershipDetailMap">
+        SELECT
+            A.suggest_id,
+            B.member_cd,
+            B.member_id,
+            B.member_nickname,
+            B.member_type,
+            C.member_name,
+            A.customer,
+            A.phone,
+            A.email,
+            A.content,
+            A.reg_date,
+            D.id AS file_id,
+            D.name,
+            D.original_name,
+            D.path,
+            SUBSTRING_INDEX(D.name, '.', -1) AS file_ext
+        FROM
+            Suggest A
+            INNER JOIN member B ON A.member_cd = B.member_cd
+            INNER JOIN member_confirm C ON B.member_cd = C.member_cd
+            LEFT OUTER JOIN media_file D ON D.foreign_type = 'suggest' AND A.suggest_id = D.foreign_id
+        WHERE
+            A.use_flag = 0
+          AND A.suggest_id = #{suggestId}
+    </select>
+
+    <select id="selectBannerListCnt" parameterType="hashmap" resultType="_int">
+        SELECT
+        COUNT(1) AS totalCount
+        FROM
+        banner
+        WHERE
+        use_flag = 0
+        <if test='sKeyword != null and sKeyword != ""'>
+            AND (title LIKE CONCAT('%',#{sKeyword},'%'))
+        </if>
+
+    </select>
+
+    <resultMap id="bannerResultMap" type="java.util.HashMap">
+        <id property="banner_id" column="banner_id"/>
+        <result property="title" column="title"/>
+        <result property="view_cnt" column="view_cnt"/>
+        <result property="url_link" column="url_link"/>
+        <result property="reg_date" column="reg_date"/>
+        <collection property="files" ofType="java.util.HashMap" javaType="java.util.List">
+            <result property="file_save_path" column="file_save_path"/>
+            <result property="file_save_name" column="file_save_name"/>
+            <result property="file_name" column="file_name"/>
+            <result property="file_ext" column="file_ext"/>
+        </collection>
+    </resultMap>
+    <select id="selectBannerList" parameterType="hashmap" resultMap="bannerResultMap">
+        SELECT
+        A.banner_id,
+        A.title,
+        A.view_cnt,
+        A.url_link,
+        DATE_FORMAT(A.reg_date, '%Y-%m-%d %H:%i:%s') AS reg_date,
+        SUBSTRING(B.file_save_path, LENGTH('/content_nextplayer') + 1) AS file_save_path,
+        B.file_save_name,
+        B.file_name,
+        B.file_ext
+        FROM
+        banner A
+        LEFT JOIN Public_File B ON foreign_type = 'Banner' AND A.banner_id = B.foreign_id AND B.use_flag = 0
+        WHERE
+        A.use_flag = 0
+        <if test='sKeyword != null and sKeyword != ""'>
+            AND (title LIKE CONCAT('%',#{sKeyword},'%'))
+        </if>
+        <if test='sTitle != null and sTitle != ""'>
+            AND (title LIKE CONCAT('%',#{sTitle},'%'))
+        </if>
+        ORDER BY
+        A.reg_date DESC
+        <if test="eCount != null and eCount != ''">
+        LIMIT ${sRow}, ${eCount}
+        </if>
+    </select>
+
+    <insert id="insertBanner" parameterType="hashmap">
+        INSERT INTO
+        banner (
+            title,
+            url_link,
+            url_app_link,
+            banner_type,
+            banner_app_type,
+            auth_flag,
+            use_flag
+        ) VALUES (
+            #{title},
+            #{urlLink},
+            #{urlAppLink},
+            CONCAT('[', #{android} ', ', #{ios}, ', ', #{ipad}, ', ', #{pc}, ']'),
+            CONCAT('[', #{androidApp} ', ', #{iosApp}, ', ', #{ipadApp}, ', ', #{pcApp}, ']'),
+            #{authFlag},
+            '0')
+        <selectKey resultType="String" keyProperty="bannerId" order="AFTER">
+            SELECT LAST_INSERT_ID()
+        </selectKey>
+    </insert>
+
+    <update id="updateBanner" parameterType="hashmap">
+        UPDATE
+        banner
+        SET
+        <if test="title != null and title != ''">
+            title = #{title},
+        </if>
+        <if test="urlLink != null and urlLink != ''">
+            url_link = #{urlLink},
+        </if>
+        <if test="urlAppLink != null and urlAppLink != ''">
+            url_app_link = #{urlAppLink},
+        </if>
+        banner_type = CONCAT('[', #{android} ', ', #{ios}, ', ', #{ipad}, ', ', #{pc}, ']'),
+        banner_app_type = CONCAT('[', #{androidApp} ', ', #{iosApp}, ', ', #{ipadApp}, ', ', #{pcApp}, ']'),
+        <if test="authFlag != null and authFlag != ''">
+            auth_flag = #{authFlag}
+        </if>
+        WHERE
+        banner_id = #{bannerId}
+    </update>
+
+    <update id="updateDeleteBanner" parameterType="hashmap">
+        UPDATE
+            banner
+        SET
+            use_flag = '1',
+            show_flag = '1'
+        WHERE
+            banner_id = #{bannerId}
+    </update>
+
+    <select id="selectBannerInfo" parameterType="hashmap" resultType="hashmap">
+        SELECT
+            banner_id,
+            title,
+            view_cnt,
+            url_link,
+            url_app_link,
+            banner_type,
+            banner_app_type,
+            auth_flag,
+            reg_date
+        FROM
+            banner
+        WHERE
+            banner_id = #{bannerId}
+    </select>
+
+    <delete id="deleteMainBannerData" parameterType="hashmap">
+        DELETE
+        FROM main_banner
+        WHERE foreign_type = #{bannerType}
+    </delete>
+
+    <insert id="insertMainBannerData" parameterType="hashmap">
+        INSERT INTO
+        main_banner(
+            foreign_id, foreign_type, show_sdate, show_edate, banner_order
+        ) VALUES (
+            #{bannerId}, #{bannerType}, CONCAT(#{sdate}, ' 00:00:00'), CONCAT(#{edate}, ' 23:59:59'), #{bannerOrder}
+        )
+    </insert>
+
+
+    <resultMap id="mainBannerResultMap" type="java.util.HashMap">
+        <id property="banner_id" column="banner_id"/>
+        <result property="title" column="title"/>
+        <result property="view_cnt" column="view_cnt"/>
+        <result property="url_link" column="url_link"/>
+        <result property="open_flag" column="open_flag"/>
+        <result property="reg_date" column="reg_date"/>
+        <result property="show_sdate" column="show_sdate"/>
+        <result property="show_edate" column="show_edate"/>
+        <collection property="files" ofType="java.util.HashMap" javaType="java.util.List">
+            <result property="file_save_path" column="file_save_path"/>
+            <result property="file_save_name" column="file_save_name"/>
+            <result property="file_name" column="file_name"/>
+            <result property="file_ext" column="file_ext"/>
+        </collection>
+    </resultMap>
+    <select id="selectMainBannerList" parameterType="hashmap" resultMap="mainBannerResultMap">
+        SELECT
+            A.banner_id,
+            A.title,
+            A.view_cnt,
+            A.url_link,
+            A.reg_date,
+            SUBSTRING(B.file_save_path, LENGTH('/content_nextplayer') + 1) AS file_save_path,
+            B.file_save_name,
+            B.file_name,
+            B.file_ext,
+            C.open_flag,
+            date_format(C.show_sdate, '%Y-%m-%d') AS show_sdate,
+            date_format(C.show_edate, '%Y-%m-%d') AS show_edate
+        FROM
+            banner A
+            LEFT JOIN Public_File B ON foreign_type = 'Banner' AND A.banner_id = B.foreign_id AND B.use_flag = 0
+            INNER JOIN main_banner C ON A.banner_id = C.foreign_id
+        WHERE
+            A.use_flag = 0
+            AND C.foreign_type = 'Banner'
+        ORDER BY
+            C.banner_order
+    </select>
+
+    <select id="selectBannerConfigList" resultType="java.util.HashMap">
+        SELECT
+            banner_config_id,
+            config_name,
+            config_key,
+            use_flag
+        FROM
+            banner_config
+        WHERE
+            banner_config_id
+    </select>
+
+    <resultMap id="subBannerResultMap" type="java.util.HashMap">
+        <id property="banner_cross_id" column="banner_cross_id"/>
+        <result property="banner_id" column="banner_id"/>
+        <result property="title" column="title"/>
+        <result property="view_cnt" column="view_cnt"/>
+        <result property="url_link" column="url_link"/>
+        <result property="open_flag" column="open_flag"/>
+        <result property="reg_date" column="reg_date"/>
+        <result property="show_sdate" column="show_sdate"/>
+        <result property="show_edate" column="show_edate"/>
+        <result property="uage" column="uage"/>
+        <collection property="files" ofType="java.util.HashMap" javaType="java.util.List">
+            <result property="file_save_path" column="file_save_path"/>
+            <result property="file_save_name" column="file_save_name"/>
+            <result property="file_name" column="file_name"/>
+            <result property="file_ext" column="file_ext"/>
+        </collection>
+    </resultMap>
+    <select id="selectSubBannerList" parameterType="java.util.HashMap" resultMap="subBannerResultMap">
+        SELECT
+            A.banner_id,
+            D.banner_config_id,
+            C.banner_cross_id,
+            A.title,
+            A.view_cnt,
+            A.url_link,
+            A.reg_date,
+            SUBSTRING(B.file_save_path, LENGTH('/content_nextplayer') + 1) AS file_save_path,
+            B.file_save_name,
+            B.file_name,
+            B.file_ext,
+            date_format(C.show_sdate, '%Y-%m-%d') AS show_sdate,
+            date_format(C.show_edate, '%Y-%m-%d') AS show_edate,
+            D.config_key
+        FROM
+            banner A
+            LEFT JOIN Public_File B ON foreign_type = 'Banner' AND A.banner_id = B.foreign_id AND B.use_flag = 0
+            INNER JOIN banner_cross C ON A.banner_id = C.banner_id
+            INNER JOIN banner_config D on C.banner_config_id = D.banner_config_id
+        WHERE
+            A.use_flag = 0
+            AND C.use_flag = 0
+            AND D.banner_config_id = #{bannerConfigId}
+        ORDER BY
+            C.banner_order
+    </select>
+
+    <insert id="insertBannerConfig" parameterType="java.util.HashMap">
+        INSERT INTO banner_config
+        (config_name, config_key)
+        VALUES
+        (#{configName}, #{configKey})
+    </insert>
+
+    <delete id="updateBannerConfig" parameterType="java.util.HashMap">
+        UPDATE
+            banner_config
+        SET
+            use_flag = #{useFlag}
+        WHERE
+            banner_config_id = #{bannerConfigId}
+    </delete>
+
+    <insert id="insertSubBannerCross" parameterType="java.util.HashMap">
+        INSERT INTO banner_cross
+        (banner_id,
+         banner_config_id,
+         show_sdate,
+         show_edate,
+         banner_order
+         <if test="uage != null and uage != ''">
+         , uage
+         </if>
+         )
+        VALUES
+        (#{bannerId},
+         #{bannerConfigId},
+         CONCAT(#{sdate}, ' 00:00:00'),
+         CONCAT(#{edate}, ' 23:59:59'),
+         #{bannerOrder}
+         <if test="uage != null and uage != ''">
+         , #{uage}
+         </if>
+        )
+    </insert>
+
+    <delete id="deleteSubBannerCross" parameterType="java.util.HashMap">
+        UPDATE
+            banner_cross
+        SET
+            use_flag = '1',
+            show_flag = '1'
+        WHERE
+            banner_config_id = #{bannerConfigId}
+    </delete>
+	<select id="selectNoticeShowCheck" parameterType="hashmap" resultType="String">
+        SELECT
+        	board_id
+        FROM
+        	board
+        WHERE
+        	use_flag = 0
+        AND show_flag = '0'
+    </select>
+</mapper>

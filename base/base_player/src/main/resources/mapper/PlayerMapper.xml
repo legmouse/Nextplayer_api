@@ -1,0 +1,514 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.co.nextplayer.base.player.mapper.PlayerMapper">
+
+    <resultMap id="RosterResultMap" type="kr.co.nextplayer.base.player.model.Roster">
+        <id column="roster_id" jdbcType="VARCHAR" property="rosterId"/>
+        <result column="title" jdbcType="VARCHAR" property="title"/>
+        <result column="comment" jdbcType="VARCHAR" property="comment"/>
+        <result column="year" jdbcType="VARCHAR" property="year"/>
+        <result column="uage" jdbcType="VARCHAR" property="uage"/>
+        <result column="roster_type" jdbcType="VARCHAR" property="rosterType"/>
+        <result column="type" jdbcType="VARCHAR" property="type"/>
+        <result column="reg_date" jdbcType="VARCHAR" property="regDate"/>
+        <result column="enterCnt" jdbcType="INTEGER" property="enterCnt"/>
+        <result column="localCnt" jdbcType="INTEGER" property="localCnt"/>
+        <result column="fiveAreaCnt" jdbcType="INTEGER" property="fiveAreaCnt"/>
+        <result column="allAreaCnt" jdbcType="INTEGER" property="allAreaCnt"/>
+        <result column="futureCnt" jdbcType="INTEGER" property="futureCnt"/>
+        <result column="giftedCnt" jdbcType="INTEGER" property="giftedCnt"/>
+        <result column="eliteCnt" jdbcType="INTEGER" property="eliteCnt"/>
+        <result column="center_type" jdbcType="INTEGER" property="centerType"/>
+
+        <association property="rosterFiles" javaType="kr.co.nextplayer.base.player.model.PublicFile">
+            <result column="public_file_id" property="publicFileId" />
+            <result column="file_name" property="fileName" />
+            <result column="file_ext" property="fileExt" />
+            <result column="path" property="path" />
+            <result column="file_save_path" property="fileSavePath"/>
+        </association>
+    </resultMap>
+
+    <select id="selectRosterListCnt" parameterType="kr.co.nextplayer.base.player.dto.PlayerReqDto" resultType="_int">
+        SELECT
+        COUNT(1)
+        FROM
+        Roster
+        WHERE
+        use_flag = 0
+        AND delete_flag = 0
+        <choose>
+            <when test="sYear != null and sYear != ''">
+                AND year = #{sYear}
+            </when>
+            <otherwise>
+                AND year = YEAR(CURDATE())
+            </otherwise>
+        </choose>
+
+        AND roster_type = #{rosterType}
+        <if test="ageGroup != null and ageGroup != ''">
+            AND uage = #{ageGroup}
+        </if>
+        <if test="type != null and type != ''">
+            AND type = #{type}
+        </if>
+        <if test="sKeyword != null and sKeyword != ''">
+            AND (title LIKE CONCAT('%', #{sKeyword}, '%') OR comment LIKE CONCAT('%', #{sKeyword}, '%'))
+        </if>
+    </select>
+
+    <select id="selectRosterList" parameterType="kr.co.nextplayer.base.player.dto.PlayerReqDto" resultMap="RosterResultMap">
+        SELECT
+        A.roster_id,
+        A.title,
+        A.comment,
+        A.year,
+        A.roster_type,
+        DATE_FORMAT(A.reg_date, '%Y-%m-%d') AS reg_date,
+        uage,
+        CASE
+        WHEN A.type = '0' THEN '지역센터'
+        WHEN A.type = '1' THEN '5대광역'
+        WHEN A.type = '2' THEN '합동광역'
+        WHEN A.type = '3' THEN '퓨처팀'
+        WHEN A.type = '4' THEN '영재센터'
+        END AS center_type,
+        A.type
+        FROM
+        Roster A
+        WHERE
+        A.use_flag = 0
+        AND delete_flag = 0
+        <choose>
+            <when test="sYear != null and sYear != ''">
+                AND year = #{sYear}
+            </when>
+            <otherwise>
+                AND year = YEAR(CURDATE())
+            </otherwise>
+        </choose>
+
+        AND roster_type = #{rosterType}
+        <if test="ageGroup != null and ageGroup != ''">
+            AND uage = #{ageGroup}
+        </if>
+        <if test="type != null and type != ''">
+            AND type = #{type}
+        </if>
+        <if test="sKeyword != null and sKeyword != ''">
+            AND (title LIKE CONCAT('%', #{sKeyword}, '%') OR comment LIKE CONCAT('%', #{sKeyword}, '%'))
+        </if>
+        ORDER BY
+        A.reg_date DESC
+        LIMIT
+        #{sRow}, #{eCount}
+    </select>
+
+    <resultMap id="RosterPlayerResultMap" type="kr.co.nextplayer.base.player.model.RosterPlayer">
+        <id column="player_id" jdbcType="VARCHAR" property="playerId"/>
+        <result column="roster_id" jdbcType="VARCHAR" property="rosterId"/>
+        <result column="name" jdbcType="VARCHAR" property="name"/>
+        <result column="position" jdbcType="VARCHAR" property="position"/>
+        <result column="birthday" jdbcType="VARCHAR" property="birthday"/>
+        <result column="nick_name" jdbcType="VARCHAR" property="nickName"/>
+        <result column="emblem" jdbcType="VARCHAR" property="emblem"/>
+    </resultMap>
+
+    <select id="selectRosterPlayerListCnt" parameterType="kr.co.nextplayer.base.player.dto.PlayerReqDto" resultType="_int">
+        SELECT
+        COUNT(1)
+        FROM
+        Roster_Player A
+        LEFT JOIN Roster B ON A.roster_id = B.roster_id
+        INNER JOIN Player C ON A.player_id = C.player_id
+        INNER JOIN Team D ON A.team_id = D.team_id
+        WHERE
+        B.use_flag = 0
+        AND B.delete_flag = 0
+        AND B.roster_type = #{rosterType}
+        <choose>
+            <when test="sYear != null and sYear != ''">
+                AND B.year = #{sYear}
+            </when>
+            <otherwise>
+                AND B.year = YEAR(CURDATE())
+            </otherwise>
+        </choose>
+
+        <if test="ageGroup != null and ageGroup != ''">
+            AND B.uage = #{ageGroup}
+        </if>
+        <if test="type != null and type != ''">
+            AND B.type = #{type}
+        </if>
+        <if test="sKeyword != null and sKeyword != ''">
+            AND C.name LIKE CONCAT('%', #{sKeyword} ,'%')
+        </if>
+    </select>
+
+    <select id="selectRosterPlayerList" parameterType="kr.co.nextplayer.base.player.dto.PlayerReqDto" resultMap="RosterPlayerResultMap">
+        SELECT
+        B.roster_id,
+        A.player_id,
+        C.name,
+        C.position,
+        C.birthday,
+        D.nick_name,
+        D.emblem
+        FROM
+        Roster_Player A
+        LEFT JOIN Roster B ON A.roster_id = B.roster_id
+        INNER JOIN Player C ON A.player_id = C.player_id
+        INNER JOIN Team D ON A.team_id = D.team_id
+        WHERE
+        B.use_flag = 0
+        AND C.delete_flag = 0
+        AND B.delete_flag = 0
+        AND B.roster_type = #{rosterType}
+        <choose>
+            <when test="sYear != null and sYear != ''">
+                AND B.year = #{sYear}
+            </when>
+            <otherwise>
+                AND B.year = YEAR(CURDATE())
+            </otherwise>
+        </choose>
+
+        <if test="ageGroup != null and ageGroup != ''">
+            AND B.uage = #{ageGroup}
+        </if>
+        <if test="type != null and type != ''">
+            AND B.type = #{type}
+        </if>
+        <if test="sKeyword != null and sKeyword != ''">
+            AND C.name LIKE CONCAT('%', #{sKeyword} ,'%')
+        </if>
+        GROUP BY
+        A.player_id
+        LIMIT
+        #{offset}, #{pageSize}
+    </select>
+
+    <select id="selectRosterInfo" parameterType="kr.co.nextplayer.base.player.dto.PlayerReqDto" resultMap="RosterResultMap">
+        SELECT
+            A.roster_id,
+            A.title,
+            A.year,
+            A.uage,
+            DATE_FORMAT(A.reg_date, '%Y-%m-%d') AS reg_date,
+            A.comment,
+            A.type,
+            A.roster_type,
+            B.public_file_id,
+            B.file_name,
+            B.file_ext,
+            SUBSTRING(B.file_save_path, LENGTH('/content_nextplayer') + 1) AS file_save_path
+        FROM
+            Roster A
+                LEFT OUTER JOIN Public_File B ON B.foreign_type = 'Roster' AND A.roster_id = B.foreign_id AND B.use_flag = 0
+        WHERE
+            roster_id = #{rosterId}
+    </select>
+
+
+    <resultMap id="PlayerResultMap" type="kr.co.nextplayer.base.player.model.Player">
+        <id column="player_id" jdbcType="VARCHAR" property="playerId"/>
+        <result column="name" jdbcType="VARCHAR" property="name"/>
+        <result column="position" jdbcType="VARCHAR" property="position"/>
+        <result column="birthday" jdbcType="VARCHAR" property="birthday"/>
+        <result column="team_id" jdbcType="VARCHAR" property="teamId"/>
+        <result column="nick_name" jdbcType="VARCHAR" property="teamName"/>
+        <result column="team_type" jdbcType="VARCHAR" property="teamType"/>
+        <result column="emblem" jdbcType="VARCHAR" property="emblem"/>
+        <result column="year" jdbcType="VARCHAR" property="year"/>
+    </resultMap>
+    <select id="selectPlayerList" parameterType="kr.co.nextplayer.base.player.dto.PlayerReqDto" resultMap="PlayerResultMap">
+        SELECT
+            P.player_id,
+            P.name,
+            P.position,
+            P.birthday,
+            T.emblem,
+            T.nick_name,
+            T.team_type
+        FROM
+            Player P
+                INNER JOIN Roster_Player RP ON P.player_id = RP.player_id
+                INNER JOIN Team T ON RP.team_id = T.team_id
+        WHERE
+            P.use_flag = 0
+          AND P.delete_flag = 0
+          AND RP.roster_id = #{rosterId}
+    </select>
+
+    <resultMap id="PlayerDetailResultMap" type="kr.co.nextplayer.base.player.model.PlayerDetail">
+        <id column="player_id" jdbcType="VARCHAR" property="playerId"/>
+        <result column="name" jdbcType="VARCHAR" property="name"/>
+        <result column="position" jdbcType="VARCHAR" property="position"/>
+        <result column="birthday" jdbcType="VARCHAR" property="birthday"/>
+        <result column="team_id" jdbcType="VARCHAR" property="teamId"/>
+        <result column="emblem" jdbcType="VARCHAR" property="emblem"/>
+    </resultMap>
+    <select id="selectPlayerInfo" parameterType="kr.co.nextplayer.base.player.dto.PlayerReqDto" resultMap="PlayerDetailResultMap">
+        SELECT
+            A.player_id,
+            A.name,
+            A.position,
+            A.birthday,
+            B.team_id,
+            B.emblem
+        FROM
+            Player A
+                LEFT JOIN(
+                SELECT
+                    player_id,
+                    B.team_id,
+                    emblem
+                FROM
+                    Player_History A
+                        INNER JOIN Team B ON A.team_id = B.team_id
+                WHERE
+                    player_id = #{playerId}
+                ORDER BY
+                    A.team_type DESC
+                    LIMIT 1
+            ) B ON A.player_id = B.player_id
+        WHERE
+            A.player_id = #{playerId}
+    </select>
+
+    <select id="selectPlayerHistory" parameterType="kr.co.nextplayer.base.player.dto.PlayerReqDto" resultMap="PlayerResultMap">
+        SELECT
+            A.*
+        FROM
+            (
+                SELECT
+                    A.year,
+                    A.team_type,
+                    B.nick_name,
+                    B.team_id,
+                    B.emblem
+                FROM
+                    Player_History A
+                        INNER JOIN Team B ON A.team_id = B.team_id
+                WHERE
+                    A.player_id = #{playerId}
+                  AND A.delete_flag = 0
+                ORDER BY
+                    team_type DESC, reg_order DESC
+            ) A
+        GROUP BY
+            A.team_type
+    </select>
+
+    <select id="selectPlayerJoinRosterList"  parameterType="kr.co.nextplayer.base.player.dto.PlayerReqDto" resultMap="RosterResultMap">
+        SELECT
+            A.roster_id,
+            A.title,
+            A.comment,
+            A.year,
+            A.uage,
+            A.roster_type,
+            CASE
+                WHEN type = '0' THEN '지역센터'
+                WHEN type = '1' THEN '5대광역'
+                WHEN type = '2' THEN '합동광역'
+                WHEN type = '3' THEN '퓨처팀'
+                WHEN type = '4' THEN '영재센터'
+                END AS center_type,
+            A.type,
+            DATE_FORMAT(A.reg_date, '%Y-%m-%d') AS reg_date
+        FROM
+            Roster A
+                INNER JOIN Roster_Player B ON A.roster_id = B.roster_id
+        WHERE
+            A.use_flag = 0
+          AND A.delete_flag = 0
+          AND A.roster_type = #{rosterType}
+          AND B.player_id = #{playerId}
+    </select>
+
+    <select id="selectPlayerJoinNationalRoster" parameterType="kr.co.nextplayer.base.player.dto.PlayerReqDto" resultMap="RosterResultMap">
+        SELECT
+            CAST(A.n AS CHAR) AS `year`,
+            CASE
+                WHEN
+                    B.cnt IS NULL THEN 0
+                ELSE B.cnt
+                END AS enterCnt
+        FROM
+            (
+                SELECT
+                    @N:= @N +1 AS n
+                FROM
+                    Roster_Player, (SELECT @N:= YEAR(CURDATE()) - 10 FROM DUAL) NN
+                WHERE
+                    @N <![CDATA[<]]> DATE_FORMAT(NOW(), '%Y')
+            ) A
+                LEFT JOIN (
+                SELECT
+                    COUNT(1) cnt,
+                    year
+                FROM
+                    Roster_Player A
+                    INNER JOIN Roster B ON A.roster_id = B.roster_id
+                WHERE
+                    player_id = #{playerId}
+                  AND B.roster_type = 0
+                  AND B.use_flag = 0
+                  AND B.delete_flag = 0
+                GROUP BY
+                    year
+            ) B ON A.n = B.year
+        ORDER BY
+            A.n
+    </select>
+
+    <select id="selectPlayerJoinGoldenAgeRoster" parameterType="kr.co.nextplayer.base.player.dto.PlayerReqDto" resultMap="RosterResultMap">
+        SELECT
+            CAST(A.n AS CHAR) AS `year`
+             , CASE
+                   WHEN
+                       B.`local` IS NULL THEN 0
+                   ELSE B.`local`
+            END AS `localCnt`
+             , CASE
+                   WHEN
+                       B.`5Area` IS NULL THEN 0
+                   ELSE B.`5Area`
+            END AS `fiveAreaCnt`
+             , CASE
+                   WHEN
+                       B.`allArea` IS NULL THEN 0
+                   ELSE B.`allArea`
+            END AS `allAreaCnt`
+             , CASE
+                   WHEN
+                       B.`future` IS NULL THEN 0
+                   ELSE B.`future`
+            END AS `futureCnt`
+             , CASE
+                   WHEN
+                       B.`giftedArea` IS NULL THEN 0
+                   ELSE B.`giftedArea`
+            END AS `giftedCnt`
+             , CASE
+                   WHEN
+                       B.`elite` IS NULL THEN 0
+                   ELSE B.`elite`
+            END AS `eliteCnt`
+        FROM
+            (
+                SELECT
+                    @N:= @N +1 AS n
+                FROM
+                    Roster_Player, (SELECT @N:= YEAR(CURDATE()) - 10 FROM DUAL) NN
+                WHERE
+                    @N <![CDATA[<]]> DATE_FORMAT(NOW(), '%Y')
+            ) A
+                LEFT JOIN (
+                SELECT
+                    R.year,
+                    COALESCE(SUM(CASE WHEN R.type = 0 THEN 1 ELSE 0 END), 0) AS 'local',
+                        COALESCE(SUM(CASE WHEN R.type = 1 THEN 1 ELSE 0 END), 0) AS '5Area',
+                        COALESCE(SUM(CASE WHEN R.type = 2 THEN 1 ELSE 0 END), 0) AS 'allArea',
+                        COALESCE(SUM(CASE WHEN R.type = 3 THEN 1 ELSE 0 END), 0) AS 'giftedArea',
+                        COALESCE(SUM(CASE WHEN R.type = 3 THEN 1 ELSE 0 END), 0) AS 'future',
+                        COALESCE(SUM(CASE WHEN R.type = 4 THEN 1 ELSE 0 END), 0) AS 'elite'
+                FROM
+                    Roster_Player RP
+                        INNER JOIN Roster R ON RP.roster_id = R.roster_id
+                WHERE
+                    RP.player_id = #{playerId}
+                  AND R.roster_type = 1
+                  AND R.use_flag = 0
+                  AND R.delete_flag = 0
+                GROUP BY
+                    R.year
+                ORDER BY
+                    R.year
+            ) B ON A.n = B.year
+        ORDER BY
+            A.n
+    </select>
+
+    <select id="selectNationalRosterList" parameterType="kr.co.nextplayer.base.player.dto.PlayerReqDto" resultMap="RosterResultMap">
+        SELECT
+            roster_id,
+            title,
+            comment,
+            year,
+            roster_type,
+            DATE_FORMAT(reg_date, '%Y-%m-%d') AS reg_date,
+            uage
+        FROM
+            Roster
+        WHERE
+            use_flag = 0
+          AND delete_flag = 0
+          AND roster_type = '0'
+        ORDER BY
+            reg_date DESC
+            LIMIT
+            10
+    </select>
+
+    <select id="selectGoldenAgeRosterList" parameterType="kr.co.nextplayer.base.player.dto.PlayerReqDto" resultMap="RosterResultMap">
+        SELECT
+            roster_id,
+            title,
+            comment,
+            year,
+            roster_type,
+            DATE_FORMAT(reg_date, '%Y-%m-%d') AS reg_date,
+            CASE
+            WHEN type = '0' THEN '지역센터'
+            WHEN type = '1' THEN '5대광역'
+            WHEN type = '2' THEN '합동광역'
+            WHEN type = '3' THEN '퓨처팀'
+            WHEN type = '4' THEN '영재센터'
+        END AS center_type,
+            type
+        FROM
+            Roster
+        WHERE
+            use_flag = 0
+            AND delete_flag = 0
+            AND roster_type = '1'
+        ORDER BY
+            reg_date DESC
+        LIMIT
+            10
+    </select>
+
+    <select id="selectRosterInfoPageList"  parameterType="kr.co.nextplayer.base.player.dto.PlayerReqDto" resultMap="RosterResultMap">
+        SELECT
+            A.roster_id,
+            title,
+            comment,
+            year,
+            uage,
+            roster_type,
+            CASE
+            WHEN type = '0' THEN '지역센터'
+            WHEN type = '1' THEN '5대광역'
+            WHEN type = '2' THEN '합동광역'
+            WHEN type = '3' THEN '퓨처팀'
+            WHEN type = '4' THEN '영재센터'
+        END AS type,
+            DATE_FORMAT(A.reg_date, '%y.%m.%d') AS reg_date
+        FROM
+            Roster A
+            INNER JOIN main_roster B ON A.roster_id = B.roster_id
+        WHERE
+            A.use_flag = 0
+            AND B.use_flag = 0
+            AND delete_flag = 0
+            AND roster_type = #{rosterType}
+        ORDER BY
+        B.roster_order
+        /*LIMIT 4*/
+    </select>
+
+</mapper>

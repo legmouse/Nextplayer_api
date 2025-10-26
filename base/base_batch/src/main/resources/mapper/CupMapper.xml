@@ -1,0 +1,341 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.co.nextplayer.base.batch.mapper.CupMapper">
+
+    <select id="selectCupTourMatchListCraw" parameterType="java.util.HashMap" resultType="kr.co.nextplayer.base.batch.dto.joinkfaCraw.MatchDataDto">
+        select
+            match_order
+             ,cup_tour_match_id as match_id
+             ,round
+             ,tour_no
+             ,next_tour_no
+             ,next_tour_port
+             ,home
+             ,away
+             ,home_id
+             ,away_id
+             ,home_score as home_bf_score
+             ,away_score as away_bf_score
+             ,home_pk
+             ,away_pk
+             ,end_flag
+             ,upd_flag
+        from
+            ${matchTB}
+        where
+            cup_id = #{cupId}
+          and use_flag = 0
+    </select>
+
+    <select id="selectCupMainMatchListCraw" parameterType="java.util.HashMap" resultType="kr.co.nextplayer.base.batch.dto.joinkfaCraw.MatchDataDto">
+        select
+            match_order
+             ,cup_main_match_id as match_id
+             ,home
+             ,away
+             ,home_id
+             ,away_id
+             ,home_score as home_bf_score
+             ,away_score as away_bf_score
+             ,home_pk
+             ,away_pk
+             ,end_flag
+             ,upd_flag
+        from
+            ${matchTB}
+        where
+            cup_id = #{cupId}
+          and use_flag = 0
+    </select>
+
+    <select id="selectCupSubMatchListCraw" parameterType="java.util.HashMap" resultType="kr.co.nextplayer.base.batch.dto.joinkfaCraw.MatchDataDto">
+        select
+            match_order
+             ,cup_sub_match_id as match_id
+             ,home
+             ,away
+             ,home_id
+             ,away_id
+             ,home_score as home_bf_score
+             ,away_score as away_bf_score
+             ,home_pk
+             ,away_pk
+             ,end_flag
+             ,upd_flag
+        from
+            ${matchTB}
+        where
+            cup_id = #{cupId}
+          and use_flag = 0
+    </select>
+
+
+    <update id="updateCupSubMatchEndFlag" parameterType="java.util.HashMap">
+        UPDATE
+            ${cupSubMatchTB}
+        SET
+            end_flag = 1
+        WHERE
+            cup_id = #{cupId}
+          AND cup_sub_match_id = #{cupSubMatchId}
+    </update>
+
+    <update id="updateCupMainMatchEndFlag" parameterType="java.util.HashMap">
+        UPDATE
+            ${cupMainMatchTB}
+        SET
+            end_flag = 1
+        WHERE
+            cup_id = #{cupId}
+          AND cup_main_match_id = #{cupMainMatchId}
+    </update>
+
+
+    <update id="updateCupTourMatchEndFlag" parameterType="java.util.HashMap">
+        UPDATE
+            ${cupMainMatchTB}
+        SET
+            end_flag = 1
+        WHERE
+            cup_id = #{cupId}
+          AND cup_tour_match_id = #{cupMainMatchId}
+    </update>
+
+    <!-- 대회 본선 스코어 수정 -->
+    <update id="updateCupMainMatchScore" parameterType="java.util.HashMap" >
+        UPDATE ${cupMainMatchTB}
+        SET
+        home_score = #{homeScore},
+        away_score = #{awayScore},
+        home_pk = #{homePk},
+        away_pk = #{awayPk},
+        match_type = #{selMatchType},
+        <if test="endFlag != null and endFlag != '' and endFlag != 0">
+            end_flag = #{endFlag},
+        </if>
+        <if test="updFlag != null and updFlag != '' and updFlag != '0'">
+            upd_flag = #{updFlag},
+        </if>
+        reason = #{reason}
+        WHERE cup_main_match_id = #{cupMainMatchId}
+    </update>
+
+    <!-- 대회 예선 스코어 수정 -->
+    <update id="updateCupSubMatchScore" parameterType="java.util.HashMap" >
+        UPDATE ${cupSubMatchTB}
+        SET
+        home_score = #{homeScore},
+        away_score = #{awayScore},
+        home_pk = #{homePk},
+        away_pk = #{awayPk},
+        <if test="endFlag != null and endFlag != '' and endFlag != 0">
+            end_flag = #{endFlag},
+        </if>
+        <if test="updFlag != null and updFlag != '' and updFlag != '0'">
+            upd_flag = #{updFlag},
+        </if>
+        match_type = #{selMatchType}
+        WHERE cup_sub_match_id = #{cupSubMatchId}
+    </update>
+
+    <!-- 대회 토너먼트 스코어 수정 -->
+    <update id="updateCupTourMatchScore" parameterType="java.util.HashMap" >
+        UPDATE ${cupTourMatchTB}
+        SET
+        home_score = #{homeScore},
+        away_score = #{awayScore},
+        home_pk = #{homePk},
+        away_pk = #{awayPk},
+        <if test="fixFlag != null and fixFlag != '' and fixFlag != 0">
+            fix_flag = #{fixFlag},
+        </if>
+        <if test="endFlag != null and endFlag != '' and endFlag != 0">
+            end_flag = #{endFlag},
+        </if>
+        <if test="updFlag != null and updFlag != '' and updFlag != '0'">
+            upd_flag = #{updFlag},
+        </if>
+        match_type = #{selMatchType}
+        WHERE cup_tour_match_id = #{cupTourMatchId}
+    </update>
+
+    <select id="selectCupNextTourMatch" parameterType="java.util.HashMap" resultType="java.util.HashMap">
+        SELECT
+            cup_tour_match_id
+        FROM
+            ${cupTourMatchTB}
+        WHERE
+            cup_id = #{cupId}
+          AND tour_no = #{nextTourNo}
+          AND use_flag = 0
+    </select>
+
+    <update id="updateCupTourNextMatch" parameterType="java.util.HashMap">
+        UPDATE
+        ${cupTourMatchTB}
+        SET
+        <if test="home != '' and home != null">
+            home = #{home},
+        </if>
+        <if test="away != '' and away != null">
+            away = #{away},
+        </if>
+        <if test="homeId != '' and homeId != null">
+            home_id = #{homeId}
+        </if>
+        <if test="awayId != '' and awayId != null">
+            away_id = #{awayId}
+        </if>
+        <if test="fixFlag != null and fixFlag != '' and fixFlag != 0">
+            ,fix_flag = #{fixFlag}
+        </if>
+        <if test="endFlag != null and endFlag != '' and endFlag != 0">
+            ,end_flag = #{endFlag}
+        </if>
+        <if test="updFlag != null and updFlag != '' and updFlag != '0'">
+            ,upd_flag = #{updFlag}
+        </if>
+        WHERE
+        cup_tour_match_id = #{cupTourMatchId}
+        AND cup_id = #{cupId}
+    </update>
+
+    <update id="updateCupTourMatchFixFlag" parameterType="java.util.HashMap">
+        UPDATE
+            ${cupTourMatchTB}
+        SET
+            fix_flag = 1
+          ,end_flag= 1
+        WHERE
+            cup_id = #{cupId}
+          AND cup_tour_match_id = #{cupTourMatchId}
+    </update>
+
+    <update id="updateMainMatchInfo" parameterType="java.util.HashMap">
+        update ${cupMatchTB}
+        set match_status = #{playData.status}
+          , audience = #{playData.audience}
+          , weather = #{playData.weather}
+          , play_time = #{playData.playTime}
+          , main_referee = #{playData.mainReferee}
+          , sub_referee = #{playData.subReferee}
+          , stand_by_referee = #{playData.standByReferee}
+          , referee_evaluation = #{playData.refereeEvaluation}
+          , game_supervisor = #{playData.gameSupervisor}
+        where cup_main_match_id = #{matchId}
+    </update>
+
+    <update id="updateSubMatchInfo" parameterType="java.util.HashMap">
+        update ${cupMatchTB}
+        set match_status = #{playData.status}
+          , audience = #{playData.audience}
+          , weather = #{playData.weather}
+          , play_time = #{playData.playTime}
+          , main_referee = #{playData.mainReferee}
+          , sub_referee = #{playData.subReferee}
+          , stand_by_referee = #{playData.standByReferee}
+          , referee_evaluation = #{playData.refereeEvaluation}
+          , game_supervisor = #{playData.gameSupervisor}
+        where cup_sub_match_id = #{matchId}
+    </update>
+
+    <update id="updateTourMatchInfo" parameterType="java.util.HashMap">
+        update ${cupMatchTB}
+        set match_status = #{playData.status}
+          , audience = #{playData.audience}
+          , weather = #{playData.weather}
+          , play_time = #{playData.playTime}
+          , main_referee = #{playData.mainReferee}
+          , sub_referee = #{playData.subReferee}
+          , stand_by_referee = #{playData.standByReferee}
+          , referee_evaluation = #{playData.refereeEvaluation}
+          , game_supervisor = #{playData.gameSupervisor}
+        where cup_tour_match_id = #{matchId}
+    </update>
+
+    <delete id="deleteMatchPlayDataOrChangeData" parameterType="java.util.HashMap">
+        delete
+        from ${matchPlayDataOrChangeDataTB}
+        where match_id = #{matchId};
+    </delete>
+
+    <delete id="deleteMatchStaffDataOrStaffPenaltyDataOrOwnGoalData" parameterType="java.util.HashMap">
+        delete
+        from ${staffDataOrStaffPenaltyDataOrOwnGoalDataTB}
+        where match_id = #{matchId};
+    </delete>
+
+    <insert id="insertMatchPlayData" parameterType="java.util.HashMap">
+        <![CDATA[
+        INSERT INTO ${matchPlayDataTB}
+        (player_number, position, player_name, compete, goal, help, warning, gexit, pso, home_away_gbn, sel_can_gbn, match_id, player_id, captain_flag)
+        VALUES
+            (#{playData.playerNumber}
+            , #{playData.position}
+            , #{playData.playerName}
+            , #{playData.compete}
+            , #{playData.goal}
+            , #{playData.help}
+            , #{playData.warning}
+            , #{playData.exit}
+            , #{playData.pso}
+            , #{playData.homeAwayGbn}
+            , #{playData.selCanGbn}
+            , #{playData.leagueMatchId}
+            , #{playData.playerId}
+            , #{playData.captainFlag}
+            )
+        ]]>
+    </insert>
+
+    <insert id="insertMatchChangeData" parameterType="java.util.HashMap">
+        <![CDATA[
+        INSERT INTO ${matchChangeDataTB}
+        (time, in_player_number, in_player_name, in_player_id, out_player_number, out_player_name, out_player_id, home_away_gbn, match_id)
+        VALUES
+            (#{changeData.time}
+            , #{changeData.inPlayerNumber}
+            , #{changeData.inPlayerName}
+            , #{changeData.inPlayerId}
+            , #{changeData.outPlayerNumber}
+            , #{changeData.outPlayerName}
+            , #{changeData.outPlayerId}
+            , #{changeData.homeAwayGbn}
+            , #{changeData.matchId})
+        ]]>
+    </insert>
+
+    <insert id="insertStaffData" parameterType="java.util.HashMap">
+        INSERT INTO ${cupStaffDataTB}
+        (
+            home_away_gbn
+        ,match_id
+        ,rank
+        ,staff_name
+        ) VALUES (
+                     #{staffData.homeAwayGbn}
+                 ,#{staffData.matchId}
+                 ,#{staffData.rank}
+                 ,#{staffData.staffName}
+                 )
+    </insert>
+
+    <insert id="insertStaffPenaltyData" parameterType="java.util.HashMap">
+        INSERT ${cupStaffPenaltyDataTB}
+        (
+            home_away_gbn, match_id, time, rank, staff_name, penalty_type
+        ) VALUES (
+        #{staffPenaltyData.homeAwayGbn}, #{staffPenaltyData.matchId}, #{staffPenaltyData.time}, #{staffPenaltyData.rank}, #{staffPenaltyData.staffName}, #{staffPenaltyData.penaltyType}
+        )
+
+    </insert>
+
+    <insert id="insertOwnGoalData" parameterType="java.util.HashMap">
+        INSERT ${cupOwnGoalDataTB}
+        (
+            home_away_gbn, match_id, time, player_number, player_name, player_id
+        ) VALUES (
+        #{ownGoalData.homeAwayGbn}, #{ownGoalData.matchId}, #{ownGoalData.time}, #{ownGoalData.playerNumber}, #{ownGoalData.playerName}, #{ownGoalData.playerId}
+        )
+    </insert>
+</mapper>

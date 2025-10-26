@@ -1,0 +1,695 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.co.nextplayer.base.backend.mapper.PlayerMapper">
+
+    <resultMap id="playerResultMap" type="java.util.HashMap">
+        <id property="player_id" column="player_id" />
+        <result property="name" column="name" />
+        <result property="position" column="position" />
+        <result property="birthday" column="birthday" />
+        <result property="reg_date" column="reg_date" />
+        <result property="team_name" column="team_name" />
+        <result property="nick_name" column="nick_name" />
+    </resultMap>
+
+    <select id="selectPlayerListCnt" parameterType="hashmap" resultType="_int">
+        SELECT
+            COUNT(1)
+        FROM
+            Player a
+            LEFT JOIN(
+                        SELECT
+                            A.*
+                        FROM
+                            (
+                            SELECT
+                                a.*
+                            FROM
+                                Player_History a
+                                INNER JOIN (
+                                            SELECT
+                                                player_id,
+                                                MAX(team_type) AS max_team_type
+                                            FROM
+                                                Player_History
+                                            WHERE
+                                                use_flag = 0
+                                            GROUP BY
+                                                player_id
+                                ) b ON a.player_id = b.player_id AND a.team_type = b.max_team_type
+                                INNER JOIN player c ON a.player_id = c.player_id
+                            WHERE
+                                c.delete_flag = 0
+                            ORDER BY year DESC, reg_order DESC
+                            ) A
+                        GROUP BY
+                            A.player_id
+            ) b ON a.player_id = b.player_id
+            LEFT JOIN Team c ON b.team_id = c.team_id
+        WHERE
+            a.delete_flag = '0'
+            <if test="sKeyword != null and sKeyword != ''">
+            AND a.name LIKE CONCAT('%', #{sKeyword}, '%') or c.nick_name LIKE CONCAT('%', #{sKeyword}, '%') or c.team_name LIKE CONCAT('%', #{sKeyword}, '%')
+            </if>
+            <if test="sPosition != null and sPosition != ''">
+            AND a.position LIKE CONCAT('%', #{sPosition}, '%')
+            </if>
+            <if test="sYear != null and sYear != ''">
+                AND b.year = #{sYear}
+            </if>
+    </select>
+
+    <select id="selectPlayerList" parameterType="hashmap" resultType="hashmap">
+        SELECT
+            A.*
+        FROM
+            (
+            SELECT
+                a.player_id,
+                a.name AS name,
+                a.position AS position,
+                a.birthday AS birthday,
+                a.reg_date AS reg_date,
+                c.team_name AS team_name,
+                c.nick_name AS nick_name,
+                a.delete_flag
+            FROM
+                Player a
+                LEFT JOIN(
+                            SELECT
+                                A.*
+                            FROM
+                                (
+                                SELECT
+                                    a.*
+                                FROM
+                                    Player_History a
+                                INNER JOIN (
+                                            SELECT
+                                                player_id,
+                                                MAX(team_type) AS max_team_type
+                                            FROM
+                                                Player_History
+                                            WHERE
+                                                use_flag = 0
+                                            GROUP BY
+                                                player_id
+                                            ) b ON a.player_id = b.player_id AND a.team_type = b.max_team_type
+                                ORDER BY year DESC, reg_order DESC
+                                ) A
+                            GROUP BY
+                                A.player_id
+                ) b ON a.player_id = b.player_id
+                LEFT OUTER JOIN Team c ON b.team_id = c.team_id
+            WHERE
+                a.delete_flag = '0'
+                <if test="sKeyword != null and sKeyword != ''">
+                AND a.name LIKE CONCAT('%', #{sKeyword}, '%') or c.nick_name LIKE CONCAT('%', #{sKeyword}, '%') or c.team_name LIKE CONCAT('%', #{sKeyword}, '%')
+                </if>
+                <if test="sPosition != null and sPosition != ''">
+                AND a.position LIKE CONCAT('%', #{sPosition}, '%')
+                </if>
+                <if test="sYear != null and sYear != ''">
+                    AND b.year = #{sYear}
+                </if>
+            ORDER BY
+                a.player_id DESC
+        ) A
+    WHERE
+        A.delete_flag = 0
+    LIMIT ${sRow}, ${eCount}
+    </select>
+
+    <select id="selectPlayerInfo" parameterType="hashmap" resultType="hashmap">
+        SELECT
+            a.player_id
+            ,a.name
+            ,a.position
+            ,a.birthday
+            ,a.use_flag
+            ,a.reg_date
+        FROM
+            Player a
+        WHERE
+            a.player_id = #{playerId}
+    </select>
+
+    <select id="selectPlayerHistoryDetail" parameterType="hashmap" resultType="hashmap">
+        SELECT
+            a.year
+            ,a.team_id
+            ,a.team_type
+            ,b.team_name
+            ,b.nick_name
+            ,b.uage
+            ,a.use_flag
+        FROM
+            Player_History a
+            INNER JOIN Team b ON a.team_id = b.team_id
+        WHERE
+            a.player_id = #{playerId}
+        ORDER BY
+            a.team_type ASC, a.reg_order ASC
+    </select>
+
+    <select id="selectSearchPlayerTeam" parameterType="hashmap" resultType="hashmap">
+        SELECT
+            team_id
+            ,uage
+            ,area_name
+            ,team_name
+            ,nick_name
+            ,emblem
+        FROM
+            Team
+        WHERE
+            uage = #{ageGroup}
+            AND (team_name LIKE CONCAT('%', #{sKeyword}, '%') or nick_name LIKE CONCAT('%', #{sKeyword}, '%'))
+    </select>
+
+    <insert id="insertPlayer" parameterType="hashmap">
+        INSERT INTO Player (
+            name, 
+            position, 
+            <if test="birthday != null and birthday != ''">
+            birthday,
+            </if>
+            use_flag
+        ) VALUES (
+            #{name}, 
+            #{position},
+            <if test="birthday != null and birthday != ''"> 
+            date_format(#{birthday}, '%Y-%m-%d'),
+            </if> 
+            #{useFlag}
+        )
+        <selectKey keyProperty="playerId" order="AFTER" resultType="String">
+            SELECT LAST_INSERT_ID()
+        </selectKey>
+    </insert>
+
+    <insert id="insertPlayerHistory" parameterType="hashmap">
+        <foreach item="item" index="index" collection="list" separator=";">
+            INSERT INTO Player_History (
+                player_id, year, team_id, team_type, use_flag, reg_order
+            ) VALUES (
+                <choose>
+                    <when test="insertType == 'excel'">
+                        #{item.playerId},
+                    </when>
+                    <otherwise>
+                        #{playerId},
+                    </otherwise>
+                </choose>
+                 #{item.year}, #{item.teamId}, #{item.teamType}, #{item.useFlag}, #{item.regOrder}
+            )
+        </foreach>
+    </insert>
+
+    <insert id="insertPlayerHistoryForExcel" parameterType="hashmap">
+        INSERT INTO Player_History (
+            player_id, year, team_id, team_type, use_flag, reg_order
+        ) VALUES (
+            #{playerId}, #{year}, #{teamId}, #{teamType}, #{useFlag}, #{regOrder}
+        )
+    </insert>
+
+    <insert id="insertMatchFailPlayerHistory" parameterType="hashmap">
+        <foreach item="item" index="index" collection="list" separator=";">
+            INSERT INTO Player_History_Fail (
+                player_id, name, position, birthday, year, team_type, team_name, result
+            ) VALUES (
+                #{item.playerId}, #{item.name}, #{item.position}, #{item.birthday}, #{item.year}, #{item.teamType}, #{item.teamName}, #{item.resultState}
+            )
+        </foreach>
+    </insert>
+
+    <update id="updatePlayer" parameterType="hashmap">
+        UPDATE
+            Player
+        SET
+            <if test="name != null and name != ''">
+                name = #{name},
+            </if>
+            <if test="position != null and position != ''">
+                position = #{position},
+            </if>
+            <if test="birthday != null and birthday != ''">
+                birthday = date_format(#{birthday}, '%Y-%m-%d'),
+            </if>
+            <if test="useFlag != null and useFlag != ''">
+                use_flag = #{useFlag}
+            </if>
+        WHERE
+            player_id = #{playerId}
+    </update>
+
+    <delete id="deletePlayerHistory" parameterType="hashmap">
+        DELETE
+        FROM
+            Player_History
+        WHERE
+            player_id = #{playerId}
+    </delete>
+
+    <update id="updateDeletePlayer" parameterType="hashmap">
+        UPDATE
+            Player
+        SET
+            delete_flag = '1',
+            use_flag = '1'
+        WHERE
+            player_id = #{playerId}
+    </update>
+
+    <update id="updateDeletePlayerHistory" parameterType="hashmap">
+        UPDATE
+            Player_History
+        SET
+            delete_flag = '1'
+        WHERE
+            player_id = #{playerId}
+    </update>
+
+    <select id="selectRosterPlayerListCnt" parameterType="hashmap" resultType="_int">
+        SELECT
+            COUNT(A.cnt) AS cnt
+        FROM
+            (
+            SELECT
+                IFNULL(COUNT(B.roster_id), '0') AS cnt
+            FROM
+                Roster A
+                LEFT JOIN roster_player B ON A.roster_id = B.roster_id
+                LEFT JOIN player C ON B.player_id = C.player_id
+            WHERE
+                A.delete_flag = 0
+            <choose>
+                <when test="type eq 'national'">
+                AND A.roster_type = '0'
+                </when>
+                <otherwise>
+                AND A.roster_type = '1'
+                </otherwise>
+            </choose>
+            <if test="sYear != null and sYear != ''">
+                AND A.year = #{sYear}
+            </if>
+            <if test="sKeyword != null and sKeyword != ''">
+                AND (A.title LIKE CONCAT('%', #{sKeyword}, '%') OR C.name LIKE CONCAT('%', #{sKeyword} , '%'))
+            </if>
+            <if test="ageGroup != null and ageGroup != ''">
+                AND A.uage = #{ageGroup}
+            </if>
+            GROUP BY
+                A.roster_id
+        ) A
+    </select>
+
+    <resultMap id="RosterListMap" type="java.util.HashMap">
+        <id property="roster_id" column="roster_id"/>
+        <result property="title" column="title"/>
+        <result property="year" column="year"/>
+        <result property="uage" column="uage"/>
+        <result property="type" column="type"/>
+        <result property="roster_type" column="roster_type"/>
+        <result property="cnt" column="cnt"/>
+        <result property="reg_date" column="reg_date"/>
+    </resultMap>
+    <select id="selectRosterPlayerList" parameterType="hashmap" resultMap="RosterListMap">
+        SELECT
+            A.roster_id,
+            A.title,
+            A.year,
+            A.uage,
+            A.type,
+            A.roster_type,
+            COUNT(B.roster_id) AS cnt,
+            DATE_FORMAT(A.reg_date, '%Y-%m-%d') AS reg_date
+        FROM
+            Roster A
+            LEFT JOIN roster_player B ON A.roster_id = B.roster_id
+            LEFT JOIN player C ON B.player_id = C.player_id
+        WHERE
+            A.delete_flag = 0
+            <choose>
+                <when test="type eq 'national'">
+            AND roster_type = '0'
+                </when>
+                <when test="type eq 'golden'">
+            AND roster_type = '1'
+                </when>
+            </choose>
+            <if test="sYear != null and sYear != ''">
+            AND year = #{sYear}
+            </if>
+            <if test="sKeyword != null and sKeyword != ''">
+            AND (A.title LIKE CONCAT('%', #{sKeyword}, '%') OR C.name LIKE CONCAT('%', #{sKeyword} , '%'))
+            </if>
+            <if test="sTitle != null and sTitle != ''">
+            AND A.title LIKE CONCAT('%', #{sTitle}, '%')
+            </if>
+            <if test="ageGroup != null and ageGroup != ''">
+            AND A.uage = #{ageGroup}
+            </if>
+        GROUP BY
+            A.roster_id
+        ORDER BY
+            A.roster_id DESC
+        <if test="eCount != null and eCount != ''">
+        LIMIT ${sRow}, ${eCount}
+        </if>
+    </select>
+
+    <select id="selectSearchPlayerList" parameterType="hashmap" resultType="hashmap">
+        SELECT
+            a.player_id,
+            a.name AS name,
+            a.position AS position,
+            a.birthday AS birthday,
+            DATE_FORMAT(a.reg_date, '%Y-%m-%d') AS reg_date,
+            c.team_name AS team_name,
+            c.nick_name AS nick_name,
+            c.team_id
+        FROM
+            Player a
+            INNER JOIN(
+                        SELECT
+                            A.*
+                        FROM
+                            (
+                                SELECT
+                                    a.*
+                                FROM
+                                    Player_History a
+                                    INNER JOIN (
+                                                SELECT
+                                                    player_id,
+                                                    history_id
+                                                    <!--MAX(team_type) AS max_team_type-->
+                                                FROM
+                                                    Player_History
+                                                WHERE
+                                                    use_flag = 0
+                                                    <if test="sYear != null and sYear != ''">
+                                                    AND year = #{sYear}
+                                                    </if>
+                                                ORDER BY
+                                                    team_type desc
+                                                /*) b ON a.player_id = b.player_id AND a.team_type = b.max_team_type*/
+                                                ) b ON a.player_id = b.player_id AND a.history_id = b.history_id
+                                ORDER BY year DESC, reg_order DESC
+                            ) A
+                        GROUP BY
+                            A.player_id
+            ) b ON a.player_id = b.player_id
+            LEFT OUTER JOIN Team c ON b.team_id = c.team_id
+        WHERE
+            a.delete_flag = '0'
+        <if test="sKeyword != null and sKeyword != ''">
+            AND a.name LIKE CONCAT('%', #{sKeyword}, '%') or c.nick_name LIKE CONCAT('%', #{sKeyword}, '%') or c.team_name LIKE CONCAT('%', #{sKeyword}, '%')
+        </if>
+        ORDER BY
+            a.player_id DESC
+    </select>
+
+    <select id="selectRosterInfo" parameterType="hashmap" resultType="hashmap">
+        SELECT
+            roster_id,
+            title,
+            comment,
+            year,
+            uage,
+            roster_type,
+            type,
+            DATE_FORMAT(reg_date, '%Y-%m-%d') AS reg_date,
+            use_flag
+        FROM
+            Roster
+        WHERE
+            roster_id = #{rosterId}
+    </select>
+
+    <select id="selectRosterPlayerDetail" parameterType="hashmap" resultType="hashmap">
+        SELECT
+            C.player_id,
+            B.team_id,
+            A.roster_player_id,
+            C.name,
+            C.position,
+            C.birthday,
+            B.team_name
+        FROM
+            Roster_Player A
+            INNER JOIN Team B ON A.team_id = B.team_id
+            INNER JOIN Player C ON A.player_id = C.player_id
+        WHERE
+            A.roster_id = #{rosterId}
+    </select>
+
+    <insert id="insertRoster" parameterType="hashmap">
+        INSERT INTO Roster (
+                            title,
+                            comment,
+                            year,
+                            <if test="ageGroup != null and ageGroup != ''">
+                            uage,
+                            </if>
+                            roster_type,
+                            <if test="type != null and type != ''">
+                            type,
+                            </if>
+                            use_flag
+        ) VALUES (
+                    #{title},
+                    #{comment},
+                    #{year},
+                    <if test="ageGroup != null and ageGroup != ''">
+                    #{ageGroup},
+                    </if>
+                    #{rosterType},
+                    <if test="type != null and type != ''">
+                    #{type},
+                    </if>
+                    #{useFlag}
+        )
+        <selectKey keyProperty="rosterId" order="AFTER" resultType="String">
+            SELECT LAST_INSERT_ID()
+        </selectKey>
+    </insert>
+
+    <insert id="insertRosterPlayer" parameterType="hashmap">
+        <foreach item="item" index="index" collection="list" separator=";">
+            INSERT INTO Roster_Player (
+            roster_id, player_id, team_id
+            ) VALUES (
+            <choose>
+                <when test="insertType == 'excel'">
+                    #{item.rosterId},
+                </when>
+                <otherwise>
+                    #{rosterId},
+                </otherwise>
+            </choose>
+            #{item.playerId}, #{item.teamId}
+            )
+        </foreach>
+    </insert>
+
+    <insert id="insertRosterPlayerForExcel" parameterType="hashmap">
+        INSERT INTO Roster_Player (
+        roster_id, player_id, team_id
+        ) VALUES (
+        #{rosterId}, #{playerId}, #{teamId}
+        )
+    </insert>
+
+    <update id="updateRoster" parameterType="hashmap">
+        UPDATE
+            Roster
+        SET
+        <if test="title != null and title != ''">
+            title = #{title},
+        </if>
+        <if test="comment != null and comment != ''">
+            comment = #{comment},
+        </if>
+        <if test="year != null and year != ''">
+            year = #{year},
+        </if>
+        <if test="ageGroup != null and ageGroup != ''">
+            uage = #{ageGroup},
+        </if>
+        <if test="type != null and type != ''">
+            type = #{type},
+        </if>
+        <if test="useFlag != null and useFlag != ''">
+            use_flag = #{useFlag}
+        </if>
+        WHERE
+        roster_id = #{rosterId}
+    </update>
+
+    <delete id="deleteRosterPlayer" parameterType="hashmap">
+        DELETE
+        FROM
+            Roster_Player
+        WHERE
+            roster_id = #{rosterId}
+    </delete>
+
+    <update id="updateDeleteRoster" parameterType="hashmap">
+        UPDATE
+            Roster
+        SET
+            delete_flag = '1'
+        WHERE
+            roster_id = #{rosterId}
+    </update>
+
+    <update id="updateDeleteRosterPlayer" parameterType="hashmap">
+        UPDATE
+            Roster_Player
+        SET
+            delete_flag = '1'
+        WHERE
+            roster_id = #{rosterId}
+    </update>
+
+    <select id="selectSearchRosterPlayer" parameterType="hashmap" resultType="hashmap">
+        SELECT
+            A.player_id
+        FROM
+            Player A
+        WHERE
+            A.name = #{name}
+            AND A.delete_flag = '0'
+            AND A.birthday = #{birthday}
+    </select>
+
+    <insert id="insertMatchFailRosterPlayer" parameterType="hashmap">
+        <foreach item="item" index="index" collection="list" separator=";">
+            INSERT INTO Roster_Player_Fail (
+                                            roster_id,
+                                            name,
+                                            position,
+                                            birthday,
+                                            <if test="item.ageGroup != null and item.ageGroup != ''">
+                                            year,
+                                            </if>
+                                            <if test="item.type != null and item.type != ''">
+                                            type,
+                                            </if>
+                                            team_type,
+                                            team_name,
+                                            result
+            ) VALUES (
+                        #{item.rosterId},
+                        #{item.name},
+                        #{item.position},
+                        #{item.birthday},
+                        <if test="item.ageGroup != null and item.ageGroup != ''">
+                        #{item.ageGroup},
+                        </if>
+                        <if test="item.type != null and item.type != ''">
+                        #{item.type},
+                        </if>
+                        #{item.teamType},
+                        #{item.teamName},
+                        #{item.matchState}
+            )
+        </foreach>
+    </insert>
+
+    <select id="selectJoinkfaPlayerId" parameterType="java.util.HashMap" resultType="java.lang.Integer">
+        select b.player_id
+        from Joinkfa_Team a
+         left join Joinkfa_Player b on a.team_id = b.team_id
+        where a.level = #{level}
+          and a.ord = ${ord}
+          and b.player_position = #{position}
+          and b.player_name = #{playerName}
+          and a.team_name like concat('%', #{teamName}, '%')
+    </select>
+
+    <select id="selectJoinkfaPlayerIdOwnGoal" parameterType="java.util.HashMap" resultType="java.lang.Integer">
+        select b.player_id
+        from Joinkfa_Team a
+         left join Joinkfa_Player b on a.team_id = b.team_id
+        where a.level = #{level}
+          and a.ord = ${ord}
+          and b.player_name = #{playerName}
+          and a.team_name like concat('%', #{teamName}, '%')
+    </select>
+
+    <select id="selectLatestJoinKfaOrd" resultType="java.lang.Integer">
+        select max(ord)
+        from joinkfa_team
+    </select>
+
+    <select id="selectCheckPlayer" parameterType="hashmap" resultType="_int">
+        select
+            COUNT(1)
+        from
+            Player
+        where
+            name = #{name}
+            and birthday = #{birthday}
+            and use_flag = 0
+            and delete_flag = 0
+    </select>
+
+    <select id="selectPlayerInfoForExcel" parameterType="hashmap" resultType="hashmap">
+        SELECT
+            A.player_id
+        FROM
+            Player A
+        WHERE
+            A.name = #{name}
+            AND A.delete_flag = '0'
+            AND A.birthday = #{birthday}
+    </select>
+
+    <insert id="insertMainRosterData" parameterType="hashmap">
+        INSERT INTO main_roster (
+            roster_id, roster_order
+        ) VALUES (
+             #{rosterId}, #{rosterOrder}
+         )
+    </insert>
+
+    <delete id="deleteMainRosterData">
+        DELETE
+        FROM main_roster
+    </delete>
+
+    <select id="selectMainRosterList" parameterType="hashmap" resultType="hashmap">
+        SELECT
+            A.roster_id,
+            A.title,
+            A.year,
+            A.uage,
+            A.type,
+            A.roster_type,
+            IFNULL(B.cnt, 0) AS cnt,
+            DATE_FORMAT(A.reg_date, '%Y-%m-%d') AS reg_date
+        FROM
+            Roster A
+            LEFT JOIN(
+                        SELECT
+                            roster_id,
+                            COUNT(1) AS cnt
+                        FROM
+                            Roster_Player
+                        GROUP BY
+                            roster_id
+            ) B ON A.roster_id = B.roster_id
+            INNER JOIN main_roster C ON A.roster_id = C.roster_id
+        WHERE
+            A.delete_flag = 0
+        ORDER BY
+        C.roster_order
+
+    </select>
+
+</mapper>

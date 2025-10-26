@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.co.nextplayer.base.backend.storeMapper.StoreMapper">
+
+    <select id="selectStoreGoodsList" parameterType="hashmap" resultType="hashmap">
+        SELECT
+            tg.NO AS goods_id,
+            tg.GOODSCODE AS goods_code,
+            tg.GOODSKIND AS goods_kind,
+            tg.GOODSNAME AS goods_name,
+            tg.IMGM AS goods_img,
+            tg.PRICE AS price
+        FROM
+            t_goods tg
+            INNER JOIN t_goods_category tgc ON tg.NO = tgc.GOODSNO
+        WHERE
+            TRASHDATE IS NULL
+            AND tgc.CATEIDX = #{idx}
+            <if test="sKeyword != null and sKeyword != ''">
+                AND tg.GOODSNAME LIKE CONCAT('%', #{sKeyword}, '%')
+            </if>
+    </select>
+
+    <select id="selectStoreGoodsDetail" parameterType="hashmap" resultType="hashmap">
+        SELECT
+            NO AS goods_id,
+            GOODSCODE AS goods_code,
+            GOODSNAME AS goods_name,
+            IMGM AS goods_img,
+            PRICE AS price
+        FROM
+            t_goods
+        WHERE
+            NO = #{goodsId}
+    </select>
+
+    <select id="selectStoreCategory" parameterType="hashmap" resultType="hashmap">
+        SELECT
+            IDX, NAME, PARENT
+        FROM
+            t_category
+        WHERE
+            PARENT = 0
+            AND HIDDEN = 0
+            /*AND IDX = 1967*/
+    </select>
+
+    <select id="selectStoreChildCategory" parameterType="hashmap" resultType="hashmap">
+        SELECT
+            IDX, NAME, PARENT
+        FROM
+            t_category
+        WHERE
+            PARENT = #{idx}
+            AND HIDDEN = 0
+    </select>
+
+</mapper>

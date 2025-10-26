@@ -1,0 +1,397 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.co.nextplayer.base.backend.mapper.PushMapper">
+
+    <insert id="insertMemberPush" parameterType="java.util.Map">
+        insert into member_push
+        (
+        push_content_id
+        ,member_cd
+        ,fcm_token
+        )
+        values
+        <foreach collection="list" item="item" separator=",">
+            (
+            #{item.pushContentId}
+            ,#{item.memberCd}
+            ,#{item.fcmToken}
+            )
+		</foreach>
+    </insert>
+    
+    <insert id="insertMemberPushContent" parameterType="java.util.Map">
+        insert into member_push_contents
+        (
+        type_id
+        ,title
+        ,body
+        <if test="param != null and param != ''">
+        ,param
+        </if>
+        <if test="path != null and path != ''">
+        ,path
+        </if>
+        <if test="description != null and description != ''">
+        ,description
+        </if>
+        ,auto_flag
+        <if test="cnt != null and cnt != ''">
+        , total_cnt
+        </if>
+        <if test="date != null and date != ''">
+        ,req_dt
+        </if>
+        )
+        values
+            (
+            #{typeId}
+            ,#{title}
+            ,#{body}
+            <if test="param != null and param != ''">
+            ,#{param}
+            </if>
+            <if test="path != null and path != ''">
+            ,#{path}
+            </if>
+            <if test="description != null and description != ''">
+            ,#{description}
+            </if>
+            ,#{autoFlag}
+            <if test="cnt != null and cnt != ''">
+        	, #{cnt}
+        	</if>
+            <if test="date != null and date != ''">
+            ,#{date}
+            </if>
+            )
+		<selectKey resultType="int" keyProperty="pushContentId" order="AFTER">
+            SELECT LAST_INSERT_ID();
+        </selectKey>
+    </insert>
+
+    <select id="selectMemberByInterestAge" resultType="java.util.Map" parameterType="java.util.Map">
+        select member_cd, fcm_token
+        from member
+        where interest_age = #{uage}
+          and fcm_token is not null
+          and use_flag = 0
+          and contest_reg_push_agree = 1
+    </select>
+    
+    <select id="selectMemberByInterestTeam" resultType="java.util.Map" parameterType="java.util.Map">
+        select member_cd, fcm_token
+        from member
+        where
+         	use_flag = 0
+          and fcm_token is not null
+		  <if test="home != null  and home != '' and away != null and away != ''">
+		  and (interest_team = #{home} or interest_team = #{away}) 
+		  </if>
+          <if test="method != null and method != ''">
+          	<choose>
+          		<when test="method eq 'START'">
+          			and game_time_push_agree = 1
+          		</when>
+          		<when test="method eq 'END'">
+          			and game_end_push_agree = 1
+          		</when>
+          		<when test="method eq 'LINEUP'">
+          			and lineup_push_agree = 1
+          		</when>
+          	</choose>
+          </if>
+    </select>
+    
+    <select id="selectMemberByPushAgree" resultType="java.util.Map" parameterType="java.util.Map">
+        select member_cd, fcm_token
+        from member
+        where 
+          fcm_token is not null
+          and use_flag = 0
+          <if test="method != null and method != ''">
+          	<choose>
+          		<when test="method eq 'MARKETING'">
+          			and marketing_push_agree = 1
+          		</when>
+          		<when test="method eq 'NEW'">
+          			and new_goods_push_agree = 1
+          		</when>
+          		<when test="method eq 'EVENT'">
+          			and event_push_agree = 1
+          		</when>
+          	</choose>
+          </if>
+    </select>
+    
+    <select id="selectPushInfoList" resultType="hashmap">
+        SELECT
+        	type_id,
+        	type,
+        	case_name,
+        	case_title,
+        	case_text,
+        	auto_flag
+        FROM
+        	push_type
+        WHERE
+        	use_flag = 0
+    </select>
+    
+    <select id="selectPushListToSend" resultType="hashmap">
+        SELECT
+        	type_id,
+        	type,
+        	case_name
+        FROM
+        	push_type
+        WHERE
+        	use_flag = 1
+    </select>
+    
+    <insert id="insertPush" parameterType="hashmap">
+        INSERT INTO push_type
+        (
+        type,
+        case_name,
+        case_title,
+        case_text
+        )
+        VALUES
+		(
+		#{type}
+		,#{caseName}
+		,#{caseTitle}
+		,#{caseText}
+		)
+    </insert>
+
+    <update id="updatePush" parameterType="hashmap">
+        UPDATE push_type
+        SET
+        	<if test="caseTitle != null and caseTitle != ''">
+            case_title = #{caseTitle},
+            </if>
+        	<if test="caseText != null and caseText != ''">
+            case_text = #{caseText},
+            </if>
+            <if test="autoFlag != null  and autoFlag != ''">
+            auto_flag = #{autoFlag},
+            </if>
+            use_flag = #{useFlag}
+        WHERE type_id = #{pushId}
+    </update>
+    
+    <select id="selectPushInfo" resultType="hashmap">
+        SELECT
+        	type_id,
+        	type,
+        	case_name,
+        	case_title,
+        	case_text,
+        	auto_flag
+        FROM
+        	push_type
+        WHERE
+        	use_flag = 0
+        <if test="pushId != null and pushId != ''">
+        AND type_id = #{pushId}
+        </if>
+        <if test="method != null and method != ''">
+        AND type = #{method}
+        </if>
+    </select>
+    
+    <update id="updateCupSendFlag" parameterType="hashmap">
+        UPDATE ${cupInfoTB}
+        SET
+            send_flag = 1
+        WHERE cup_id = #{cupId}
+    </update>
+    
+    <update id="updateSubMatchSendFlag" parameterType="hashmap">
+        UPDATE ${matchTB}
+        SET
+            send_flag = 1
+        WHERE cup_sub_match_id = #{matchId}
+    </update>
+    
+    <update id="updateMainMatchSendFlag" parameterType="hashmap">
+        UPDATE ${matchTB}
+        SET
+            send_flag = 1
+        WHERE cup_main_match_id = #{matchId}
+    </update>
+    
+    <update id="updateTourMatchSendFlag" parameterType="hashmap">
+        UPDATE ${matchTB}
+        SET
+            send_flag = 1
+        WHERE cup_tour_match_id = #{matchId}
+    </update>
+    
+    <select id="selectSendPushList" parameterType="hashmap" resultType="hashmap">
+    	SELECT 
+    		a.push_content_id
+            , DATE_FORMAT(a.reg_dt, '%Y-%m-%d %h:%i:%S') as reg_dt
+            , a.send_dt
+            , c.case_name
+            , a.title
+            , a.body
+            , a.send_flag
+            , a.total_cnt
+            , a.auto_flag
+            , a.suc_cnt
+            , a.fail_cnt
+        FROM
+            member_push_contents a
+            LEFT JOIN push_type c ON a.type_id = c.type_id
+		WHERE
+			1 = 1
+		<if test="type != null and type != ''">
+		AND c.type = #{type}
+		</if>
+		<if test="searchKeyword != null and searchKeyword != ''">
+		AND a.title LIKE CONCAT('%',#{searchKeyword},'%')
+		</if>
+        ORDER BY
+            a.reg_dt DESC
+        <if test="eCount != null and eCount != ''">
+        LIMIT ${sRow}, ${eCount}
+        </if>
+    </select>
+    
+    <select id="selectSendPushListCount" parameterType="hashmap" resultType="hashmap">
+    	SELECT 
+            COUNT(1) AS totalCount
+        FROM
+            member_push_contents a
+            LEFT JOIN push_type c ON a.type_id = c.type_id
+		WHERE
+			1 = 1
+		<if test="type != null and type != ''">
+		AND c.type = #{type}
+		</if>
+		<if test="searchKeyword != null and searchKeyword != ''">
+		AND a.title LIKE CONCAT('%',#{searchKeyword},'%')
+		</if>
+    </select>
+    
+    <select id="selectMemberPushList" parameterType="hashmap" resultType="hashmap">
+    	SELECT 
+    		a.push_id
+            , a.member_cd
+            , b.member_nickname
+            , b.member_id
+            , c.member_name
+            , a.send_dt
+            , c.email
+            , c.phone_no
+            , c.birth_date
+            , c.age
+        FROM
+            member_push a
+            LEFT JOIN member b ON a.member_cd = b.member_cd
+            LEFT JOIN member_confirm c ON b.member_cd = c.member_cd
+        WHERE
+        	b.use_flag = 0
+		AND b.member_state = #{memberState}
+		<if test="pushContentId != null  and pushContentId != ''">
+        AND a.push_content_id = #{pushContentId}
+        </if>
+        <if test="age != null and age != ''">
+		AND c.age BETWEEN #{startAge} AND #{endAge}
+		</if>
+		<if test="pushAgree != null and pushAgree != ''">
+			<choose>
+				<when test="pushAgree.equals('MARKETING')">
+					AND b.marketing_push_agree = 1
+				</when>
+            	<when test="pushAgree.equals('EVENT')">
+            		AND b.event_push_agree = 1
+            	</when>
+            	<when test="pushAgree.equals('NEW')">
+            		AND b.new_goods_push_agree = 1
+            	</when>
+            </choose>
+		</if>
+		<if test="uage != null and uage !=''">
+		AND b.interest_age = #{uage}
+		</if>
+		<if test="memberType != null and memberType !=''">
+		AND b.position = #{memberType}
+		</if>
+		<if test="sex != null and sex !=''">
+		AND c.sex = #{sex}
+		</if>
+		<if test='searchKeyword != null and searchKeyword != ""'>
+		AND (b.member_nickname LIKE CONCAT('%',#{searchKeyword},'%') OR c.member_name LIKE CONCAT('%',#{searchKeyword},'%') OR c.email LIKE CONCAT('%',#{searchKeyword},'%'))
+		</if>
+        <if test="eCount != null and eCount != ''">
+        LIMIT ${sRow}, ${eCount}
+        </if>
+    </select>
+    
+    <select id="selectMemberPushListCount" parameterType="hashmap" resultType="hashmap">
+    	SELECT 
+            COUNT(1) AS totalCount
+        FROM
+            member_push a
+            LEFT JOIN member b ON a.member_cd = b.member_cd
+            LEFT JOIN member_confirm c ON b.member_cd = c.member_cd
+		WHERE
+			b.use_flag = 0
+            AND b.member_state = #{memberState}
+		<if test="pushContentId != null  and pushContentId != ''">
+        AND a.push_content_id = #{pushContentId}
+        </if>
+        <if test="age != null and age != ''">
+		AND c.age BETWEEN #{startAge} AND #{endAge}
+		</if>
+		<if test="pushAgree != null and pushAgree != ''">
+			<choose>
+				<when test="pushAgree.equals('MARKETING')">
+					AND b.marketing_push_agree = 1
+				</when>
+            	<when test="pushAgree.equals('EVENT')">
+            		AND b.event_push_agree = 1
+            	</when>
+            	<when test="pushAgree.equals('NEW')">
+            		AND b.new_goods_push_agree = 1
+            	</when>
+            </choose>
+		</if>
+		<if test="uage != null and uage !=''">
+		AND b.interest_age = #{uage}
+		</if>
+		<if test="memberType != null and memberType !=''">
+		AND b.position = #{memberType}
+		</if>
+		<if test="sex != null and sex !=''">
+		AND c.sex = #{sex}
+		</if>
+		<if test='searchKeyword != null and searchKeyword != ""'>
+		AND (b.member_nickname LIKE CONCAT('%',#{searchKeyword},'%') OR b.member_name LIKE CONCAT('%',#{searchKeyword},'%') OR c.email LIKE CONCAT('%',#{searchKeyword},'%'))
+		</if>
+    </select>
+    
+    <select id="selectPushDetail" parameterType="hashmap" resultType="hashmap">
+    	SELECT 
+    		a.push_content_id
+            , DATE_FORMAT(a.req_dt, '%Y-%m-%d %h:%i:%S') as req_dt
+            , a.send_dt
+            , a.path
+            , c.case_name
+            , a.title
+            , a.body
+            , a.send_flag
+            , a.total_cnt
+            , a.auto_flag
+            , a.suc_cnt
+            , a.fail_cnt
+        FROM
+            member_push_contents a
+            LEFT JOIN push_type c ON a.type_id = c.type_id
+		WHERE
+			a.push_content_id = #{pushContentId}
+    </select>
+</mapper>

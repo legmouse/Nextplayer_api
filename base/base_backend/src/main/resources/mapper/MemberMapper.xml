@@ -1,0 +1,956 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.co.nextplayer.base.backend.mapper.MemberMapper">
+
+    <select id="selectMemberCount" resultType="hashmap">
+        SELECT
+            A.cnt AS totalMemberCnt
+             ,B.cnt AS sleepCnt
+             ,C.cnt AS newCnt
+        FROM
+            (
+                SELECT
+                    COUNT(1) AS cnt
+                FROM
+                    member
+                WHERE
+                    use_flag = 0
+            ) A
+            ,(
+                SELECT
+                    COUNT(1) AS cnt
+                FROM
+                    member
+                WHERE
+                    member_state = '4'
+                    AND use_flag = 0
+            ) B
+            ,(
+                SELECT
+                    COUNT(1) AS cnt
+                FROM
+                    member
+                WHERE
+                    reg_date BETWEEN DATE_FORMAT(CURDATE(), '%Y-%m-%d 00:00:00') AND NOW()
+                    AND use_flag = 0
+            ) C
+    </select>
+
+    <!-- 회원 목록 수 -->
+    <select id="selectMemberListCount" parameterType="hashmap" resultType="hashmap">
+        SELECT
+            COUNT(1) AS totalCount
+        FROM
+            member a
+            INNER JOIN member_confirm b ON a.member_cd = b.member_cd
+        WHERE
+            a.use_flag = 0
+            <if test="push != null and push != ''">
+            AND a.fcm_token IS NOT NULL
+            </if>
+            <if test="age != null and age != ''">
+            	AND age BETWEEN #{startAge} AND #{endAge}
+            </if>
+            <if test="pushAgree != null and pushAgree != ''">
+            	<choose>
+            		<when test="pushAgree.equals('MARKETING')">
+            			AND marketing_push_agree = 1
+            		</when>
+            		<when test="pushAgree.equals('EVENT')">
+            			AND event_push_agree = 1
+            		</when>
+            		<when test="pushAgree.equals('NEW')">
+            			AND new_goods_push_agree = 1
+            		</when>
+            	</choose>
+            </if>
+            <if test="uage != null and uage !=''">
+            AND interest_age = #{uage}
+            </if>
+            <if test="memberType != null and memberType !=''">
+            AND position = #{memberType}
+            </if>
+            <if test="sex != null and sex !=''">
+            AND sex = #{sex}
+            </if>
+            <if test="memberState != null and memberState !=''">
+            AND member_state = #{memberState}
+            </if>
+            <if test='searchKeyword != null and searchKeyword != ""'>
+            AND (member_nickname LIKE CONCAT('%',#{searchKeyword},'%') OR member_name LIKE CONCAT('%',#{searchKeyword},'%') OR email LIKE CONCAT('%',#{searchKeyword},'%'))
+            </if>
+            <if test='sDate != null and sDate != "" and eDate != null and eDate != "" '>
+            AND reg_date BETWEEN DATE_FORMAT(#{sDate}, '%Y-%m-%d 00:00:00') AND DATE_FORMAT(#{eDate}, '%Y-%m-%d 23:59:59')
+            </if>
+    </select>
+
+    <!-- 회원 리스트 -->
+    <select id="selectMemberList" parameterType="hashmap" resultType="hashmap">
+        SELECT 
+            a.member_cd
+            , a.fcm_token
+            , member_nickname
+            , children_age
+            , member_state
+            , reg_date
+            , member_id
+            , member_name
+            , member_type
+            , CONCAT(age, '-', birth_date) AS birth_day
+            , age
+            , birth_date
+            , sex
+            , email
+            , cert_type
+            , phone_no
+            , position
+        FROM
+            member a
+            INNER JOIN member_confirm b ON a.member_cd = b.member_cd
+        WHERE
+            a.use_flag = 0
+            <if test="push != null and push != ''">
+            AND a.fcm_token IS NOT NULL
+            </if>
+            <if test="age != null and age != ''">
+            AND age BETWEEN #{startAge} AND #{endAge}
+            </if>
+            <if test="pushAgree != null and pushAgree != ''">
+            	<choose>
+            		<when test="pushAgree.equals('MARKETING')">
+            			AND marketing_push_agree = 1
+            		</when>
+            		<when test="pushAgree.equals('EVENT')">
+            			AND event_push_agree = 1
+            		</when>
+            		<when test="pushAgree.equals('NEW')">
+            			AND new_goods_push_agree = 1
+            		</when>
+            	</choose>
+            </if>
+            <if test="uage != null and uage !=''">
+            AND interest_age = #{uage}
+            </if>
+            <if test="memberType != null and memberType !=''">
+            AND position = #{memberType}
+            </if>
+            <if test="sex != null and sex !=''">
+            AND sex = #{sex}
+            </if>
+            <if test="memberState != null and memberState !=''">
+            AND member_state = #{memberState}
+            </if>
+            <if test='searchKeyword != null and searchKeyword != ""'>
+            AND (member_nickname LIKE CONCAT('%',#{searchKeyword},'%') OR member_name LIKE CONCAT('%',#{searchKeyword},'%') OR email LIKE CONCAT('%',#{searchKeyword},'%'))
+            </if>
+            <if test='sDate != null and sDate != "" and eDate != null and eDate != "" '>
+            AND reg_date BETWEEN DATE_FORMAT(#{sDate}, '%Y-%m-%d 00:00:00') AND DATE_FORMAT(#{eDate}, '%Y-%m-%d 23:59:59')
+            </if>
+        ORDER BY
+            a.reg_date DESC
+        <if test="eCount != null and eCount != ''">
+        LIMIT ${sRow}, ${eCount}
+        </if>
+    </select>
+
+    <!-- 회원 상세 -->
+    <select id="selectMemberDetail" parameterType="hashmap" resultType="hashmap">
+        SELECT
+            a.member_cd
+            , member_nickname
+            , children_age
+            , member_state
+            , reg_date
+            , member_id
+            , member_name
+            , phone_no
+            , CONCAT(age, '-', birth_date) AS birth_day
+            , age
+            , birth_date
+            , sex
+            , email
+            , cert_type
+            , memo
+            , member_type
+            , age_group
+        FROM
+            member a
+            INNER JOIN member_confirm b ON a.member_cd = b.member_cd
+        WHERE
+            a.member_cd = #{memberCd}
+            AND a.use_flag = 0
+    </select>
+
+    <select id="selectTotalDayVisitAvg" parameterType="hashmap" resultType="_int">
+        SELECT
+            IFNULL(COUNT(1), 0) AS cnt
+        FROM
+            visitors_history
+        WHERE
+        <choose>
+            <when test="sYear != null and sYear != '' and sMonth != null and sMonth != ''">
+                reg_date BETWEEN DATE_FORMAT(CONCAT(#{sYear}, '-', #{sMonth}, '-01'), '%Y-%m-%d 00:00:00') AND DATE_FORMAT(LAST_DAY(CONCAT(#{sYear}, '-', #{sMonth}, '-01')), '%Y-%m-%d 23:59:59')
+            </when>
+            <otherwise>
+                reg_date BETWEEN DATE_FORMAT(LAST_DAY(NOW() - interval 1 month) + interval 1 DAY, '%Y-%m-%d 00:00:00') AND DATE_FORMAT(LAST_DAY(NOW()), '%Y-%m-%d 23:59:59')
+            </otherwise>
+        </choose>
+    </select>
+
+    <select id="selectDayVisitAvg" parameterType="hashmap" resultType="hashmap">
+        SET @N := 0;
+        SELECT
+            CAST(A.n AS CHAR) AS days
+            , IFNULL(B.cnt, '-') AS cnt
+        FROM
+            (
+                SELECT
+                    @N:= @N +1 AS n
+                FROM
+                    /*visitors_history, (SELECT @N:= 0 FROM DUAL) NN*/
+                    visitors_history
+                WHERE
+                    <choose>
+                        <when test="sYear != null and sYear != '' and sMonth != null and sMonth != ''">
+                            @N <![CDATA[<]]> DATE_FORMAT(LAST_DAY(CONCAT(#{sYear}, '-', #{sMonth}, '-01')), '%e')
+                        </when>
+                        <otherwise>
+                            @N <![CDATA[<]]> DATE_FORMAT(LAST_DAY(NOW()), '%e')
+                        </otherwise>
+                    </choose>
+            ) A
+            LEFT JOIN (
+                        SELECT
+                            DATE_FORMAT(reg_date, '%e') AS days
+                             ,COUNT(1) AS cnt
+                        FROM
+                            visitors_history
+                        WHERE
+                            <choose>
+                                <when test="sYear != null and sYear != '' and sMonth != null and sMonth != ''">
+                            reg_date BETWEEN DATE_FORMAT(CONCAT(#{sYear}, '-', #{sMonth}, '-01'), '%Y-%m-%d 00:00:00') AND DATE_FORMAT(LAST_DAY(CONCAT(#{sYear}, '-', #{sMonth}, '-01')), '%Y-%m-%d 23:59:59')
+                                </when>
+                                <otherwise>
+                            reg_date BETWEEN DATE_FORMAT(LAST_DAY(NOW() - interval 1 month) + interval 1 DAY, '%Y-%m-%d 00:00:00') AND DATE_FORMAT(LAST_DAY(NOW()), '%Y-%m-%d 23:59:59')
+                                </otherwise>
+                            </choose>
+                        GROUP BY
+                            DATE_FORMAT(reg_date, '%Y-%m-%d')
+            ) B ON A.n = B.days
+        ORDER BY
+            A.n
+    </select>
+
+    <select id="selectTotalDayOrgVisitAvg" parameterType="hashmap" resultType="_int">
+        SELECT
+            IFNULL(SUM(A.cnt), 0) AS cnt
+        FROM(
+            SELECT
+                A.days AS days,
+                COUNT(A.days) AS cnt
+            FROM
+                (
+                    SELECT
+                        DATE_FORMAT(reg_date, '%e') AS days
+                        ,COUNT(1) AS cnt
+                    FROM
+                        visitors_history
+                    WHERE
+                    <choose>
+                        <when test="sYear != null and sYear != '' and sMonth != null and sMonth != ''">
+                            reg_date BETWEEN DATE_FORMAT(CONCAT(#{sYear}, '-', #{sMonth}, '-01'), '%Y-%m-%d 00:00:00') AND DATE_FORMAT(LAST_DAY(CONCAT(#{sYear}, '-', #{sMonth}, '-01')), '%Y-%m-%d 23:59:59')
+                        </when>
+                        <otherwise>
+                            reg_date BETWEEN DATE_FORMAT(LAST_DAY(NOW() - interval 1 month) + interval 1 DAY, '%Y-%m-%d 00:00:00') AND DATE_FORMAT(LAST_DAY(NOW()), '%Y-%m-%d 23:59:59')
+                        </otherwise>
+                    </choose>
+                    GROUP BY
+                        DATE_FORMAT(reg_date, '%Y-%m-%d'), ip
+            ) A
+           GROUP BY
+               A.days
+        ) A
+    </select>
+
+    <select id="selectDayOrgVisitAvg" parameterType="hashmap" resultType="hashmap">
+        SET @N := 0;
+        SELECT
+            CAST(A.n AS CHAR) AS days
+            , IFNULL(B.cnt, '-') AS cnt
+        FROM
+            (
+            SELECT
+                @N:= @N +1 AS n
+            FROM
+                /*visitors_history, (SELECT @N:= 0 FROM DUAL) NN*/
+                visitors_history
+            WHERE
+            <choose>
+                <when test="sYear != null and sYear != '' and sMonth != null and sMonth != ''">
+                    @N <![CDATA[<]]> DATE_FORMAT(LAST_DAY(CONCAT(#{sYear}, '-', #{sMonth}, '-01')), '%e')
+                </when>
+                <otherwise>
+                    @N <![CDATA[<]]> DATE_FORMAT(LAST_DAY(NOW()), '%e')
+                </otherwise>
+            </choose>
+            ) A
+            LEFT JOIN (
+                        SELECT
+                            COUNT(A.days) AS cnt
+                            ,A.days AS days
+                        FROM
+                            (
+                                SELECT
+                                    DATE_FORMAT(reg_date, '%e') AS days
+                                    ,COUNT(1) AS cnt
+                                FROM
+                                    visitors_history
+                                WHERE
+                                <choose>
+                                    <when test="sYear != null and sYear != '' and sMonth != null and sMonth != ''">
+                                        reg_date BETWEEN DATE_FORMAT(CONCAT(#{sYear}, '-', #{sMonth}, '-01'), '%Y-%m-%d 00:00:00') AND DATE_FORMAT(LAST_DAY(CONCAT(#{sYear}, '-', #{sMonth}, '-01')), '%Y-%m-%d 23:59:59')
+                                    </when>
+                                    <otherwise>
+                                        reg_date BETWEEN DATE_FORMAT(LAST_DAY(NOW() - interval 1 month) + interval 1 DAY, '%Y-%m-%d 00:00:00') AND DATE_FORMAT(LAST_DAY(NOW()), '%Y-%m-%d 23:59:59')
+                                    </otherwise>
+                                </choose>
+                                GROUP BY
+                                DATE_FORMAT(reg_date, '%Y-%m-%d'), ip
+                            ) A
+                        GROUP BY
+                            A.days
+            ) B ON A.n = B.days
+        ORDER BY
+            A.n
+    </select>
+
+    <select id="selectTotalMonthOrgVisitAvg" parameterType="hashmap" resultType="_int">
+        SELECT
+            IFNULL(SUM(A.cnt), 0) AS cnt
+        FROM(
+            SELECT
+                A.months AS months,
+                COUNT(A.months) AS cnt
+            FROM
+                (
+                SELECT
+                    DATE_FORMAT(reg_date, '%e') AS months
+                    ,COUNT(1) AS cnt
+                FROM
+                    visitors_history
+                WHERE
+                <choose>
+                    <when test="sYear != null and sYear != ''">
+                        reg_date BETWEEN DATE_FORMAT(CONCAT(#{sYear}, '-01-01'), '%Y-%m-%d 00:00:00') AND DATE_FORMAT(LAST_DAY(CONCAT(#{sYear},'-12-31')), '%Y-%m-%d 23:59:59')
+                    </when>
+                    <otherwise>
+                        reg_date BETWEEN CONCAT(YEAR(NOW()), '-01-01 00:00:00') AND CONCAT(YEAR(NOW()), '-12-31 23:59:59')
+                    </otherwise>
+                </choose>
+                GROUP BY
+                    DATE_FORMAT(reg_date, '%m'), ip
+                ) A
+            GROUP BY
+            A.months
+        ) A
+    </select>
+
+    <select id="selectMonthOrgVisitAvg" parameterType="hashmap" resultType="hashmap">
+        SET @N := 0;
+        SELECT
+            CAST(A.n AS CHAR) AS days
+            , IFNULL(B.cnt, '-') AS cnt
+        FROM
+            (
+            SELECT
+                @N:= @N +1 AS n
+            FROM
+                /*visitors_history, (SELECT @N:= 0 FROM DUAL) NN*/
+                visitors_history
+            WHERE
+                @N <![CDATA[<]]> 12
+            ) A
+            LEFT JOIN (
+                        SELECT
+                            COUNT(A.months) AS cnt
+                            ,A.months AS months
+                        FROM
+                            (
+                            SELECT
+                                DATE_FORMAT(reg_date, '%m') AS months
+                                ,COUNT(1) AS cnt
+                            FROM
+                                visitors_history
+                            WHERE
+                            <choose>
+                                <when test="sYear != null and sYear != ''">
+                                    reg_date BETWEEN DATE_FORMAT(CONCAT(#{sYear}, '-01-01'), '%Y-%m-%d 00:00:00') AND DATE_FORMAT(LAST_DAY(CONCAT(#{sYear}, '-12-31')), '%Y-%m-%d 23:59:59')
+                                </when>
+                                <otherwise>
+                                    reg_date BETWEEN CONCAT(YEAR(NOW()), '-01-01 00:00:00') AND CONCAT(YEAR(NOW()), '-12-31 23:59:59')
+                                </otherwise>
+                            </choose>
+                            GROUP BY
+                                DATE_FORMAT(reg_date, '%m'), ip
+                            ) A
+            GROUP BY
+                A.months
+            ) B ON A.n = B.months
+        ORDER BY
+            A.n
+    </select>
+
+    <select id="selectTotalJoinMemberCnt" parameterType="hashmap" resultType="_int">
+        SELECT
+            IFNULL(COUNT(1), 0) AS cnt
+        FROM
+            member
+        WHERE
+            use_flag = 0
+        <choose>
+            <when test="sYear != null and sYear != '' and sMonth != null and sMonth != ''">
+            AND reg_date BETWEEN DATE_FORMAT(CONCAT(#{sYear}, '-', #{sMonth}, '-01'), '%Y-%m-%d 00:00:00') AND DATE_FORMAT(LAST_DAY(CONCAT(#{sYear}, '-', #{sMonth}, '-01')), '%Y-%m-%d 23:59:59')
+            </when>
+            <otherwise>
+            AND reg_date BETWEEN DATE_FORMAT(LAST_DAY(NOW() - interval 1 month) + interval 1 DAY, '%Y-%m-%d 00:00:00') AND DATE_FORMAT(LAST_DAY(NOW()), '%Y-%m-%d 23:59:59')
+            </otherwise>
+        </choose>
+    </select>
+
+    <select id="selectDayJoinMember" parameterType="hashmap" resultType="hashmap">
+        SET @N := 0;
+        SELECT
+            CAST(A.n AS CHAR) AS days
+            , IFNULL(B.cnt, '-') AS cnt
+        FROM
+            (
+            SELECT
+                @N:= @N +1 AS n
+            FROM
+                /*visitors_history, (SELECT @N:= 0 FROM DUAL) NN*/
+                visitors_history
+            WHERE
+            <choose>
+                <when test="sYear != null and sYear != '' and sMonth != null and sMonth != ''">
+                    @N <![CDATA[<]]> DATE_FORMAT(LAST_DAY(CONCAT(#{sYear}, '-', #{sMonth}, '-01')), '%e')
+                </when>
+                <otherwise>
+                    @N <![CDATA[<]]> DATE_FORMAT(LAST_DAY(NOW()), '%e')
+                </otherwise>
+            </choose>
+            ) A
+            LEFT JOIN (
+                        SELECT
+                            DATE_FORMAT(reg_date, '%e') AS days
+                            ,COUNT(1) AS cnt
+                        FROM
+                            member
+                        WHERE
+                            use_flag = 0
+                        <choose>
+                            <when test="sYear != null and sYear != '' and sMonth != null and sMonth != ''">
+                                AND reg_date BETWEEN DATE_FORMAT(CONCAT(#{sYear}, '-', #{sMonth}, '-01'), '%Y-%m-%d 00:00:00') AND DATE_FORMAT(LAST_DAY(CONCAT(#{sYear}, '-', #{sMonth}, '-01')), '%Y-%m-%d 23:59:59')
+                            </when>
+                            <otherwise>
+                                AND reg_date BETWEEN DATE_FORMAT(LAST_DAY(NOW() - interval 1 month) + interval 1 DAY, '%Y-%m-%d 00:00:00') AND DATE_FORMAT(LAST_DAY(NOW()), '%Y-%m-%d 23:59:59')
+                            </otherwise>
+                        </choose>
+                        GROUP BY
+                            DATE_FORMAT(reg_date, '%Y-%m-%d')
+            ) B ON A.n = B.days
+        ORDER BY
+            A.n
+    </select>
+
+    <select id="selectMemberCntByPosition" parameterType="hashmap" resultType="hashmap">
+        SELECT
+            CASE
+                WHEN A.POSITION = 'ACADEMY' THEN '학원/클럽 관계자'
+                WHEN A.POSITION = 'DIRECTOR' THEN '감독/코치'
+                WHEN A.POSITION = 'ETC' THEN '기타'
+                WHEN A.POSITION = 'PARENTS' THEN '학부모'
+                WHEN A.POSITION = 'PLAYER' THEN '선수'
+                WHEN A.POSITION = 'TEACHER' THEN '레슨 선생님'
+                ELSE ''
+            END AS position,
+            IFNULL(B.cnt, '-') AS cnt
+        FROM
+            (
+            SELECT 'PARENTS' AS position
+            UNION ALL
+            SELECT 'DIRECTOR' AS position
+            UNION ALL
+            SELECT 'TEACHER' AS position
+            UNION ALL
+            SELECT 'ACADEMY' AS position
+            UNION ALL
+            SELECT 'PLAYER' AS position
+            UNION ALL
+            SELECT 'ETC' AS position
+            ) A
+            LEFT JOIN (
+                        SELECT
+                            position,
+                            COUNT(1) AS cnt
+                        FROM
+                            member
+                        WHERE
+                            use_flag = 0
+                        GROUP BY
+                            position
+            ) B ON A.position = B.position
+    </select>
+
+    <select id="selectMemberCntByAgeGroup" parameterType="hashmap" resultType="hashmap">
+        SELECT
+            ageGroup AS age_group
+            , COUNT(1) AS cnt
+        FROM
+            (
+                SELECT
+                    CASE
+                        WHEN age != 'ERR'
+                            THEN
+                                CASE
+                                    WHEN age <![CDATA[<]]> 20 THEN '10대'
+                                    WHEN age <![CDATA[<]]> 30 THEN '20대'
+                                    WHEN age <![CDATA[<]]> 40 THEN '30대'
+                                    WHEN age <![CDATA[<]]> 50 THEN '40대'
+                                    WHEN age <![CDATA[<]]> 60 THEN '50대'
+                                    WHEN age <![CDATA[<]]> 70 THEN '60대'
+                                END
+                        ELSE 'ERR'
+                    END AS ageGroup,
+                    age
+                FROM
+                    (
+                        SELECT
+                            CASE
+                                WHEN age IS NOT NULL THEN
+                                (CASE
+                                    WHEN age > 1900 THEN
+                                    (CASE
+                                        WHEN YEAR(NOW())-LEFT(age ,4) <![CDATA[>]]> 60 OR YEAR(NOW())-LEFT(age ,4) <![CDATA[<]]> 10 THEN 'ERR'
+                                        ELSE YEAR(NOW())-LEFT(age ,4)
+                                    END)
+                                    ELSE 'ERR'
+                                END
+                                )
+                            ELSE 'ERR'
+                            END AS age
+                        FROM
+                            member_confirm A
+                            INNER JOIN member B ON A.member_cd = B.member_cd
+                        WHERE
+                            B.use_flag = 0
+                    ) A
+            ) A
+        GROUP BY
+            ageGroup
+
+    </select>
+
+    <select id="selectMemberCntByCertType" parameterType="hashmap" resultType="hashmap">
+        SELECT
+            CASE
+                WHEN A.cert_type IN ('S', 'A') THEN '넥스트플레이어'
+                WHEN A.cert_type = 'KAKAO' THEN '카카오'
+                WHEN A.cert_type = 'NAVER' THEN '네이버'
+                WHEN A.cert_type = 'APPLE' THEN '애플'
+                ELSE ''
+            END AS cert_type,
+            IFNULL(B.cnt, '-') AS cnt
+        FROM
+            (
+            SELECT 'S' AS cert_type
+            UNION ALL
+            SELECT 'A' AS cert_type
+            UNION ALL
+            SELECT 'KAKAO' AS cert_type
+            UNION ALL
+            SELECT 'NAVER' AS cert_type
+            UNION ALL
+            SELECT 'APPLE' AS cert_type
+            ) A
+            LEFT JOIN (
+                        SELECT
+                            B.cert_type,
+                            COUNT(1) AS cnt
+                        FROM
+                            member A
+                            INNER JOIN member_confirm B ON A.member_cd = B.member_cd
+                        WHERE
+                            A.use_flag = 0
+                        GROUP
+                            BY cert_type
+            ) B ON A.cert_type = B.cert_type
+        GROUP BY cert_type;
+    </select>
+
+    <select id="selectMemberCntByGender" parameterType="hashmap" resultType="hashmap">
+        SELECT
+            CASE
+                WHEN A.sex = 'M' THEN '남성'
+                WHEN A.sex = 'W' THEN '여성'
+                ELSE ''
+            END AS gender,
+            IFNULL(B.cnt, '-') AS cnt
+        FROM
+            (
+            SELECT 'M' AS sex
+            UNION SELECT 'W' AS sex
+            ) A
+            LEFT JOIN (
+                        SELECT
+                            B.sex,
+                            COUNT(1) AS cnt
+                        FROM
+                            member A
+                            INNER JOIN member_confirm B ON A.member_cd = B.member_cd
+                        WHERE
+                            A.use_flag = 0
+                        GROUP BY B.sex
+            ) B ON  A.sex = B.sex
+        GROUP BY gender
+    </select>
+    <select id="selectMemberCntByPositionAndAgeGroup" parameterType="hashmap" resultType="hashmap">
+        SELECT
+            CASE
+            WHEN A.age_group = 'ERR' THEN 'ERR'
+            WHEN A.age_group = '10' THEN '10대'
+            WHEN A.age_group = '20' THEN '20대'
+            WHEN A.age_group = '30' THEN '30대'
+            WHEN A.age_group = '40' THEN '40대'
+            WHEN A.age_group = '50' THEN '50대'
+            WHEN A.age_group = '60' THEN '60대 이상'
+            END AS age_group,
+            IFNULL(B.cnt, '-') AS cnt
+        FROM
+            (
+            SELECT 'ERR' AS age_group
+            UNION SELECT '10' AS age_group
+            UNION ALL SELECT '20' AS age_group
+            UNION ALL SELECT '30' AS age_group
+            UNION ALL SELECT '40' AS age_group
+            UNION ALL SELECT '50' AS age_group
+            UNION ALL SELECT '60' AS age_group
+            ) A
+            LEFT JOIN (
+                        SELECT
+                            ageGroup AS age_group
+                            , COUNT(1) AS cnt
+                        FROM
+                            (
+                            SELECT
+                                CASE
+                                    WHEN age != 'ERR'
+                                        THEN
+                                            CASE
+                                                WHEN age <![CDATA[<]]> 20 THEN '10'
+                                                WHEN age <![CDATA[<]]> 30 THEN '20'
+                                                WHEN age <![CDATA[<]]> 40 THEN '30'
+                                                WHEN age <![CDATA[<]]> 50 THEN '40'
+                                                WHEN age <![CDATA[<]]> 60 THEN '50'
+                                                WHEN age <![CDATA[<]]> 70 THEN '60'
+                                            END
+                                    ELSE 'ERR'
+                                END AS ageGroup,
+                                age
+                            FROM
+                            (
+                                SELECT
+                                    CASE
+                                        WHEN age IS NOT NULL THEN
+                                            (CASE
+                                                WHEN age > 1900 THEN
+                                                    (CASE
+                                                        WHEN YEAR(NOW())-LEFT(age ,4) <![CDATA[>]]> 60 OR YEAR(NOW())-LEFT(age ,4) <![CDATA[<]]> 10 THEN 'ERR'
+                                                        ELSE YEAR(NOW())-LEFT(age ,4)
+                                                    END)
+                                                ELSE 'ERR'
+                                            END
+                                            )
+                                        ELSE 'ERR'
+                                    END AS age
+                                FROM
+                                    member_confirm A
+                                    INNER JOIN member B ON A.member_cd = B.member_cd
+                                WHERE
+                                    B.use_flag = 0
+                                    AND B.position = #{position}
+                                ) A
+                            ) A
+                        GROUP BY
+                        ageGroup
+            ) B ON  A.age_group = B.age_group
+        GROUP BY age_group
+    </select>
+
+    <select id="selectMemberCntByPositionAndGender" parameterType="hashmap" resultType="hashmap">
+        SELECT
+            CASE
+                WHEN A.sex = 'M' THEN '남성'
+                WHEN A.sex = 'W' THEN '여성'
+                ELSE ''
+                END AS gender,
+            IFNULL(B.cnt, '-') AS cnt
+        FROM
+            (
+                SELECT 'M' AS sex
+                UNION SELECT 'W' AS sex
+            ) A
+                LEFT JOIN (
+                SELECT
+                    B.sex,
+                    COUNT(1) AS cnt
+                FROM
+                    member A
+                        INNER JOIN member_confirm B ON A.member_cd = B.member_cd
+                WHERE
+                    A.use_flag = 0
+                  AND A.position = #{position}
+                GROUP BY
+                    B.sex
+            ) B ON  A.sex = B.sex
+        GROUP BY gender
+    </select>
+
+    <select id="selectMemberTotalCnt" parameterType="hashmap" resultType="_int">
+        SELECT
+            COUNT(1) AS cnt
+        FROM
+            member_confirm A
+            INNER JOIN member B ON A.member_cd = B.member_cd
+        WHERE
+            B.use_flag = 0
+            <if test="position != '' and position != null">
+            AND B.position = #{position}
+            </if>
+    </select>
+
+    <update id="updateMember" parameterType="hashmap">
+        update member
+        <set>
+            <if test="memberType != null">
+                member_type = #{memberType,jdbcType=CHAR},
+            </if>
+            <if test="childrenAge != null">
+                children_age = #{childrenAge,jdbcType=VARCHAR},
+            </if>
+            <if test="memberNickname != null">
+                member_nickname = #{memberNickname,jdbcType=VARCHAR},
+            </if>
+            <if test="memo != null">
+                memo = #{memo,jdbcType=LONGVARCHAR},
+            </if>
+            <if test="updDate != null">
+                upd_date = #{updDate,jdbcType=TIMESTAMP},
+            </if>
+        </set>
+        where member_cd = #{memberCd,jdbcType=CHAR}
+    </update>
+
+    <update id="updateMemberConfirm" parameterType="hashmap">
+        update member_confirm
+        <set>
+            <if test="memberName != null">
+                member_name = #{memberName,jdbcType=VARCHAR},
+            </if>
+            <if test="birthDate != null">
+                birth_date = #{birthDate,jdbcType=VARCHAR},
+            </if>
+            <if test="sex != null">
+                sex = #{sex,jdbcType=CHAR},
+            </if>
+            <if test="age != null">
+                age = #{age, jdbcType=INTEGER},
+            </if>
+            <if test="phoneNo != null">
+                phone_no = #{phoneNo,jdbcType=VARCHAR},
+            </if>
+            <if test="email != null">
+                email = #{email,jdbcType=VARCHAR},
+            </if>
+            <if test="ageGroup != null and ageGroup != ''">
+                age_group = #{ageGroup,jdbcType=VARCHAR},
+            </if>
+        </set>
+        where member_cd = #{memberCd}
+    </update>
+
+    <update id="deleteMember" parameterType="String">
+        UPDATE
+            member
+        SET use_flag = 1,
+            inactive_date = now()
+        WHERE
+            member_cd = #{memberCd}
+            AND use_flag = 0
+    </update>
+
+    <update id="deleteMemberConfirm" parameterType="String">
+        UPDATE
+            member_confirm
+        SET
+            use_flag = 1,
+            inactive_date = now()
+        WHERE
+            member_cd = #{memberCd}
+            AND use_flag = 0
+    </update>
+
+    <update id="deleteMemberSns" parameterType="String">
+        UPDATE
+            member_sns
+        SET
+            use_flag = 1,
+            inactive_date = now()
+        WHERE
+            member_cd = #{memberCd}
+            AND use_flag = 0
+    </update>
+
+    <select id="selectCheckActiveEmail" parameterType="hashmap" resultType="_int">
+        SELECT
+            count(email)
+        FROM
+            member_confirm
+        WHERE
+            email = #{email}
+            AND DATE_ADD(now(),INTERVAL -7 DAY)
+            AND member_cd != #{memberCd}
+    </select>
+
+    <select id="selectMemberListForExcelDown" parameterType="hashmap" resultType="java.util.LinkedHashMap">
+        SELECT
+            IFNULL(member_id, '') AS '아이디'
+            , IFNULL(member_name, '') AS '이름'
+            , IFNULL(member_nickname, '') AS '닉네임'
+            , CASE
+                WHEN sex = 'M' THEN '남'
+                WHEN sex = 'W' THEN '여'
+                ELSE ''
+            END AS '성별'
+            , IFNULL(phone_no, '') AS '휴대폰 번호'
+            , IFNULL(email, '') AS '이메일'
+            , CASE
+               WHEN birth_date != ' ' and birth_date IS NOT NULL
+                THEN
+                    CASE
+                        WHEN LENGTH(birth_date) = 10 THEN birth_date
+                        ELSE CONCAT(age, '-', birth_date)
+                    END
+                ELSE age
+            END AS '생일'
+            , IFNULL(children_age, '') AS '자녀 연령'
+            , CASE
+                WHEN cert_type = 'NAVER' THEN '네이버'
+                WHEN cert_type = 'KAKAO' THEN '카카오'
+                WHEN cert_type = 'APPLE' THEN '애플'
+                ELSE '일반회원'
+            END AS '가입방식'
+            , CASE
+                WHEN member_type = '1' THEN '학부모'
+                WHEN member_type = '2' THEN '감독/코치'
+                WHEN member_type = '3' THEN '레슨 선생님'
+                WHEN member_type = '4' THEN '학원/클럽 관계자'
+                ELSE ''
+            END AS '회원종류'
+            , date_format(reg_date, '%Y-%m-%d') AS '가입일'
+        FROM
+        member a
+        INNER JOIN member_confirm b ON a.member_cd = b.member_cd
+        WHERE
+        a.use_flag = 0
+        ORDER BY
+        a.reg_date DESC
+    </select>
+
+    <resultMap id="MemberEducationMap" type="java.util.HashMap">
+        <id column="education_file_id" jdbcType="VARCHAR" property="education_file_id"/>
+        <result column="title" jdbcType="VARCHAR" property="title"/>
+        <result column="member_cd" jdbcType="VARCHAR" property="memberCd"/>
+        <result column="reg_date" jdbcType="VARCHAR" property="reg_date"/>
+        <association property="eduFile" javaType="java.util.HashMap">
+            <result column="public_file_id" property="publicFileId"/>
+            <result column="file_save_name" property="fileSaveName"/>
+            <result column="file_name" property="fileName"/>
+            <result column="file_save_path" property="fileSavePath"/>
+            <result column="file_ext" property="fileExt"/>
+            <result column="file_size" property="fileSize"/>
+        </association>
+    </resultMap>
+    <select id="selectMemberEducationListCnt" parameterType="hashmap" resultType="_int">
+        SELECT
+            COUNT(1)
+        FROM
+            education_file A
+        WHERE
+            A.use_flag = 0
+            AND A.member_cd  = #{memberCd}
+    </select>
+    <select id="selectMemberEducationList" parameterType="hashmap" resultMap="MemberEducationMap">
+        SELECT
+            A.education_file_id,
+            A.title,
+            A.member_cd,
+            A.reg_date,
+            B.public_file_id,
+            B.file_name,
+            B.file_ext
+        FROM
+            education_file A
+            INNER JOIN public_file B ON A.education_file_id = B.foreign_id AND B.foreign_type = 'EduFile' AND B.use_flag = 0
+        WHERE
+            A.use_flag = 0
+          AND A.member_cd  = #{memberCd}
+        ORDER BY
+            A.education_file_id DESC
+        LIMIT ${sRow}, ${eCount}
+    </select>
+
+    <select id="selectDetailMemberEducation" parameterType="hashmap" resultMap="MemberEducationMap">
+        SELECT
+            A.education_file_id,
+            A.title,
+            A.member_cd,
+            A.reg_date,
+            B.public_file_id,
+            B.file_name,
+            B.file_ext
+        FROM
+            education_file A
+            INNER JOIN public_file B ON A.education_file_id = B.foreign_id AND B.foreign_type = 'EduFile' AND B.use_flag = 0
+        WHERE
+            A.use_flag = 0
+            AND A.member_cd  = #{memberCd}
+            AND A.education_file_id = #{educationFileId}
+    </select>
+
+    <insert id="insertMemberEducation" parameterType="hashmap">
+        INSERT INTO education_file
+        (member_cd, title)
+        VALUES
+        (#{memberCd}, #{title})
+        <selectKey resultType="String" keyProperty="educationFileId" order="AFTER">
+            SELECT LAST_INSERT_ID()
+        </selectKey>
+    </insert>
+
+    <update id="updateMemberEducation" parameterType="hashmap">
+        UPDATE education_file
+        SET
+            title = #{title}
+        WHERE
+            education_file_id = #{educationFileId}
+    </update>
+
+    <delete id="deleteMemberEducation" parameterType="hashmap">
+        UPDATE education_file
+        SET
+            use_flag = '1'
+        WHERE
+            education_file_id = #{educationFileId}
+    </delete>
+    
+</mapper>

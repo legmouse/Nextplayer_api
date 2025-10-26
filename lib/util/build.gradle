@@ -1,0 +1,8 @@
+dependencies {
+    implementation 'org.mybatis.spring.boot:mybatis-spring-boot-autoconfigure'
+    implementation 'org.mybatis.spring.boot:mybatis-spring-boot'
+    implementation 'org.springframework.boot:spring-boot-autoconfigure'
+    implementation 'org.mybatis:mybatis-spring'
+
+    implementation 'io.methvin:directory-watcher'
+}

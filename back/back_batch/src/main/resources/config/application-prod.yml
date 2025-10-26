@@ -1,0 +1,14 @@
+
+spring:
+  config:
+    activate:
+      on-profile: prod
+#  redis:
+#    host: redis.ypbooks.co.kr
+#    port: 6389
+logging:
+  config: classpath:config/logback-spring-prod.xml
+cron:
+  message-send: 0/10 * * * * ?
+  craw-score: 0 */3 * * * ?
+  craw-play: 0 */20 * * * ?

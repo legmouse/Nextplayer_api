@@ -1,0 +1,31 @@
+jar {
+    enabled = false
+}
+
+bootJar {
+    enabled = false
+}
+
+subprojects {
+    apply {
+        plugin 'application'
+        plugin 'org.springframework.boot'
+    }
+
+    jar {
+        enabled = false
+    }
+
+    bootJar {
+        enabled = true
+    }
+
+    tasks.bootRun.doFirst {
+		[
+			'SPRING_PROFILES_ACTIVE',
+		].each {
+			environment '${it}', env.fetch("${it}", "")
+		}
+
+    }
+}

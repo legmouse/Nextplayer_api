@@ -1,0 +1,93 @@
+spring:
+  np:
+    datasource:
+      driver-class-name: net.sf.log4jdbc.sql.jdbcapi.DriverSpy
+      type: com.zaxxer.hikari.HikariDataSource
+      jdbc-url: jdbc:log4jdbc:mysql://192.168.1.69:53306/Next_Player?useUnicode=true&allowMultiQueries=true&characterEncoding=utf-8
+      username: nextPlayer_sc
+      password: Next123!@#
+      hikari:
+        minimum-idle: 5
+        maximum-pool-size: 10
+        idle-timeout: 600000
+        max-lifetime: 1800000
+        connection-test-query: SELECT 1
+  store:
+    datasource:
+      driver-class-name: net.sf.log4jdbc.sql.jdbcapi.DriverSpy
+      type: com.zaxxer.hikari.HikariDataSource
+      jdbc-url: jdbc:log4jdbc:mysql://58.180.27.47:53307/nextplayer_shop?noAccessToProcedureBodies=true
+      username: npshop_sc
+      password: Sprvmf1197!!
+      hikari:
+        minimum-idle: 5
+        maximum-pool-size: 10
+        idle-timeout: 600000
+        max-lifetime: 1800000
+        connection-test-query: SELECT 1
+
+mybatis:
+  hot-reload: true
+
+nextplayer:
+  media:
+    # file-server: https://img.nextplayer.co.kr
+    # storage-path: /mnt/data
+    # ffmpeg-path: /usr/local/bin/ffmpeg
+    # ffprobe-path: /usr/local/bin/ffprobe
+    file-server: http://192.168.1.12:8185
+    # DEV
+    # storage-path: /Users/content_nextplayer/
+    # ffmpeg-path: /Users/content_nextplayer/
+    # ffprobe-path: /Users/content_nextplayer/
+    storage-path: /content_nextplayer/
+    ffmpeg-path: /content_nextplayer/
+    ffprobe-path: /content_nextplayer/
+
+    image-resizes: 100,192,350,512,1024
+    video-resizes: 100,192,350,512,1024
+    resource-path: /back_media/base_media/api/v1/media/statics
+
+---
+# LOCAL
+spring.config.activate.on-profile: local
+
+---
+# DEV
+spring.config.activate.on-profile: dev
+
+---
+# PROD
+spring.config.activate.on-profile: prod
+
+spring:
+  np:
+    datasource:
+      #추후 실제 운영오픈시 불필요 로그를 제거할려면 아래 옵션으로 변경해야함.
+      driver-class-name: net.sf.log4jdbc.sql.jdbcapi.DriverSpy
+      type: com.zaxxer.hikari.HikariDataSource
+      jdbc-url: jdbc:log4jdbc:mysql://58.180.27.47:53307/nextplayer?useUnicode=true&characterEncoding=utf-8&allowMultiQueries=true
+      username: np_sc
+      password: Sprvmf1002!
+      hikari:
+        minimum-idle: 5
+        maximum-pool-size: 10
+        idle-timeout: 600000
+        max-lifetime: 1800000
+        connection-test-query: SELECT 1
+  store:
+    datasource:
+      driver-class-name: net.sf.log4jdbc.sql.jdbcapi.DriverSpy
+      type: com.zaxxer.hikari.HikariDataSource
+      jdbc-url: jdbc:log4jdbc:mysql://58.180.27.47:53307/nextplayer_shop?noAccessToProcedureBodies=true
+      username: npshop_sc
+      password: Sprvmf1197!!
+      hikari:
+        minimum-idle: 5
+        maximum-pool-size: 10
+        idle-timeout: 600000
+        max-lifetime: 1800000
+        connection-test-query: SELECT 1
+
+mybatis:
+  hot-reload: true

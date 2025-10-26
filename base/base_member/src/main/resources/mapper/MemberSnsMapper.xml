@@ -1,0 +1,147 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.co.nextplayer.base.member.mapper.MemberSnsMapper">
+
+    <delete id="deleteByPrimaryKey" parameterType="java.lang.Integer">
+        delete
+        from member_sns
+        where sns_no = #{snsNo,jdbcType=INTEGER}
+    </delete>
+
+    <insert id="insertSelective" parameterType="kr.co.nextplayer.base.member.model.MemberSns">
+        insert into member_sns
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="snsNo != null">
+                sns_no,
+            </if>
+            <if test="snsType != null">
+                sns_type,
+            </if>
+            <if test="snsId != null">
+                sns_id,
+            </if>
+            <if test="memberCd != null">
+                member_cd,
+            </if>
+            <if test="email != null">
+                email,
+            </if>
+            <if test="name != null">
+                name,
+            </if>
+            <if test="phone != null">
+                phone,
+            </if>
+            <if test="age != null">
+                age,
+            </if>
+            <if test="birthDate != null">
+                birth_date,
+            </if>
+            <if test="ciNo != null">
+                ci_no,
+            </if>
+            <if test="sex != null">
+                sex,
+            </if>
+            <if test="photo != null">
+                photo,
+            </if>
+            <if test="nickname != null">
+                nickname,
+            </if>
+            <if test="regDate != null">
+                reg_date,
+            </if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="snsNo != null">
+                #{snsNo,jdbcType=INTEGER},
+            </if>
+            <if test="snsType != null">
+                #{snsType,jdbcType=VARCHAR},
+            </if>
+            <if test="snsId != null">
+                #{snsId,jdbcType=VARCHAR},
+            </if>
+            <if test="memberCd != null">
+                #{memberCd,jdbcType=VARCHAR},
+            </if>
+            <if test="email != null">
+                #{email,jdbcType=VARCHAR},
+            </if>
+            <if test="name != null">
+                #{name,jdbcType=VARCHAR},
+            </if>
+            <if test="phone != null">
+                #{phone,jdbcType=VARCHAR},
+            </if>
+            <if test="age != null">
+                #{age,jdbcType=INTEGER},
+            </if>
+            <if test="birthDate != null">
+                #{birthDate,jdbcType=VARCHAR},
+            </if>
+            <if test="ciNo != null">
+                #{ciNo,jdbcType=VARCHAR},
+            </if>
+            <if test="sex != null">
+                #{sex,jdbcType=CHAR},
+            </if>
+            <if test="photo != null">
+                #{photo,jdbcType=VARCHAR},
+            </if>
+            <if test="nickname != null">
+                #{nickname,jdbcType=VARCHAR},
+            </if>
+            <if test="regDate != null">
+                #{regDate,jdbcType=TIMESTAMP},
+            </if>
+        </trim>
+    </insert>
+    <update id="updateByPrimaryKeySelective" parameterType="kr.co.nextplayer.base.member.model.MemberSns">
+        update member_sns
+        <set>
+            <if test="snsType != null">
+                sns_type = #{snsType,jdbcType=VARCHAR},
+            </if>
+            <if test="snsId != null">
+                sns_id = #{snsId,jdbcType=VARCHAR},
+            </if>
+            <if test="snsConnect != null">
+                sns_connect = #{snsConnect,jdbcType=CHAR},
+            </if>
+            <if test="memberCd != null">
+                member_cd = #{memberCd,jdbcType=VARCHAR},
+            </if>
+            <if test="email != null">
+                email = #{email,jdbcType=VARCHAR},
+            </if>
+            <if test="name != null">
+                name = #{name,jdbcType=VARCHAR},
+            </if>
+            <if test="phone != null">
+                phone = #{phone,jdbcType=VARCHAR},
+            </if>
+            <if test="birthDate != null">
+                birth_date = #{birthDate,jdbcType=VARCHAR},
+            </if>
+            <if test="ciNo != null">
+                ci_no = #{ciNo,jdbcType=VARCHAR},
+            </if>
+            <if test="sex != null">
+                sex = #{sex,jdbcType=CHAR},
+            </if>
+            <if test="photo != null">
+                photo = #{photo,jdbcType=VARCHAR},
+            </if>
+            <if test="nickname != null">
+                nickname = #{nickname,jdbcType=VARCHAR},
+            </if>
+            <if test="regDate != null">
+                reg_date = #{regDate,jdbcType=TIMESTAMP},
+            </if>
+        </set>
+        where sns_no = #{snsNo,jdbcType=INTEGER}
+    </update>
+</mapper>

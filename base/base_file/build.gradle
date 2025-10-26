@@ -1,0 +1,29 @@
+dependencies {
+    implementation 'com.linecorp.armeria:armeria-spring-boot2-webflux-starter'
+    implementation 'org.mybatis.spring.boot:mybatis-spring-boot-starter'
+    implementation 'org.springframework.boot:spring-boot-starter-data-redis-reactive'
+    implementation 'io.springfox:springfox-boot-starter'
+
+    implementation 'io.jsonwebtoken:jjwt-api:0.11.2'
+    runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.11.2','io.jsonwebtoken:jjwt-jackson:0.11.2'
+
+    //google
+    implementation 'com.google.api-client:google-api-client:1.33.2'
+    implementation 'com.google.auth:google-auth-library-oauth2-http:1.4.0'
+
+    //jwt
+    implementation 'io.jsonwebtoken:jjwt-api:0.11.2'
+    implementation 'com.auth0:jwks-rsa:0.20.2'
+    runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.11.2','io.jsonwebtoken:jjwt-jackson:0.11.2'
+
+    //other
+    implementation 'org.apache.commons:commons-collections4:4.4'
+    implementation 'com.google.code.gson:gson:2.9.0'
+    implementation 'commons-beanutils:commons-beanutils:1.9.4'
+    implementation 'javax.xml.bind:jaxb-api:2.3.1'
+
+    //model
+    implementation project(":lib:common")
+    implementation project(":lib:util")
+    implementation project(":base:base")
+}

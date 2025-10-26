@@ -1,0 +1,12 @@
+spring:
+  config:
+    activate:
+      on-profile: dev
+#  redis:
+#    host: 210.216.122.200
+#    port: 7617
+
+cron:
+  message-send: 0/10 * * * * ?
+  craw-score: 0 */3 * * * ?
+  craw-play: 0 */10 * * * ?

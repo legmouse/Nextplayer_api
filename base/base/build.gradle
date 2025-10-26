@@ -1,0 +1,25 @@
+dependencies {
+    implementation 'javax.annotation:javax.annotation-api'
+    implementation 'io.springfox:springfox-schema'
+    implementation 'org.springframework:spring-jdbc'
+    implementation 'org.springframework.data:spring-data-redis'
+    implementation 'org.springframework.boot:spring-boot-autoconfigure'
+    implementation 'org.mybatis.spring.boot:mybatis-spring-boot-starter'
+    implementation 'org.springframework.security:spring-security-crypto'
+
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+
+    implementation 'com.linecorp.armeria:armeria-spring-boot2-webflux-starter'
+    implementation 'org.springframework.boot:spring-boot-starter-data-redis-reactive'
+    implementation 'io.springfox:springfox-boot-starter'
+
+    implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.13.4'
+
+    // https://mvnrepository.com/artifact/io.projectreactor.netty/reactor-netty
+    implementation group: 'io.projectreactor.netty', name: 'reactor-netty', version: '1.1.5'
+
+    implementation group: 'com.googlecode.json-simple', name: 'json-simple', version: '1.1.1'
+
+    implementation project(":lib:util")
+    implementation project(":lib:common")
+}

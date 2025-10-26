@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.co.nextplayer.base.batch.mapper.PlayerMapper">
+
+    <select id="selectJoinkfaPlayerId" parameterType="java.util.HashMap" resultType="java.lang.Integer">
+        select b.player_id
+        from Joinkfa_Team a
+                 left join Joinkfa_Player b on a.team_id = b.team_id
+        where a.level = #{level}
+          and a.ord = ${ord}
+          and b.player_position = #{position}
+          and b.player_name = #{playerName}
+          and a.team_name like concat('%', #{teamName}, '%')
+    </select>
+
+    <select id="selectJoinkfaPlayerIdOwnGoal" parameterType="java.util.HashMap" resultType="java.lang.Integer">
+        select b.player_id
+        from Joinkfa_Team a
+                 left join Joinkfa_Player b on a.team_id = b.team_id
+        where a.level = #{level}
+          and a.ord = ${ord}
+          and b.player_name = #{playerName}
+          and a.team_name like concat('%', #{teamName}, '%')
+    </select>
+
+    <select id="selectLatestJoinKfaOrd" resultType="java.lang.Integer">
+        select max(ord)
+        from joinkfa_team
+    </select>
+
+    <select id="selectCheckPlayer" parameterType="hashmap" resultType="_int">
+        select
+            COUNT(1)
+        from
+            Player
+        where
+            name = #{name}
+          and birthday = #{birthday}
+          and use_flag = 0
+          and delete_flag = 0
+    </select>
+
+</mapper>

@@ -1,0 +1,171 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.co.nextplayer.base.backend.mapper.CrawMapper">
+
+    <select id="selectUniversityLeagueTitle" resultType="kr.co.nextplayer.base.backend.dto.joinkfaCraw.GameDto">
+        select a.*
+        from (select league_name_origin as title, reg_date
+              from U20_League_Info
+              union all
+              select league_name_origin as title, reg_date
+              from U22_League_Info) as a
+        where reg_date >= date_sub(now(), INTERVAL 10 DAY)
+    </select>
+
+    <select id="selectHighSchoolLeagueTitle" resultType="kr.co.nextplayer.base.backend.dto.joinkfaCraw.GameDto">
+        select a.*
+        from (select league_name_origin as title, reg_date
+              from U17_League_Info
+              union all
+              select league_name_origin as title, reg_date
+              from U18_League_Info) as a
+        where reg_date >= date_sub(now(), INTERVAL 10 DAY)
+    </select>
+
+    <select id="selectMiddleSchoolLeagueTitle" resultType="kr.co.nextplayer.base.backend.dto.joinkfaCraw.GameDto">
+        select a.*
+        from (select league_name_origin as title, reg_date
+              from U14_League_Info
+              union all
+              select league_name_origin as title, reg_date
+              from U15_League_Info) as a
+        where reg_date >= date_sub(now(), INTERVAL 10 DAY)
+    </select>
+
+    <select id="selectElementarySchoolLeagueTitle" resultType="kr.co.nextplayer.base.backend.dto.joinkfaCraw.GameDto">
+        select a.*
+        from (select league_name_origin as title, reg_date
+              from U11_League_Info
+              union all
+              select league_name_origin as title, reg_date
+              from U12_League_Info) as a
+        where reg_date >= date_sub(now(), INTERVAL 10 DAY)
+    </select>
+
+    <select id="selectUniversityCupTitle" resultType="kr.co.nextplayer.base.backend.dto.joinkfaCraw.GameDto">
+        select a.*
+        from (select cup_name_origin as title, reg_date
+              from U20_Cup_Info
+              union all
+              select cup_name_origin as title, reg_date
+              from U22_Cup_Info) as a
+        where reg_date >= date_sub(now(), INTERVAL 10 DAY)
+    </select>
+
+    <select id="selectHighSchoolCupTitle" resultType="kr.co.nextplayer.base.backend.dto.joinkfaCraw.GameDto">
+        select a.*
+        from (select cup_name_origin as title, reg_date
+              from U17_Cup_Info
+              union all
+              select cup_name_origin as title, reg_date
+              from U18_Cup_Info) as a
+        where reg_date >= date_sub(now(), INTERVAL 10 DAY)
+    </select>
+
+    <select id="selectMiddleSchoolCupTitle" resultType="kr.co.nextplayer.base.backend.dto.joinkfaCraw.GameDto">
+        select a.*
+        from (select cup_name_origin as title, reg_date
+              from U14_Cup_Info
+              union all
+              select cup_name_origin as title, reg_date
+              from U15_Cup_Info) as a
+        where reg_date >= date_sub(now(), INTERVAL 10 DAY)
+    </select>
+
+    <select id="selectElementarySchoolCupTitle" resultType="kr.co.nextplayer.base.backend.dto.joinkfaCraw.GameDto">
+        select a.*
+        from (select cup_name_origin as title, reg_date
+              from U11_Cup_Info
+              union all
+              select cup_name_origin as title, reg_date
+              from U12_Cup_Info) as a
+        where reg_date >= date_sub(now(), INTERVAL 10 DAY)
+    </select>
+
+    <delete id="deleteMatchPlayDataOrChangeData" parameterType="java.util.HashMap">
+        delete
+        from ${matchPlayDataOrChangeDataTB}
+        where match_id = #{matchId};
+    </delete>
+
+    <delete id="deleteMatchStaffDataOrStaffPenaltyDataOrOwnGoalData" parameterType="java.util.HashMap">
+        delete
+        from ${staffDataOrStaffPenaltyDataOrOwnGoalDataTB}
+        where match_id = #{matchId};
+    </delete>
+
+    <insert id="insertMatchPlayData" parameterType="java.util.HashMap">
+        <![CDATA[
+        INSERT INTO ${matchPlayDataTB}
+        (player_number, position, player_name, compete, goal, help, warning, gexit, pso, home_away_gbn, sel_can_gbn, match_id, player_id, captain_flag)
+        VALUES
+            (#{playData.playerNumber}
+            , #{playData.position}
+            , #{playData.playerName}
+            , #{playData.compete}
+            , #{playData.goal}
+            , #{playData.help}
+            , #{playData.warning}
+            , #{playData.exit}
+            , #{playData.pso}
+            , #{playData.homeAwayGbn}
+            , #{playData.selCanGbn}
+            , #{playData.leagueMatchId}
+            , #{playData.playerId}
+            , #{playData.captainFlag}
+            )
+        ]]>
+    </insert>
+
+    <insert id="insertMatchChangeData" parameterType="java.util.HashMap">
+        <![CDATA[
+        INSERT INTO ${matchChangeDataTB}
+        (time, in_player_number, in_player_name, in_player_id, out_player_number, out_player_name, out_player_id, home_away_gbn, match_id)
+        VALUES
+            (#{changeData.time}
+            , #{changeData.inPlayerNumber}
+            , #{changeData.inPlayerName}
+            , #{changeData.inPlayerId}
+            , #{changeData.outPlayerNumber}
+            , #{changeData.outPlayerName}
+            , #{changeData.outPlayerId}
+            , #{changeData.homeAwayGbn}
+            , #{changeData.matchId})
+        ]]>
+    </insert>
+
+    <insert id="insertStaffData" parameterType="java.util.HashMap">
+        INSERT INTO ${cupStaffDataTB}
+        (
+        home_away_gbn
+        ,match_id
+        ,rank
+        ,staff_name
+        ) VALUES (
+        #{staffData.homeAwayGbn}
+        ,#{staffData.matchId}
+        ,#{staffData.rank}
+        ,#{staffData.staffName}
+        )
+    </insert>
+
+    <insert id="insertStaffPenaltyData" parameterType="java.util.HashMap">
+        INSERT ${cupStaffPenaltyDataTB}
+        (
+            home_away_gbn, match_id, time, rank, staff_name, penalty_type
+        ) VALUES (
+            #{staffPenaltyData.homeAwayGbn}, #{staffPenaltyData.matchId}, #{staffPenaltyData.time}, #{staffPenaltyData.rank}, #{staffPenaltyData.staffName}, #{staffPenaltyData.penaltyType}
+        )
+
+    </insert>
+
+    <insert id="insertOwnGoalData" parameterType="java.util.HashMap">
+        INSERT ${cupOwnGoalDataTB}
+        (
+            home_away_gbn, match_id, time, player_number, player_name, player_id
+        ) VALUES (
+            #{ownGoalData.homeAwayGbn}, #{ownGoalData.matchId}, #{ownGoalData.time}, #{ownGoalData.playerNumber}, #{ownGoalData.playerName}, #{ownGoalData.playerId}
+        )
+    </insert>
+
+</mapper>

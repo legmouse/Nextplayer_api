@@ -1,0 +1,28 @@
+group = 'kr.co.nextplayer'
+version = '0.0.1-SNAPSHOT'
+apply plugin: 'war'
+
+//mainClassName = 'kr.co.nextplayer.back.backend.BackBackendApplication'
+
+dependencies {
+    implementation 'org.springframework.boot:spring-boot-starter-data-redis'
+    implementation 'org.mybatis.spring.boot:mybatis-spring-boot-starter'
+    developmentOnly("org.springframework.boot:spring-boot-devtools")
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+    implementation 'org.springframework.boot:spring-boot-autoconfigure'
+
+    implementation 'org.springframework.boot:spring-boot-starter-tomcat'
+
+    implementation 'dev.akkinoc.spring.boot:logback-access-spring-boot-starter:3.3.2'
+
+    implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.13.4'
+
+    implementation 'org.apache.tomcat.embed:tomcat-embed-jasper'
+    implementation 'javax.servlet:jstl'
+
+
+    implementation project(":base:base_backend")
+
+
+}

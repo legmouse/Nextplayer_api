@@ -1,0 +1,12 @@
+dependencies {
+    implementation 'com.linecorp.armeria:armeria-spring-boot2-webflux-starter'
+    implementation 'org.mybatis.spring.boot:mybatis-spring-boot-starter'
+    implementation 'org.springframework.boot:spring-boot-starter-data-redis-reactive'
+    implementation 'io.springfox:springfox-boot-starter'
+    implementation 'net.bramp.ffmpeg:ffmpeg:0.7.0'
+    implementation 'javax.persistence:javax.persistence-api:2.2'
+    //model
+    implementation project(":lib:common")
+    implementation project(":lib:util")
+    implementation project(":base:base")
+}

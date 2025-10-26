@@ -1,0 +1,597 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.co.nextplayer.base.backend.mapper.EducationMapper">
+
+    <select id="selectEducationListCnt" parameterType="hashmap" resultType="_int">
+        SELECT
+        COUNT(education_id)
+        FROM
+            education
+        WHERE
+            use_flag = 0
+            <if test="sTitle != null and !sTitle.equals('') ">
+            AND title LIKE CONCAT('%', #{sTitle}, '%')
+            </if>
+    </select>
+
+    <select id="selectEducationList" parameterType="hashmap" resultType="hashmap">
+        SELECT
+            a.education_id,
+            title,
+            summary,
+            play_time,
+            a.use_flag,
+            a.show_flag,
+            a.reg_date,
+            a.view_cnt,
+            IFNULL(b.cnt, '0') AS cnt
+        FROM
+            education a
+            LEFT JOIN (
+                        SELECT
+                            education_id,
+                            COUNT(education_auth_id) AS cnt
+                        FROM
+                            education_auth
+                        WHERE
+                            use_flag = 0
+                        GROUP BY
+                            education_id
+            ) b ON a.education_id = b.education_id
+        WHERE
+            a.use_flag = 0
+            <if test="sTitle != null and !sTitle.equals('') ">
+                AND title LIKE CONCAT('%', #{sTitle}, '%')
+            </if>
+        ORDER BY
+            education_id DESC
+        LIMIT ${sRow}, ${eCount}
+    </select>
+
+    <insert id="insertEducation" parameterType="hashmap">
+        INSERT INTO education(
+            goods_id,
+            title,
+            summary,
+            content,
+            play_time,
+            use_flag,
+            show_flag,
+            url_link,
+            preview_link,
+            move_url,
+            reg_date
+        ) VALUES (
+            #{goodsId},
+            #{title},
+            #{summary},
+            #{content},
+            #{playTime},
+            '0',
+            #{showFlag},
+            #{urlLink},
+            #{previewLink},
+            #{moveUrl},
+            CURRENT_TIMESTAMP
+        )
+        <selectKey resultType="String" keyProperty="educationId" order="AFTER">
+            SELECT LAST_INSERT_ID()
+        </selectKey>
+    </insert>
+
+    <update id="updateEducation" parameterType="hashmap">
+        UPDATE
+            education
+        SET
+        <choose>
+            <when test="goodsId != null and goodsId != ''">
+                goods_id = #{goodsId},
+            </when>
+            <otherwise>
+                goods_id = null,
+            </otherwise>
+        </choose>
+        <if test="title != null and title != ''">
+            title = #{title},
+        </if>
+        <if test="summary != null and summary != ''">
+            summary = #{summary},
+        </if>
+        <if test="content != null and content != ''">
+            content = #{content},
+        </if>
+        <if test="playTime != null and playTime != ''">
+            play_time = #{playTime},
+        </if>
+        <if test="urlLink != null and urlLink != ''">
+            url_link = #{urlLink},
+        </if>
+        <if test="previewLink != null and previewLink != ''">
+            preview_link = #{previewLink},
+        </if>
+        <if test="moveUrl != null and moveUrl != ''">
+            move_url = #{moveUrl},
+        </if>
+        <if test="showFlag != null and showFlag != ''">
+            show_flag = #{showFlag}
+        </if>
+        WHERE
+            education_id = #{educationId}
+    </update>
+
+    <delete id="deleteEducation" parameterType="hashmap">
+        UPDATE
+            education
+        SET
+            use_flag = '1'
+        WHERE
+            education_id = #{educationId}
+    </delete>
+
+    <resultMap id="educationDetailResultMap" type="kr.co.nextplayer.base.backend.dto.EducationDto">
+        <id property="education_id" column="education_id"/>
+        <result property="goods_id" column="goods_id"/>
+        <result property="title" column="title"/>
+        <result property="summary" column="summary"/>
+        <result property="content" column="content"/>
+        <result property="play_time" column="play_time"/>
+        <result property="url_link" column="url_link"/>
+        <result property="preview_link" column="preview_link"/>
+        <result property="move_url" column="move_url"/>
+        <result property="show_flag" column="show_flag"/>
+        <result property="view_cnt" column="view_cnt"/>
+        <result property="reg_date" column="reg_date"/>
+        <association property="imgFiles" javaType="kr.co.nextplayer.base.backend.dto.AttchFileInfoDto">
+            <result column="file_save_name" property="fileSaveName" />
+            <result column="file_save_path" property="fileSavePath" />
+            <result column="file_name" property="fileName" />
+            <result column="file_ext" property="fileExt" />
+        </association>
+    </resultMap>
+
+    <select id="selectEducationDetail" parameterType="hashmap" resultMap="educationDetailResultMap">
+        SELECT
+            A.education_id,
+            A.goods_id,
+            A.title,
+            A.summary,
+            A.content,
+            A.play_time,
+            A.url_link,
+            A.preview_link,
+            A.move_url,
+            A.view_cnt,
+            A.show_flag,
+            A.reg_date,
+            B.file_name,
+            CONCAT('/', SUBSTRING(B.file_save_path, LENGTH('/content_nextplayer/') + 1)) AS file_save_path
+        FROM
+            education A
+            LEFT OUTER JOIN Public_File B ON B.sub_type = 'imgFile' AND B.foreign_type = 'Education' AND A.education_id = B.foreign_id AND B.use_flag = 0
+        WHERE
+            A.use_flag = 0
+            AND A.education_id = #{educationId}
+    </select>
+
+    <select id="selectEducationFaqListCount" parameterType="hashmap" resultType="_int">
+        select
+            COUNT(1)
+        from
+            faq A
+        where
+            A.foreign_id = #{educationId}
+          AND A.foreign_type = 'Education'
+          AND A.use_flag = 0
+    </select>
+
+    <select id="selectEducationFaqList" parameterType="hashmap" resultType="hashmap">
+        select
+            A.faq_id
+             , A.title
+             , A.question
+             , A.answer
+        from
+            faq A
+        where
+            A.foreign_id = #{educationId}
+            AND A.foreign_type = 'Education'
+            AND A.use_flag = 0
+        ORDER BY
+            A.faq_id DESC
+        LIMIT ${sRow}, ${eCount}
+    </select>
+
+    <select id="selectEducationQuestionListCount" parameterType="hashmap" resultType="_int">
+        select
+            COUNT(1)
+        from
+            request A
+        where
+            A.foreign_parent_id = #{educationId}
+            AND A.foreign_parent_type = 'Education'
+            AND A.use_flag = 0
+    </select>
+
+    <select id="selectEducationQuestionList" parameterType="hashmap" resultType="hashmap">
+        SELECT
+            A.request_id
+             , A.content
+             , C.member_name
+             , B.member_nickname
+             , C.email
+             , C.phone_no
+        FROM
+            request A
+            INNER JOIN member B ON A.member_cd = B.member_cd
+            INNER JOIN member_confirm C ON B.member_cd = C.member_cd
+        WHERE
+            A.foreign_parent_id = #{educationId}
+            AND A.foreign_parent_type = 'Education'
+            AND A.use_flag = 0
+        ORDER BY
+            request_id DESC
+        LIMIT ${sRow}, ${eCount}
+    </select>
+
+    <insert id="insertFaq" parameterType="hashmap">
+        INSERT INTO faq
+        (foreign_id, foreign_type, title, question, answer, answer_flag)
+        VALUES
+        (#{educationId}, #{foreignType}, #{title}, #{question}, #{answer}, '1')
+    </insert>
+
+    <update id="updateFaq" parameterType="hashmap">
+        UPDATE
+            faq
+        SET
+            title = #{title},
+            question = #{question},
+            answer = #{answer}
+        WHERE
+            faq_id = #{faqId}
+    </update>
+
+    <update id="deleteFaq" parameterType="hashmap">
+        UPDATE
+            faq
+        SET
+            use_flag = '1'
+        WHERE
+            faq_id = #{faqId}
+            AND foreign_id = #{educationId}
+    </update>
+
+    <select id="selectEducationQuestionListForExcelDown" parameterType="hashmap" resultType="java.util.LinkedHashMap">
+        SELECT
+            IFNULL(A.content, '') AS '질문 내용'
+            , IFNULL(C.member_name, '') AS '회원 이름'
+            , IFNULL(B.member_nickname, '') AS '회원 닉네임'
+            , IFNULL(C.email, '') AS '이메일'
+            , IFNULL(C.phone_no, '') AS '연락처'
+        FROM
+            request A
+                INNER JOIN member B ON A.member_cd = B.member_cd
+                INNER JOIN member_confirm C ON B.member_cd = C.member_cd
+        WHERE
+            A.foreign_parent_id = #{educationId}
+          AND A.foreign_parent_type = 'Education'
+          AND A.use_flag = 0
+        ORDER BY
+            request_id DESC
+    </select>
+
+    <select id="selectEducationMemberListCount" parameterType="hashmap" resultType="_int">
+        SELECT
+            COUNT(1)
+        FROM
+            education_auth A
+            INNER JOIN member B ON A.member_cd = B.member_cd
+            INNER JOIN member_confirm C ON B.member_cd = C.member_cd
+        WHERE
+            A.use_flag = 0
+            AND B.use_flag = 0
+            AND A.education_id = #{educationId}
+            <if test="sKeyword != null and sKeyword != ''">
+            AND (C.member_name LIKE CONCAT('%', #{sKeyword}, '%') OR C.email LIKE CONCAT('%', #{sKeyword}, '%'))
+            </if>
+    </select>
+
+    <select id="selectEducationMemberList" parameterType="hashmap" resultType="hashmap">
+        SELECT
+            A.education_auth_id,
+            A.member_cd,
+            B.member_nickname,
+            C.member_name,
+            C.phone_no,
+            C.email
+            , CASE
+                WHEN C.birth_date != ' ' and C.birth_date IS NOT NULL
+                THEN
+                    CASE
+                        WHEN LENGTH(C.birth_date) = 10 THEN birth_date
+                        ELSE CONCAT(C.age, '-', C.birth_date)
+                    END
+                    ELSE C.age
+            END AS birth_day,
+            A.reg_date
+        FROM
+            education_auth A
+            INNER JOIN member B ON A.member_cd = B.member_cd
+            INNER JOIN member_confirm C ON B.member_cd = C.member_cd
+        WHERE
+            A.use_flag = 0
+            AND B.use_flag = 0
+            AND A.education_id = #{educationId}
+            <if test="sKeyword != null and sKeyword != ''">
+                AND (C.member_name LIKE CONCAT('%', #{sKeyword}, '%') OR C.email LIKE CONCAT('%', #{sKeyword}, '%'))
+            </if>
+        ORDER BY
+            A.education_auth_id DESC
+        LIMIT ${sRow}, ${eCount}
+    </select>
+
+    <insert id="insertMember" parameterType="hashmap">
+        INSERT INTO education_auth
+            (education_id, member_cd, use_flag)
+        VALUES
+            (#{educationId}, #{memberCd}, '0')
+    </insert>
+
+    <update id="deleteMember" parameterType="hashmap">
+        UPDATE
+            education_auth
+        SET
+            use_flag = '1'
+        WHERE
+            education_auth_id = #{authId}
+            AND member_cd = #{memberCd}
+    </update>
+
+    <select id="selectSearchEducationMember" parameterType="hashmap" resultType="hashmap">
+        SELECT
+            A.member_cd,
+            A.member_id,
+            A.member_nickname,
+            B.member_name,
+            B.phone_no,
+            B.email
+            , CASE
+                WHEN B.birth_date != ' ' and B.birth_date IS NOT NULL
+                THEN
+                    CASE
+                        WHEN LENGTH(B.birth_date) = 10 THEN birth_date
+                        ELSE CONCAT(B.age, '-', B.birth_date)
+                    END
+                ELSE B.age
+            END AS birth_day
+        FROM
+            member A
+            INNER JOIN member_confirm B ON A.member_cd = B.member_cd
+        WHERE
+            A.use_flag = 0
+            <if test="mKeyword != null and mKeyword != ''">
+            AND (member_id LIKE CONCAT('%', #{mKeyword}, '%') OR
+                 member_nickname LIKE CONCAT('%',#{mKeyword},'%') OR
+                 member_name LIKE CONCAT('%',#{mKeyword},'%') OR
+                 email LIKE CONCAT('%',#{mKeyword},'%') OR
+                 phone_no LIKE CONCAT('%',#{mKeyword},'%')
+                 )
+            </if>
+            AND A.member_cd NOT IN (
+                                SELECT
+                                    member_cd
+                                FROM
+                                    education_auth
+                                WHERE
+                                    education_id = #{educationId}
+                                    AND use_flag = 0
+                                )
+    </select>
+
+    <select id="selectColumnListCnt" parameterType="hashmap" resultType="_int">
+        SELECT
+            COUNT(education_column_id)
+        FROM
+            education_column
+        WHERE
+            use_flag = 0
+            <if test="sTitle != null and !sTitle.equals('') ">
+                AND title LIKE CONCAT('%', #{sTitle}, '%')
+            </if>
+    </select>
+
+    <select id="selectColumnList" parameterType="hashmap" resultType="hashmap">
+        SELECT
+            education_column_id,
+            title,
+            writer,
+            use_flag,
+            show_flag,
+            column_type,
+            DATE_FORMAT(reg_date, '%Y-%m-%d') AS reg_date,
+            DATE_FORMAT(submit_date, '%Y-%m-%d') AS submit_date,
+            view_cnt
+        FROM
+            education_column
+        WHERE
+            use_flag = 0
+            <if test="sTitle != null and !sTitle.equals('') ">
+                AND title LIKE CONCAT('%', #{sTitle}, '%')
+            </if>
+        ORDER BY
+            education_column_id DESC
+        <if test="eCount != null and eCount != ''">
+        LIMIT ${sRow}, ${eCount}
+        </if>
+    </select>
+
+    <insert id="insertColumn" parameterType="hashmap">
+        INSERT INTO education_column
+            (writer, title, summary, content, url_link, column_type, submit_date, use_flag, show_flag, main_flag)
+        VALUES
+            (#{writer}, #{title}, #{summary},#{content}, #{urlLink}, #{columnType}, #{submitDate},'0', #{showFlag}, #{mainFlag})
+        <selectKey resultType="String" keyProperty="educationColumnId" order="AFTER">
+            SELECT LAST_INSERT_ID()
+        </selectKey>
+    </insert>
+
+    <update id="updateColumn" parameterType="hashmap">
+        UPDATE
+            education_column
+        SET
+            <if test="title != null and title != ''">
+                title = #{title},
+            </if>
+            <if test="summary != null and summary != ''">
+                summary = #{summary},
+            </if>
+            <if test="content != null and content != ''">
+                content = #{content},
+            </if>
+            <if test="urlLink != null and urlLink != ''">
+                url_link = #{urlLink},
+            </if>
+            <if test="columnType != null and columnType != ''">
+                column_type = #{columnType},
+            </if>
+            <if test="submitDate != null and submitDate != ''">
+                submit_date = #{submitDate},
+            </if>
+            <if test="showFlag != null and showFlag != ''">
+                show_flag = #{showFlag},
+            </if>
+            <if test="mainFlag != null and mainFlag != ''">
+                main_flag = #{mainFlag}
+            </if>
+        WHERE
+        education_column_id = #{educationColumnId}
+    </update>
+
+    <delete id="deleteColumn" parameterType="hashmap">
+        UPDATE
+            education_column
+        SET
+            use_flag = '1'
+        WHERE
+            education_column_id = #{educationColumnId}
+    </delete>
+
+    <resultMap id="columnDetailResultMap" type="java.util.HashMap">
+        <id property="education_column_id" column="education_column_id"/>
+        <result property="title" column="title"/>
+        <result property="writer" column="writer"/>
+        <result property="summary" column="summary"/>
+        <result property="content" column="content"/>
+        <result property="url_link" column="url_link"/>
+        <result property="view_cnt" column="view_cnt"/>
+        <result property="show_flag" column="show_flag"/>
+        <result property="main_flag" column="main_flag"/>
+        <result property="column_type" column="column_type"/>
+        <result property="column_order" column="column_order"/>
+        <result property="reg_date" column="reg_date"/>
+        <result property="submit_date" column="submit_date"/>
+        <association property="imgFiles" javaType="java.util.HashMap">
+            <result column="file_save_name" property="fileSaveName" />
+            <result column="file_save_path" property="fileSavePath" />
+            <result column="file_name" property="fileName" />
+            <result column="file_ext" property="fileExt" />
+        </association>
+    </resultMap>
+    <select id="selectColumnDetail" parameterType="hashmap" resultMap="columnDetailResultMap">
+        SELECT
+            A.education_column_id,
+            A.title,
+            A.writer,
+            A.summary,
+            A.content,
+            A.url_link,
+            A.view_cnt,
+            A.show_flag,
+            A.column_type,
+            A.reg_date,
+            A.submit_date,
+            A.main_flag,
+            C.column_order,
+            B.file_name,
+            CONCAT('/', SUBSTRING(B.file_save_path, LENGTH('/content_nextplayer/') + 1)) AS file_save_path
+        FROM
+            education_column A
+            LEFT OUTER JOIN Public_File B ON B.sub_type = 'imgFile' AND B.foreign_type = 'Column' AND A.education_column_id = B.foreign_id AND B.use_flag = 0
+            LEFT OUTER JOIN main_column C ON A.education_column_id = C.education_column_id AND C.use_flag = 0 AND C.show_flag = 0
+        WHERE
+            A.use_flag = 0
+            AND A.education_column_id = #{educationColumnId}
+    </select>
+
+    <delete id="deleteMainColumnData" parameterType="hashmap">
+        UPDATE
+            main_column
+        SET
+            use_flag = '1',
+            show_flag = '1'
+    </delete>
+
+    <insert id="insertMainColumnData" parameterType="hashmap">
+        INSERT INTO main_column(
+            education_column_id, column_order
+        ) VALUES (
+            #{educationColumnId}, #{columnOrder}
+         )
+    </insert>
+
+    <update id="updateMainColumnOrderPlusAll">
+        UPDATE
+            main_column
+        SET
+            column_order = column_order + 1
+        WHERE
+            use_flag = 0
+            AND show_flag = 0
+    </update>
+
+    <delete id="deleteMainColumnOne" parameterType="hashmap">
+        UPDATE
+            main_column
+        SET
+            use_flag = '1',
+            show_flag = '1'
+        WHERE
+            education_column_id = #{educationColumnId}
+    </delete>
+
+    <update id="updateMainColumnOrderMinusAll">
+        UPDATE
+            main_column
+        SET
+            column_order = column_order - 1
+        WHERE
+            use_flag = 0
+            AND show_flag = 0
+            AND column_order > #{bfColumnOrder}
+    </update>
+
+    <select id="selectMainColumnList" parameterType="hashmap" resultType="hashmap">
+        SELECT
+            A.education_column_id,
+            A.title,
+            A.writer,
+            A.use_flag,
+            A.show_flag,
+            A.column_type,
+            DATE_FORMAT(A.reg_date, '%Y-%m-%d') AS reg_date,
+            DATE_FORMAT(A.submit_date, '%Y-%m-%d') AS submit_date,
+            A.view_cnt
+        FROM
+            education_column A
+            INNER JOIN main_column B ON A.education_column_id = B.education_column_id
+        WHERE
+            A.use_flag = 0
+            AND B.use_flag = 0
+            <if test="sTitle != null and !sTitle.equals('') ">
+                AND title LIKE CONCAT('%', #{sTitle}, '%')
+            </if>
+        ORDER BY
+            B.column_order
+    </select>
+
+</mapper>

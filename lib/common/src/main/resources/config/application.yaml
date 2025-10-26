@@ -1,0 +1,5 @@
+spring:
+nextplayer:
+  domainPath: http://127.0.0.1:8182
+  jwt:
+    secretKey: renS0Mz6ESEItE6OiI9ALw==KToaP17AikIAWoals8fgJg==

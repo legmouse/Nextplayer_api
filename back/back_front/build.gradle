@@ -1,0 +1,21 @@
+//mainClassName = 'kr.co.nextplayer.back.front.BackFrontApplication'
+
+dependencies {
+    implementation 'org.springframework.boot:spring-boot-starter-data-redis'
+    implementation 'org.mybatis.spring.boot:mybatis-spring-boot-starter'
+    implementation 'io.springfox:springfox-boot-starter'
+    developmentOnly("org.springframework.boot:spring-boot-devtools")
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+
+    implementation 'org.springframework.boot:spring-boot-autoconfigure'
+
+    implementation 'dev.akkinoc.spring.boot:logback-access-spring-boot-starter:3.3.2'
+
+    implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.13.4'
+
+    implementation project(":lib:util")
+    implementation project(":base:base")
+    implementation project(":base:base_front")
+    implementation project(":proto:proto_login")
+}

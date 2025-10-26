@@ -1,0 +1,788 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.co.nextplayer.base.media.mapper.MediaMapper">
+
+    <resultMap id="mediaResultMap" type="kr.co.nextplayer.base.media.model.Media">
+        <id column="media_id" jdbcType="VARCHAR" property="mediaId"/>
+        <result column="title" jdbcType="VARCHAR" property="title"/>
+        <result column="content" jdbcType="VARCHAR" property="content"/>
+        <result column="source" jdbcType="VARCHAR" property="source"/>
+        <result column="summary" jdbcType="VARCHAR" property="summary"/>
+        <result column="url_link" jdbcType="VARCHAR" property="urlLink"/>
+        <result column="img_url" jdbcType="VARCHAR" property="imgUrl"/>
+        <result column="ref_url" jdbcType="VARCHAR" property="refUrl"/>
+        <result column="media_type" jdbcType="VARCHAR" property="mediaType"/>
+        <result column="video_type" jdbcType="VARCHAR" property="videoType"/>
+        <result column="type" jdbcType="VARCHAR" property="type"/>
+        <result column="parentTable" jdbcType="VARCHAR" property="parentTable"/>
+        <result column="parentId" jdbcType="VARCHAR" property="parentId"/>
+        <result column="childTable" jdbcType="VARCHAR" property="childTable"/>
+        <result column="childId" jdbcType="VARCHAR" property="childId"/>
+        <result column="submit_date" jdbcType="VARCHAR" property="submitDate"/>
+        <result column="reg_date" jdbcType="VARCHAR" property="regDate"/>
+        <result column="view_cnt" jdbcType="VARCHAR" property="viewCnt"/>
+        <result column="sub_type" jdbcType="VARCHAR" property="subType"/>
+        <result column="show_flag" jdbcType="VARCHAR" property="showFlag"/>
+        <result column="mType" jdbcType="VARCHAR" property="mType"/>
+        <association property="creator" javaType="kr.co.nextplayer.base.media.model.Creator">
+            <result column="creator_id" property="creatorId" />
+            <result column="creator_name" property="creatorName" />
+            <result column="creator_link" property="creatorLink" />
+            <result column="profile_img" property="profileImg"/>
+            <result column="banner_img" property="bannerImg"/>
+        </association>
+    </resultMap>
+
+    <select id="selectMediaListCnt" parameterType="kr.co.nextplayer.base.media.dto.MediaReqDto" resultType="_int">
+        SELECT
+            COUNT(1)
+        FROM
+            Media A
+        WHERE
+            A.use_flag = 0
+            AND A.delete_flag = 0
+            AND A.media_type = #{mediaType}
+            <if test = "sKeyword != null and sKeyword != ''">
+                AND title LIKE CONCAT('%', #{sKeyword}, '%')
+            </if>
+            <if test = "ageGroup != null and ageGroup != ''">
+                AND uage = #{ageGroup}
+            </if>
+            <if test="creatorId != null and creatorId != ''">
+                AND A.creator_id = #{creatorId}
+            </if>
+            <choose>
+                <when test="subType != null and subType != ''">
+                    <choose>
+                        <when test="mediaType == 'Video'">
+                            <choose>
+                                <when test="subType == 'All'">
+                                    AND A.sub_type != '0'
+                                </when>
+                                <otherwise>
+                                    AND A.sub_type = #{subType}
+                                </otherwise>
+                            </choose>
+                        </when>
+                        <otherwise>
+                            <choose>
+                                <when test="subType != 'All'">
+                                    AND A.sub_type = #{subType}
+                                </when>
+                            </choose>
+                        </otherwise>
+                    </choose>
+                </when>
+                <otherwise>
+                    AND A.sub_type = '0'
+                </otherwise>
+            </choose>
+    </select>
+
+    <select id="selectMediaList" parameterType="kr.co.nextplayer.base.media.dto.MediaReqDto" resultMap="mediaResultMap">
+        SELECT
+            A.media_id
+            , A.title
+            , A.content
+            , A.source
+            , A.summary
+            , A.url_link
+            , A.media_type
+            , A.type
+            <choose>
+                <when test="mediaType == 'Video'">
+                    , CASE
+                    WHEN A.type = '0' THEN '하이라이트'
+                    WHEN A.type = '1' THEN '다시보기'
+                    END AS video_type
+                </when>
+            </choose>
+            , DATE_FORMAT(submit_date, '%Y-%m-%d') AS submit_date
+            , A.img_url
+            , A.sub_type
+            , B.creator_id
+            , B.creator_name
+            , CONCAT('/', SUBSTRING_INDEX(C.file_save_path, '/', -6)) AS 'profile_img'
+            , A.show_flag
+        FROM
+            Media A
+            LEFT OUTER JOIN Creator B ON A.creator_id = B.creator_id
+            LEFT OUTER JOIN Public_File C ON foreign_type = 'Creator' AND B.creator_id = C.foreign_id AND C.sub_type = 'profileImg' AND C.use_flag = 0
+        WHERE
+            A.use_flag = 0
+            AND A.delete_flag = 0
+            AND A.media_type = #{mediaType}
+            <if test = "sKeyword != null and sKeyword != ''">
+                AND title LIKE CONCAT('%', #{sKeyword}, '%')
+            </if>
+            <if test = "ageGroup != null and ageGroup != ''">
+                AND uage = #{ageGroup}
+            </if>
+            <if test="creatorId != null and creatorId != ''">
+                AND A.creator_id = #{creatorId}
+            </if>
+            <choose>
+                <when test="subType != null and subType != ''">
+                    <choose>
+                        <when test="mediaType == 'Video'">
+                            <choose>
+                                <when test="subType == 'All'">
+                                    AND A.sub_type != '0'
+                                </when>
+                                <otherwise>
+                                    AND A.sub_type = #{subType}
+                                </otherwise>
+                            </choose>
+                        </when>
+                        <otherwise>
+                            <choose>
+                                <when test="subType != 'All'">
+                                    AND A.sub_type = #{subType}
+                                </when>
+                            </choose>
+                        </otherwise>
+                    </choose>
+                </when>
+                <otherwise>
+                    AND A.sub_type = '0'
+                </otherwise>
+            </choose>
+        ORDER BY
+            A.submit_date DESC, media_id DESC
+        LIMIT
+            #{offset}, #{pageSize}
+    </select>
+
+    <resultMap id="gameMediaResultMap" type="kr.co.nextplayer.base.media.model.Media">
+        <id column="media_id" jdbcType="VARCHAR" property="mediaId"/>
+        <result column="title" jdbcType="VARCHAR" property="title"/>
+        <result column="content" jdbcType="VARCHAR" property="content"/>
+        <result column="source" jdbcType="VARCHAR" property="source"/>
+        <result column="summary" jdbcType="VARCHAR" property="summary"/>
+        <result column="url_link" jdbcType="VARCHAR" property="urlLink"/>
+        <result column="img_url" jdbcType="VARCHAR" property="imgUrl"/>
+        <result column="ref_url" jdbcType="VARCHAR" property="refUrl"/>
+        <result column="media_type" jdbcType="VARCHAR" property="mediaType"/>
+        <result column="media_order" jdbcType="VARCHAR" property="mediaOrder"/>
+        <result column="video_type" jdbcType="VARCHAR" property="videoType"/>
+        <result column="type" jdbcType="VARCHAR" property="type"/>
+        <result column="parentTable" jdbcType="VARCHAR" property="parentTable"/>
+        <result column="parentId" jdbcType="VARCHAR" property="parentId"/>
+        <result column="childTable" jdbcType="VARCHAR" property="childTable"/>
+        <result column="childId" jdbcType="VARCHAR" property="childId"/>
+        <result column="submit_date" jdbcType="VARCHAR" property="submitDate"/>
+        <result column="reg_date" jdbcType="VARCHAR" property="regDate"/>
+        <result column="view_cnt" jdbcType="VARCHAR" property="viewCnt"/>
+        <result column="sub_type" jdbcType="VARCHAR" property="subType"/>
+        <result column="show_flag" jdbcType="VARCHAR" property="showFlag"/>
+        <result column="mType" jdbcType="VARCHAR" property="mType"/>
+    </resultMap>
+
+    <select id="selectGameMediaListCnt" parameterType="kr.co.nextplayer.base.media.dto.GameReqDto" resultType="_int">
+        SELECT
+            COUNT(1)
+        FROM
+            (
+                SELECT
+                    COUNT(A.media_id)
+                FROM
+                    Media A
+                    INNER JOIN Media_Cross B ON A.media_id = B.media_id
+                    <choose>
+                        <when test="gameType == 'Cup'">
+                    INNER JOIN ${infoTB} C ON B.foreign_parent_id = C.cup_id
+                    LEFT JOIN ${cupSubMatchTB} D ON B.foreign_type = CONCAT(#{ageGroup}, '_Cup_Sub_Match') AND B.foreign_id = D.cup_sub_match_id
+                    LEFT JOIN ${cupMainMatchTB} E ON B.foreign_type = CONCAT(#{ageGroup}, '_Cup_Main_Match') AND B.foreign_id = E.cup_main_match_id
+                    LEFT JOIN ${cupTourMatchTB} F ON B.foreign_type = CONCAT(#{ageGroup}, '_Cup_Tour_Match') AND B.foreign_id = F.cup_tour_match_id
+                        </when>
+                        <when test="gameType == 'League'">
+                    INNER JOIN ${infoTB} C ON B.foreign_parent_id = C.league_id
+                    INNER JOIN ${leagueMatchTB} D ON B.foreign_type = CONCAT(#{ageGroup}, '_League_Match') AND B.foreign_id = D.league_match_id
+                        </when>
+                    </choose>
+                WHERE
+                    A.use_flag = 0
+                    AND A.delete_flag = 0
+                    AND A.media_type = 'Video'
+                    <choose>
+                        <when test="gameType == 'Cup'">
+                    AND B.foreign_parent_type LIKE CONCAT('%', #{ageGroup}, '_Cup', '%')
+                            <if test="sKeyword != null and sKeyword != ''">
+                                <choose>
+                                    <when test="sType == 'team'">
+                    AND ((D.home LIKE CONCAT('%', #{sKeyword}, '%') OR D.away LIKE CONCAT('%', #{sKeyword}, '%')) OR
+                         (E.home LIKE CONCAT('%', #{sKeyword}, '%') OR E.away LIKE CONCAT('%', #{sKeyword}, '%')) OR
+                         (F.home LIKE CONCAT('%', #{sKeyword}, '%') OR F.away LIKE CONCAT('%', #{sKeyword}, '%')))
+                                    </when>
+                                    <otherwise>
+                    AND A.title LIKE CONCAT('%', #{sKeyword}, '%')
+                                    </otherwise>
+                                </choose>
+                            </if>
+                        </when>
+                        <when test="gameType == 'League'">
+                    AND B.foreign_parent_type LIKE CONCAT('%', #{ageGroup}, '_League', '%')
+                            <if test="sKeyword != null and sKeyword != ''">
+                                <choose>
+                                    <when test="sType == 'team'">
+                    AND (D.home LIKE CONCAT('%', #{sKeyword}, '%') OR D.away LIKE CONCAT('%', #{sKeyword}, '%'))
+                                    </when>
+                                    <otherwise>
+                    AND A.title LIKE CONCAT('%', #{sKeyword}, '%')
+                                    </otherwise>
+                                </choose>
+                            </if>
+                        </when>
+                    </choose>
+                    <if test="sDate != null and sDate != ''">
+                    AND (C.play_sdate BETWEEN CONCAT(#{sDate},'-01-01 00:00:00') AND CONCAT(#{sDate}, '-12-31 00:00:00')
+                    AND C.play_edate BETWEEN CONCAT(#{sDate}, '-01-01 00:00:00') AND CONCAT(#{sDate}, '-12-31 00:00:00'))
+                    </if>
+                GROUP BY
+                    A.media_id
+            ) A
+    </select>
+
+    <select id="selectGameMediaList" parameterType="kr.co.nextplayer.base.media.dto.GameReqDto" resultMap="gameMediaResultMap">
+        SELECT
+            A.media_id
+            , A.title
+            , A.content
+            , A.source
+            , A.summary
+            , A.url_link
+            , A.media_type
+            , A.type
+            , CASE
+            WHEN A.type = '0' THEN '하이라이트'
+            WHEN A.type = '1' THEN '다시보기'
+            END AS video_type
+            , DATE_FORMAT(submit_date, '%Y-%m-%d') AS submit_date
+            , A.img_url
+            , A.sub_type
+            , B.creator_id
+            , B.creator_name
+            , CONCAT('/', SUBSTRING_INDEX(C.file_save_path, '/', -6)) AS 'profile_img'
+            , A.show_flag
+        FROM
+            Media A
+            LEFT OUTER JOIN Creator B ON A.creator_id = B.creator_id
+            LEFT OUTER JOIN Public_File C ON C.foreign_type = 'Creator' AND B.creator_id = C.foreign_id AND C.sub_type = 'profileImg' AND C.use_flag = 0
+            INNER JOIN Media_Cross D ON D.media_id = A.media_id
+            <choose>
+                <when test="gameType == 'Cup'">
+            INNER JOIN ${infoTB} E ON D.foreign_parent_id = E.cup_id
+            LEFT JOIN ${cupSubMatchTB} F ON D.foreign_type = CONCAT(#{ageGroup}, '_Cup_Sub_Match') AND D.foreign_id = F.cup_sub_match_id
+            LEFT JOIN ${cupMainMatchTB} G ON D.foreign_type = CONCAT(#{ageGroup}, '_Cup_Main_Match') AND D.foreign_id = G.cup_main_match_id
+            LEFT JOIN ${cupTourMatchTB} H ON D.foreign_type = CONCAT(#{ageGroup}, '_Cup_Tour_Match') AND D.foreign_id = H.cup_tour_match_id
+                </when>
+                <when test="gameType == 'League'">
+            INNER JOIN ${infoTB} E ON D.foreign_parent_id = E.league_id
+            INNER JOIN ${leagueMatchTB} F ON D.foreign_type = CONCAT(#{ageGroup}, '_League_Match') AND D.foreign_id = F.league_match_id
+                </when>
+            </choose>
+        WHERE
+            A.use_flag = 0
+            AND A.delete_flag = 0
+            AND A.media_type = 'Video'
+            <choose>
+                <when test="gameType == 'Cup'">
+            AND D.foreign_parent_type LIKE CONCAT('%', #{ageGroup}, '_Cup', '%')
+                    <if test="sKeyword != null and sKeyword != ''">
+                        <choose>
+                            <when test="sType == 'team'">
+            AND ((F.home LIKE CONCAT('%', #{sKeyword}, '%') OR F.away LIKE CONCAT('%', #{sKeyword}, '%')) OR
+                 (G.home LIKE CONCAT('%', #{sKeyword}, '%') OR G.away LIKE CONCAT('%', #{sKeyword}, '%')) OR
+                 (H.home LIKE CONCAT('%', #{sKeyword}, '%') OR H.away LIKE CONCAT('%', #{sKeyword}, '%')))
+                            </when>
+                            <otherwise>
+            AND A.title LIKE CONCAT('%', #{sKeyword}, '%')
+                            </otherwise>
+                        </choose>
+                    </if>
+                </when>
+                <when test="gameType == 'League'">
+            AND D.foreign_parent_type LIKE CONCAT('%', #{ageGroup}, '_League', '%')
+                    <if test="sKeyword != null and sKeyword != ''">
+                        <choose>
+                            <when test="sType == 'team'">
+            AND (F.home LIKE CONCAT('%', #{sKeyword}, '%') OR F.away LIKE CONCAT('%', #{sKeyword}, '%'))
+                            </when>
+                            <otherwise>
+            AND A.title LIKE CONCAT('%', #{sKeyword}, '%')
+                            </otherwise>
+                        </choose>
+                    </if>
+                </when>
+            </choose>
+            <if test="sDate != null and sDate != ''">
+            AND (E.play_sdate BETWEEN CONCAT(#{sDate},'-01-01 00:00:00') AND CONCAT(#{sDate}, '-12-31 00:00:00')
+            AND E.play_edate BETWEEN CONCAT(#{sDate}, '-01-01 00:00:00') AND CONCAT(#{sDate}, '-12-31 00:00:00'))
+            </if>
+        GROUP BY
+            A.media_id
+        ORDER BY
+            A.submit_date DESC, A.media_id DESC
+        LIMIT
+            #{offset}, #{pageSize}
+    </select>
+
+    <select id="selectMediaDetailList" parameterType="kr.co.nextplayer.base.media.dto.MediaReqDto" resultMap="mediaResultMap">
+        SELECT
+            A.media_id,
+            A.title,
+            A.content,
+            A.source,
+            A.summary,
+            A.url_link,
+            A.media_type,
+            DATE_FORMAT(A.submit_date, '%Y-%m-%d') AS submit_date,
+            A.img_url,
+            CASE
+            WHEN A.type = '0' THEN '하이라이트'
+            WHEN A.type = '1' THEN '다시보기'
+            END AS video_type,
+            DATE_FORMAT(A.reg_date, '%Y.%m.%d') AS reg_date,
+            img_url
+            , C.creator_id
+            , C.creator_name
+            , CONCAT('/', SUBSTRING_INDEX(D.file_save_path, '/', -6)) AS 'profile_img'
+            , A.show_flag
+        FROM
+            Media A
+            INNER JOIN Media_Cross B ON A.media_id = B.media_id
+            LEFT OUTER JOIN Creator C ON A.creator_id = C.creator_id
+            LEFT OUTER JOIN Public_File D ON D.foreign_type = 'Creator' AND C.creator_id = D.foreign_id AND D.sub_type = 'profileImg' AND D.use_flag = 0
+        WHERE
+            A.use_flag = 0
+            AND A.delete_flag = 0
+            <choose>
+                <when test="sType == 'Team'">
+                    AND B.foreign_id = #{foreignId}
+                    AND B.foreign_parent_type = 'Team'
+                </when>
+                <otherwise>
+                    AND B.foreign_parent_id = #{foreignId}
+                    AND B.foreign_parent_type = CONCAT(#{ageGroup}, '_', #{sType}, '_', 'Info')
+                </otherwise>
+            </choose>
+            AND A.media_type = #{mediaType}
+        GROUP BY
+            A.media_id
+        ORDER BY
+            UNIX_TIMESTAMP(A.submit_date) DESC, media_id DESC
+    </select>
+
+    <select id="selectMediaDetailListForTeam" parameterType="kr.co.nextplayer.base.media.dto.MediaReqDto" resultMap="mediaResultMap">
+        SELECT
+            A.media_id,
+            A.title,
+            A.content,
+            A.source,
+            A.summary,
+            A.url_link,
+            A.media_type,
+            DATE_FORMAT(A.submit_date, '%Y-%m-%d') AS submit_date,
+            A.img_url,
+            CASE
+                WHEN A.type = '0' THEN '하이라이트'
+                WHEN A.type = '1' THEN '다시보기'
+            END AS video_type,
+            DATE_FORMAT(A.reg_date, '%Y.%m.%d') AS reg_date,
+            img_url
+            , C.creator_id
+            , C.creator_name
+            , CONCAT('/', SUBSTRING_INDEX(D.file_save_path, '/', -6)) AS 'profile_img'
+            , A.show_flag
+        FROM
+            Media A
+            INNER JOIN Media_Cross B ON A.media_id = B.media_id
+            LEFT OUTER JOIN Creator C ON A.creator_id = C.creator_id
+            LEFT OUTER JOIN Public_File D ON D.foreign_type = 'Creator' AND C.creator_id = D.foreign_id AND D.sub_type = 'profileImg' AND D.use_flag = 0
+        WHERE
+            (
+            CASE
+                WHEN (SELECT team_group_id FROM Team WHERE team_id = #{foreignId}) IS NULL OR (SELECT use_flag FROM Team_Group WHERE team_group_id = (SELECT team_group_id FROM Team WHERE team_id = #{foreignId})) = '1'
+                THEN A.use_flag = 0 AND A.delete_flag = 0 AND B.foreign_parent_type = 'Team' AND A.media_type = #{mediaType} AND B.foreign_id = #{foreignId}
+                ELSE A.use_flag = 0 AND A.delete_flag = 0 AND B.foreign_parent_type = 'Team' AND A.media_type = #{mediaType} AND B.foreign_id IN (SELECT team_id FROM Team WHERE team_group_id = (SELECT team_group_id FROM Team WHERE team_id = #{foreignId}))
+            END)
+        GROUP BY
+            A.media_id
+        ORDER BY
+            UNIX_TIMESTAMP(A.submit_date) DESC, media_id DESC
+    </select>
+
+    <select id="selectMediaChildList" parameterType="String" resultMap="mediaResultMap">
+        SELECT
+            B.foreign_parent_type AS parentTable
+             , B.foreign_parent_id AS parentId
+             , B.foreign_type AS childTable
+             , GROUP_CONCAT(B.foreign_id) AS childId
+        FROM
+            Media A
+            INNER JOIN Media_Cross B ON A.media_id = B.media_id
+        WHERE
+            A.media_id = #{mediaId}
+        GROUP BY
+            foreign_parent_id, foreign_type
+        ORDER BY
+            UNIX_TIMESTAMP(A.reg_date) DESC
+    </select>
+
+    <select id="selectVideoMediaList" parameterType="kr.co.nextplayer.base.media.dto.MediaReqDto" resultMap="mediaResultMap">
+        SELECT
+            media_id,
+            title,
+            media_type,
+            url_link,
+            CASE
+                WHEN type = '0' THEN '하이라이트'
+                WHEN type = '1' THEN '다시보기'
+                END AS video_type,
+            DATE_FORMAT(reg_date, '%Y-%m-%d') AS reg_date
+            , show_flag
+        FROM
+            Media
+        WHERE
+            media_type = 'Video'
+          AND use_flag = 0
+          AND sub_type = 0
+          AND delete_flag = 0
+        ORDER BY
+            UNIX_TIMESTAMP(submit_date) DESC, media_id DESC
+        LIMIT 6
+    </select>
+
+    <select id="selectNewsMediaList" parameterType="kr.co.nextplayer.base.media.dto.MediaReqDto" resultMap="mediaResultMap">
+        SELECT
+            media_id,
+            title,
+            summary,
+            source,
+            url_link,
+            img_url,
+            DATE_FORMAT(submit_date, '%Y-%m-%d') AS submit_date,
+            DATE_FORMAT(reg_date, '%Y-%m-%d') AS reg_date
+        FROM
+            Media
+        WHERE
+            media_type = 'News'
+          AND use_flag = 0
+          AND delete_flag = 0
+        ORDER BY
+            submit_date DESC, media_id DESC
+            LIMIT 10
+    </select>
+
+    <select id="selectBlogMediaList" parameterType="kr.co.nextplayer.base.media.dto.MediaReqDto" resultMap="mediaResultMap">
+        SELECT
+            media_id,
+            title,
+            summary,
+            source,
+            url_link,
+            img_url,
+            DATE_FORMAT(submit_date, '%Y-%m-%d') AS submit_date,
+            DATE_FORMAT(reg_date, '%Y-%m-%d') AS reg_date
+        FROM
+            Media
+        WHERE
+            media_type = 'Blog'
+          AND use_flag = 0
+          AND delete_flag = 0
+        ORDER BY
+            submit_date DESC, media_id DESC
+            LIMIT 10
+    </select>
+
+    <select id="selectMediaDetailInfo" parameterType="kr.co.nextplayer.base.media.dto.MediaReqDto" resultMap="mediaResultMap">
+        SELECT
+            A.media_id,
+            A.title,
+            A.media_type,
+            A.url_link,
+            A.content,
+            <choose>
+                <when test="mediaType == 'Video'">
+            CASE
+                WHEN A.type = '0' THEN '하이라이트'
+                WHEN A.type = '1' THEN '다시보기'
+            END AS video_type,
+            A.ref_url,
+                </when>
+            </choose>
+            A.source,
+            A.summary,
+            A.img_url,
+            DATE_FORMAT(A.submit_date, '%Y-%m-%d') AS submit_date,
+            A.sub_type,
+            DATE_FORMAT(A.reg_date, '%Y-%m-%d') AS reg_date
+            , B.creator_id
+            , B.creator_name
+            , B.url_link AS creator_link
+            , CONCAT('/', SUBSTRING_INDEX(C.file_save_path, '/', -6)) AS 'banner_img'
+            , A.view_cnt
+            , A.show_flag
+        FROM
+            Media A
+            LEFT OUTER JOIN Creator B ON A.creator_id = B.creator_id
+            LEFT OUTER JOIN Public_File C ON foreign_type = 'Creator' AND B.creator_id = C.foreign_id AND C.sub_type = 'bannerImg' AND C.use_flag = 0
+        WHERE
+            A.media_type = #{mediaType}
+            AND A.use_flag = 0
+            AND A.delete_flag = 0
+            AND A.media_id = #{mediaId}
+    </select>
+
+    <resultMap id="CreatorDetailResultMap" type="kr.co.nextplayer.base.media.model.Creator">
+        <id column="creator_id" property="creatorId"/>
+        <result column="creator_name" property="creatorName"/>
+        <result column="creator_link" property="creatorLink"/>
+        <association property="files" javaType="kr.co.nextplayer.base.media.model.CreatorFileModel">
+            <result column="public_file_id" property="publicFileId"/>
+            <result column="sub_type" property="subType"/>
+            <result column="file_save_name" property="fileSaveName"/>
+            <result column="file_name" property="fileName"/>
+            <result column="file_save_path" property="fileSavePath"/>
+            <result column="file_ext" property="fileExt"/>
+            <result column="file_size" property="fileSize"/>
+        </association>
+    </resultMap>
+
+    <select id="selectCreatorList" parameterType="kr.co.nextplayer.base.media.dto.MediaReqDto" resultMap="CreatorDetailResultMap">
+        SELECT
+            A.creator_id,
+            A.creator_name,
+            A.creator_link,
+            A.public_file_id,
+            A.sub_type,
+            A.file_save_path
+        FROM
+            (
+                SELECT
+                    A.creator_id,
+                    A.creator_name,
+                    A.url_link AS creator_link,
+                    B.public_file_id,
+                    B.sub_type,
+                    CONCAT('/', SUBSTRING_INDEX(B.file_save_path, '/', -6)) AS file_save_path,
+                    COUNT(1) AS cnt
+                FROM
+                    Creator A
+                    LEFT JOIN Public_File B ON B.foreign_type = 'Creator' AND A.creator_id = B.foreign_id AND B.sub_type = 'profileImg' AND B.use_flag = 0
+                    INNER JOIN Media C ON A.creator_id = C.creator_id AND C.use_flag = 0
+                WHERE
+                    A.media_type = #{mediaType}
+                    AND A.use_flag = 0
+                    <if test="subType != 'All'">
+                    AND C.sub_type = #{subType}
+                    </if>
+                    AND C.delete_flag = 0
+                GROUP BY
+                    C.creator_id
+            ) A
+        ORDER BY
+            A.cnt DESC, A.creator_id DESC
+    </select>
+
+    <resultMap id="homeMediaResultMap" type="java.util.HashMap">
+        <id column="media_id" jdbcType="VARCHAR" property="media_id"/>
+        <result column="title" jdbcType="VARCHAR" property="title"/>
+        <result column="content" jdbcType="VARCHAR" property="content"/>
+        <result column="source" jdbcType="VARCHAR" property="source"/>
+        <result column="summary" jdbcType="VARCHAR" property="summary"/>
+        <result column="url_link" jdbcType="VARCHAR" property="url_link"/>
+        <result column="img_url" jdbcType="VARCHAR" property="img_url"/>
+        <result column="ref_url" jdbcType="VARCHAR" property="ref_url"/>
+        <result column="media_type" jdbcType="VARCHAR" property="media_type"/>
+        <result column="video_type" jdbcType="VARCHAR" property="video_type"/>
+        <result column="type" jdbcType="VARCHAR" property="type"/>
+        <result column="parentTable" jdbcType="VARCHAR" property="parentTable"/>
+        <result column="parentId" jdbcType="VARCHAR" property="parentId"/>
+        <result column="childTable" jdbcType="VARCHAR" property="childTable"/>
+        <result column="childId" jdbcType="VARCHAR" property="childId"/>
+        <result column="submit_date" jdbcType="VARCHAR" property="submit_date"/>
+        <result column="reg_date" jdbcType="VARCHAR" property="reg_date"/>
+        <association property="creator" javaType="java.util.HashMap">
+            <result column="creator_id" property="creatorId" />
+            <result column="creator_name" property="creatorName" />
+            <result column="creator_link" property="creatorLink" />
+            <result column="profile_img" property="profileImg"/>
+            <result column="banner_img" property="bannerImg"/>
+        </association>
+    </resultMap>
+
+    <select id="selectHomeMediaList" parameterType="hashmap" resultMap="homeMediaResultMap">
+        SELECT
+            A.media_id
+            , A.title
+            , A.content
+            , A.source
+            , A.summary
+            , A.url_link
+            , A.media_type
+            , A.type
+            , DATE_FORMAT(submit_date, '%Y-%m-%d') AS submit_date
+            , A.img_url
+            , A.sub_type
+            , B.creator_id
+            , B.creator_name
+            , CONCAT('/', SUBSTRING_INDEX(C.file_save_path, '/', -6)) AS 'profile_img'
+        FROM
+            Media A
+            LEFT OUTER JOIN Creator B ON A.creator_id = B.creator_id
+            LEFT OUTER JOIN Public_File C ON foreign_type = 'Creator' AND B.creator_id = C.foreign_id AND C.sub_type = 'profileImg' AND C.use_flag = 0
+            INNER JOIN main_media D ON A.media_id = D.media_id
+        WHERE
+        A.use_flag = 0
+        AND D.use_flag = 0
+        AND A.delete_flag = 0
+        AND D.media_type = #{mediaType}
+        <if test="mediaType == 'Video'">
+            AND A.sub_type != '0'
+        </if>
+        ORDER BY
+            D.media_order
+        LIMIT
+            0, 10
+    </select>
+
+    <update id="updateMediaViewCnt" parameterType="kr.co.nextplayer.base.media.dto.MediaReqDto">
+        UPDATE
+            Media
+        SET
+            view_cnt = #{viewCnt}
+        WHERE
+            media_id = #{mediaId}
+    </update>
+
+    <select id="selectPrevNextMedia" parameterType="kr.co.nextplayer.base.media.dto.MediaReqDto" resultMap="mediaResultMap">
+        SELECT
+            RES.*
+            , (CASE
+                   WHEN RES.RN = RES1.RN -1 THEN 'next'
+                   WHEN RES.RN = RES1.RN    THEN 'cur'
+                   WHEN RES.RN = RES1.RN +1 THEN 'prev'
+            END) AS mType
+        FROM
+            (
+                SELECT
+                    @ROW_NUM := @ROW_NUM + 1 AS RN
+                    , A.media_id
+                    , A.title
+                    , A.content
+                    , A.source
+                    , A.summary
+                    , A.url_link
+                    , A.media_type
+                    , A.type
+                    <choose>
+                        <when test="mediaType == 'Video'">
+                            , CASE
+                            WHEN A.type = '0' THEN '하이라이트'
+                            WHEN A.type = '1' THEN '다시보기'
+                            END AS video_type
+                        </when>
+                    </choose>
+                    , DATE_FORMAT(A.submit_date, '%Y-%m-%d') AS submit_date
+                    , A.img_url
+                    , A.sub_type
+                    , A.creator_id
+                    , A.creator_name
+                    , A.profile_img
+                FROM (
+                        SELECT
+                            A.media_id
+                            , A.title
+                            , A.content
+                            , A.source
+                            , A.summary
+                            , A.url_link
+                            , A.media_type
+                            , A.type
+                            <choose>
+                                <when test="mediaType == 'Video'">
+                                    , CASE
+                                    WHEN A.type = '0' THEN '하이라이트'
+                                    WHEN A.type = '1' THEN '다시보기'
+                                    END AS video_type
+                                </when>
+                            </choose>
+                            , DATE_FORMAT(submit_date, '%Y-%m-%d') AS submit_date
+                            , A.img_url
+                            , A.sub_type
+                            , B.creator_id
+                            , B.creator_name
+                            , CONCAT('/', SUBSTRING_INDEX(C.file_save_path, '/', -6)) AS 'profile_img'
+                        FROM
+                            Media A
+                            LEFT OUTER JOIN Creator B ON A.creator_id = B.creator_id
+                            LEFT OUTER JOIN Public_File C ON foreign_type = 'Creator' AND B.creator_id = C.foreign_id AND C.sub_type = 'profileImg' AND C.use_flag = 0
+                        WHERE
+                            A.use_flag = 0
+                            AND A.delete_flag = 0
+                            AND A.media_type = #{mediaType}
+                            AND A.sub_type = #{subType}
+                ) A, (SELECT @row_num := 0) TMP
+                ORDER BY submit_date DESC, media_id DESC
+            ) RES
+        INNER JOIN
+            (
+                SELECT
+                    DA.*
+                FROM (
+                        SELECT
+                            @ROWNUM := @ROWNUM + 1 AS RN
+                            , A.media_id
+                        FROM (
+                            SELECT
+                                media_id
+                                , DATE_FORMAT(submit_date, '%Y-%m-%d') AS submit_date
+                            FROM
+                                Media
+                            WHERE
+                                use_flag = 0
+                                AND delete_flag = 0
+                                AND media_type = #{mediaType}
+                                AND sub_type = #{subType}
+                        ) A, (SELECT @ROWNUM := 0) TMP
+                        ORDER BY submit_date DESC, media_id DESC
+                    ) DA
+                WHERE
+                    DA.media_id = #{mediaId}
+            ) RES1 ON RES.RN = RES1.RN || RES.RN = RES1.RN -1 || RES.RN = RES1.RN + 1
+    </select>
+
+    <select id="selectMainGameData" resultMap="gameMediaResultMap">
+        SELECT
+            A.media_id
+            , A.title
+            , A.url_link
+            , A.media_type
+            , A.type
+            , A.img_url
+            , A.sub_type
+            , B.creator_id
+            , B.creator_name
+            , CONCAT('/', SUBSTRING_INDEX(C.file_save_path, '/', -6)) AS 'profile_img'
+            , A.show_flag
+            , D.media_order
+        FROM
+            Media A
+            LEFT OUTER JOIN Creator B ON A.creator_id = B.creator_id
+            LEFT OUTER JOIN Public_File C ON C.foreign_type = 'Creator' AND B.creator_id = C.foreign_id AND C.sub_type = 'profileImg' AND C.use_flag = 0
+            INNER JOIN main_media D ON A.media_id = D.media_id AND D.media_type = 'Game'
+        WHERE
+            A.use_flag = 0
+            AND A.delete_flag = 0
+            AND D.use_flag = 0
+            <if test="ageGroup != null and ageGroup != ''">
+            AND A.uage = #{ageGroup}
+            </if>
+        GROUP BY
+            A.media_id
+        ORDER BY
+            D.media_order
+    </select>
+
+</mapper>

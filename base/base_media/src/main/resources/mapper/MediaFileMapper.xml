@@ -1,0 +1,222 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.co.nextplayer.base.media.mapper.MediaFileMapper">
+
+    <sql id="baseMediaFileColumn">
+        parent_id
+        , member_cd
+        , type
+        , name
+        , original_name
+        , path
+        , sub_path
+        , size
+        , width
+        , height
+        , content_type
+        , state
+        , is_resize_file
+        , reg_date
+    </sql>
+
+    <select id="findById" parameterType="java.lang.Long" resultType="kr.co.nextplayer.base.media.model.MediaFile">
+        select
+            id, 
+            <include refid="baseMediaFileColumn"/>
+        from media_file
+        where id = #{fileId,jdbcType=BIGINT}
+    </select>
+
+    <select id="findByParentIdAndWidth" resultType="kr.co.nextplayer.base.media.model.MediaFile">
+        select
+            id, 
+            <include refid="baseMediaFileColumn"/>
+        from media_file
+        where parent_id = #{parentId}
+        and width = #{width}
+    </select>
+
+    <insert id="insert" parameterType="kr.co.nextplayer.base.media.model.MediaFile"
+            useGeneratedKeys="true" keyProperty="id">
+        insert into media_file
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="parentId != null">
+                parent_id,
+            </if>
+            <if test="foreignId != null">
+                foreign_id,
+            </if>
+            <if test="foreignType != null">
+                foreign_type,
+            </if>
+            <if test="memberCd != null">
+                member_cd,
+            </if>
+            <if test="type != null">
+                type,
+            </if>
+            <if test="originalName != null">
+                original_name,
+            </if>
+            <if test="name != null">
+                name,
+            </if>
+            <if test="path != null">
+                path,
+            </if>
+            <if test="subPath != null">
+                sub_path,
+            </if>
+            <if test="size != null">
+                size,
+            </if>
+            <if test="width != null">
+                width,
+            </if>
+            <if test="height != null">
+                height,
+            </if>
+            <if test="contentType != null">
+                content_type,
+            </if>
+            <if test="state != null">
+                state,
+            </if>
+            <if test="isResizeFile != null">
+                is_resize_file,
+            </if>
+            <if test="regDate != null">
+                reg_date,
+            </if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="parentId != null">
+                #{parentId,jdbcType=BIGINT},
+            </if>
+            <if test="foreignId != null">
+                #{foreignId},
+            </if>
+            <if test="foreignType != null">
+                #{foreignType},
+            </if>
+            <if test="memberCd != null">
+                #{memberCd,jdbcType=VARCHAR},
+            </if>
+            <if test="type != null">
+                #{type,jdbcType=VARCHAR},
+            </if>
+            <if test="originalName != null">
+                #{originalName,jdbcType=VARCHAR},
+            </if>
+            <if test="name != null">
+                #{name,jdbcType=VARCHAR},
+            </if>
+            <if test="path != null">
+                #{path,jdbcType=VARCHAR},
+            </if>
+            <if test="subPath != null">
+                #{subPath,jdbcType=VARCHAR},
+            </if>
+            <if test="size != null">
+                #{size,jdbcType=BIGINT},
+            </if>
+            <if test="width != null">
+                #{width,jdbcType=INTEGER},
+            </if>
+            <if test="height != null">
+                #{height,jdbcType=INTEGER},
+            </if>
+            <if test="contentType != null">
+                #{contentType,jdbcType=VARCHAR},
+            </if>
+            <if test="state != null">
+                #{state,jdbcType=VARCHAR},
+            </if>
+            <if test="isResizeFile != null">
+                #{isResizeFile,jdbcType=BIT},
+            </if>
+            <if test="regDate != null">
+                #{regDate,jdbcType=TIMESTAMP},
+            </if>
+        </trim>
+    </insert>
+
+    <update id="update" parameterType="kr.co.nextplayer.base.media.model.MediaFile">
+        update media_file
+        <set>
+            <if test="parentId != null">
+                parent_id = #{parentId,jdbcType=BIGINT},
+            </if>
+            <if test="memberCd != null">
+                member_cd = #{memberCd,jdbcType=VARCHAR},
+            </if>
+            <if test="foreignType != null">
+                foreign_type = #{subPath,jdbcType=VARCHAR},
+            </if>
+            <if test="type != null">
+                type = #{type,jdbcType=VARCHAR},
+            </if>
+            <if test="originalName != null">
+                original_name = #{originalName,jdbcType=VARCHAR},
+            </if>
+            <if test="name != null">
+                name = #{name,jdbcType=VARCHAR},
+            </if>
+            <if test="path != null">
+                path = #{path,jdbcType=VARCHAR},
+            </if>
+            <if test="subPath != null">
+                sub_path = #{subPath,jdbcType=VARCHAR},
+            </if>
+            <if test="size != null">
+                size = #{size,jdbcType=BIGINT},
+            </if>
+            <if test="width != null">
+                width = #{width,jdbcType=INTEGER},
+            </if>
+            <if test="height != null">
+                height = #{height,jdbcType=INTEGER},
+            </if>
+            <if test="contentType != null">
+                content_type = #{contentType,jdbcType=VARCHAR},
+            </if>
+            <if test="state != null">
+                state = #{state,jdbcType=VARCHAR},
+            </if>
+            <if test="isResizeFile != null">
+                is_resize_file = #{isResizeFile,jdbcType=BIT},
+            </if>
+            <if test="regDate != null">
+                reg_date = #{regDate,jdbcType=TIMESTAMP},
+            </if>
+        </set>
+        where id = #{id,jdbcType=BIGINT}
+    </update>
+
+    <delete id="deleteById" parameterType="java.lang.Long">
+        delete
+        from media_file
+        where id = #{fileId,jdbcType=BIGINT}
+    </delete>
+
+    <update id="updateSaveFile" parameterType="kr.co.nextplayer.base.media.model.MediaFile">
+        UPDATE  media_file
+            SET
+                foreign_id = #{foreignId}
+                <if test="foreignType != null and foreignType != ''">
+                ,foreign_type = #{foreignType}
+                </if>
+        WHERE
+            id = #{id} OR parent_id = #{id}
+    </update>
+
+    <select id="selectFindMediaFileList" parameterType="String" resultType="String">
+        SELECT
+            id
+        FROM
+            media_file
+        WHERE
+            foreign_id = #{id}
+    </select>
+
+</mapper>

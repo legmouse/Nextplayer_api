@@ -1,0 +1,33 @@
+server.port: 8112
+
+spring:
+  redis:
+    host: 192.168.1.12
+    port: 6379
+
+nextplayer:
+  shopDomainPath: http://192.168.1.12
+
+auth:
+  naver:
+    cas:
+      client_id: Qd21Zd0keyOQ9DWVEOAa
+      client_secret: w9gwEaGfqG
+  kakao:
+    cas:
+      client_id: 9efe5000a2446cb7a3d2be4f2a8ad373
+      client_secret: rqKEnctZRmW7yVxBICYp4rfZezsr5VRu
+  google:
+    cas:
+      client_id: abc
+      client_secret: abc
+      application_name: nextplayer
+      redirect_uri: http://localhost:8080/login/account/googleAuthorizing
+  solapi:
+    cas:
+      api_key: NCS0BJBIAPRXAWW4
+      api_secret: PSYU9QONQARDRKYEPOKNK7N3FPRZE3ZG
+      api_url: https://api.solapi.com/messages/v4/send
+      api_admin_tel: 16615046
+logging:
+  config: classpath:config/logback-spring-dev.xml

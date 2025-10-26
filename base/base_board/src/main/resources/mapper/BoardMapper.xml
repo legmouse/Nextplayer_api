@@ -1,0 +1,578 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.co.nextplayer.base.board.mapper.BoardMapper">
+
+    <!-- 문의하기 - 등록-->
+    <insert id="insertQna" parameterType="kr.co.nextplayer.base.board.dto.BoardDto" >
+        INSERT INTO Qna
+            (customer,phone,email,title,content,reg_date)
+        VALUES
+            (#{customer}, #{phone}, #{email}, #{title}, #{content}, now())
+    </insert>
+
+    <resultMap id="ReferenceMap" type="kr.co.nextplayer.base.board.model.Reference">
+        <id column="reference_id" jdbcType="VARCHAR" property="referenceId"/>
+        <result column="title" jdbcType="VARCHAR" property="title"/>
+        <result column="content" jdbcType="VARCHAR" property="content"/>
+        <result column="reg_date" jdbcType="VARCHAR" property="regDate"/>
+        <association property="files" javaType="kr.co.nextplayer.base.file.model.PublicFileModel">
+            <result column="public_file_id" property="publicFileId"/>
+            <result column="file_save_name" property="fileSaveName"/>
+            <result column="file_name" property="fileName"/>
+            <result column="file_save_path" property="fileSavePath"/>
+            <result column="file_ext" property="fileExt"/>
+            <result column="file_size" property="fileSize"/>
+        </association>
+    </resultMap>
+
+    <resultMap id="BoardResultMap" type="kr.co.nextplayer.base.board.model.Board">
+        <id column="board_id" property="boardId"/>
+        <result column="title" property="title"/>
+        <result column="content" property="content"/>
+        <result column="type" property="type"/>
+        <result column="answer_flag" property="answerFlag"/>
+        <result column="answer" property="answer"/>
+        <result column="answer_date" property="answerDate"/>
+        <result column="reg_date" property="regDate"/>
+        <result column="answer_date" property="answerDate"/>
+        <association property="imgFile" javaType="kr.co.nextplayer.base.media.model.MediaFile">
+            <result column="file_id" property="fileId" />
+            <result column="name" property="name" />
+            <result column="original_name" property="originalName" />
+            <result column="path" property="path" />
+            <result column="file_path" property="filePath" />
+        </association>
+        <association property="answerImg" javaType="kr.co.nextplayer.base.board.model.PublicFile">
+            <result column="public_file_id" property="publicFileId" />
+            <result column="file_name" property="fileName" />
+            <result column="file_save_path" property="fileSavePath"/>
+        </association>
+    </resultMap>
+
+    <select id="selectReferenceListCount" parameterType="kr.co.nextplayer.base.board.dto.ReferenceDto" resultType="_int">
+        SELECT
+            COUNT(1)
+        FROM
+            Reference
+        WHERE
+            use_flag = 0
+          AND delete_flag = 0
+          <if test="sKeyword != '' and sKeyword != null">
+          AND (title LIKE CONCAT('%', #{sKeyword}, '%') OR content LIKE CONCAT('%', #{sKeyword}, '%'))
+          </if>
+        ORDER BY
+            reg_date DESC
+    </select>
+
+    <!-- 자료실 글 목록 -->
+    <select id="selectReferenceList" parameterType="kr.co.nextplayer.base.board.dto.ReferenceDto" resultMap="ReferenceMap">
+        SELECT
+            A.reference_id,
+            A.title,
+            A.content,
+            A.reg_date,
+            B.public_file_id,
+            B.file_name,
+            B.file_ext
+        FROM
+            Reference A
+            LEFT JOIN public_file B ON A.reference_id = B.foreign_id AND B.foreign_type = 'Reference' AND B.use_flag = 0
+        WHERE
+            A.use_flag = 0
+            AND A.delete_flag = 0
+            <if test="sKeyword != '' and sKeyword != null">
+            AND (title LIKE CONCAT('%', #{sKeyword}, '%') OR content LIKE CONCAT('%', #{sKeyword}, '%'))
+            </if>
+        ORDER BY
+            A.reg_date DESC
+        limit #{offset}, #{pageSize}
+    </select>
+
+    <select id="selectReferenceLatestList" parameterType="kr.co.nextplayer.base.board.dto.ReferenceDto" resultMap="ReferenceMap">
+        SELECT
+            A.reference_id,
+            A.title,
+            A.content,
+            A.reg_date,
+            B.file_ext
+        FROM
+            Reference A
+            LEFT JOIN public_file B ON A.reference_id = B.foreign_id AND B.foreign_type = 'Reference' AND B.use_flag = 0
+        WHERE
+            A.use_flag = 0
+          AND A.delete_flag = 0
+        ORDER BY
+            UNIX_TIMESTAMP(A.reg_date) DESC
+        limit 10
+    </select>
+
+    <resultMap id="ReferenceDetailResultMap" type="kr.co.nextplayer.base.board.model.Reference">
+        <id column="reference_id" property="referenceId"/>
+        <result column="title" property="title"/>
+        <result column="content" property="content"/>
+        <result column="reg_date" property="regDate"/>
+        <association property="files" javaType="kr.co.nextplayer.base.file.model.PublicFileModel">
+            <result column="public_file_id" property="publicFileId"/>
+            <result column="file_save_name" property="fileSaveName"/>
+            <result column="file_name" property="fileName"/>
+            <result column="file_save_path" property="fileSavePath"/>
+            <result column="file_ext" property="fileExt"/>
+            <result column="file_size" property="fileSize"/>
+        </association>
+    </resultMap>
+    <!-- 자료실 상세 -->
+    <select id="selectReferenceInfo" parameterType="kr.co.nextplayer.base.board.dto.ReferenceDto" resultMap="ReferenceDetailResultMap">
+        SELECT
+            A.reference_id,
+            A.title,
+            A.content,
+            A.reg_date,
+            B.public_file_id,
+            B.file_save_name,
+            B.file_name,
+            B.file_save_path,
+            B.file_ext,
+            B.file_size
+        FROM
+            Reference A
+            LEFT OUTER JOIN Public_File B ON B.foreign_type = 'Reference' AND A.reference_id = B.foreign_id
+        WHERE
+            A.use_flag = 0
+            AND A.delete_flag = 0
+            AND (B.use_flag = 0 OR B.use_flag IS NULL)
+            AND A.reference_id = #{referenceId}
+    </select>
+
+    <!-- 결과 수정 요청 -->
+    <insert id="insertModifyResult" parameterType="kr.co.nextplayer.base.board.dto.ModifyResultReqDto" >
+        INSERT INTO Request
+            (member_cd,
+             <if test="foreignParentId != null and foreignParentId != ''">
+                foreign_parent_id,
+             </if>
+             <if test="foreignParentType != null and foreignParentType != ''">
+                foreign_parent_type,
+             </if>
+             <if test="foreignId != null and foreignId != ''">
+                foreign_id,
+             </if>
+             <if test="foreignType != null and foreignType != ''">
+                foreign_type,
+             </if>
+             request_type,
+             content,
+             reg_date,
+             upd_date)
+        VALUES
+            (#{memberCd},
+             <if test="foreignParentId != null and foreignParentId != ''">
+                 #{foreignParentId},
+             </if>
+             <if test="foreignParentType != null and foreignParentType != ''">
+                 #{foreignParentType},
+             </if>
+             <if test="foreignId != null and foreignId != ''">
+                 #{foreignId},
+             </if>
+             <if test="foreignType != null and foreignType != ''">
+                 #{foreignType},
+             </if>
+             #{requestType},
+             #{content},
+             NOW(),
+             NOW()
+             )
+
+        <selectKey order="AFTER" keyProperty="requestId" resultType="String">
+            SELECT LAST_INSERT_ID();
+        </selectKey>
+    </insert>
+
+    <!-- 1:1 문의 -->
+    <insert id="insertBoard" parameterType="kr.co.nextplayer.base.board.dto.BoardReqDto" >
+        INSERT INTO Board
+        (member_cd, title, content, board_type, type, reg_date)
+        VALUES
+            (#{memberCd}, #{title}, #{content}, #{boardType}, #{type}, NOW())
+        <selectKey order="AFTER" keyProperty="boardId" resultType="String">
+            SELECT LAST_INSERT_ID();
+        </selectKey>
+    </insert>
+
+    <!-- 1:1문의 내역 -->
+    <select id="selectBoardList" parameterType="String" resultMap="BoardResultMap">
+        select
+            a.member_cd,
+            a.board_id,
+            a.title,
+            a.content,
+            a.board_type,
+            a.type,
+            a.answer,
+            a.answer_flag,
+            a.answer_date,
+            a.use_flag,
+            a.reg_date,
+            b.id AS file_id,
+            b.name,
+            b.original_name,
+            b.path,
+            CONCAT(b.path, '/', b.name) AS file_path,
+            c.file_name,
+            SUBSTRING(c.file_save_path, LENGTH('/content_nextplayer') + 1) AS file_save_path
+          from
+              Board a
+              left outer join media_file b on b.foreign_type = 'board' AND a.board_id = b.foreign_id
+              left outer join Public_File c on c.foreign_type = 'Board' AND a.board_id = c.foreign_id and c.use_flag = '0'
+         where a.member_cd = #{value}
+         order by reg_date desc
+    </select>
+
+    <!-- 1:1문의 내역 -->
+    <select id="selectBoardDetail" parameterType="hashMap" resultMap="BoardResultMap">
+        select
+            a.member_cd,
+            a.board_id,
+            a.title,
+            a.content,
+            a.board_type,
+            a.type,
+            a.answer,
+            a.answer_flag,
+            a.answer_date,
+            a.use_flag,
+            a.reg_date,
+            b.id AS file_id,
+            b.name,
+            b.original_name,
+            b.path,
+            CONCAT(b.path, '/', b.name) AS file_path,
+            c.file_name,
+            SUBSTRING(c.file_save_path, LENGTH('/content_nextplayer') + 1) AS file_save_path
+        from
+            Board a
+            left outer join media_file b on b.foreign_type = 'board' AND a.board_id = b.foreign_id
+            left outer join Public_File c on c.foreign_type = 'Board' AND a.board_id = c.foreign_id and c.use_flag = '0'
+        where a.member_cd = #{memberCd}
+          and a.board_id = #{boardId}
+    </select>
+
+    <resultMap id="NoticeListResultMap" type="kr.co.nextplayer.base.board.model.Notice">
+        <id column="board_id" jdbcType="VARCHAR" property="boardId"/>
+        <result column="content" jdbcType="VARCHAR" property="content"/>
+        <result column="title" property="title"/>
+        <result column="content" property="content"/>
+
+        <result column="use_flag" jdbcType="VARCHAR" property="useFlag"/>
+        <result column="reg_date" jdbcType="VARCHAR" property="regDate"/>
+        <result column="parse_date" jdbcType="VARCHAR" property="parseDate"/>
+
+        <association property="thumbImg" javaType="kr.co.nextplayer.base.board.model.PublicFile">
+            <result column="public_file_id" property="publicFileId" />
+            <result column="file_name" property="fileName" />
+            <result column="path" property="path" />
+            <result column="file_save_path" property="fileSavePath"/>
+        </association>
+    </resultMap>
+
+    <select id="selectNoticeListCount" parameterType="kr.co.nextplayer.base.board.dto.BoardReqDto" resultType="_int">
+        SELECT
+            COUNT(1)
+        FROM
+            Board
+        WHERE
+            use_flag = 0
+            <if test="sKeyword != null and sKeyword != ''">
+            AND (title LIKE CONCAT('%', #{sKeyword} ,'%') OR content LIKE CONCAT('%', #{sKeyword}, '%'))
+            </if>
+            AND board_type = '1'
+    </select>
+
+    <select id="selectMainNotice" parameterType="kr.co.nextplayer.base.board.dto.BoardReqDto" resultType="kr.co.nextplayer.base.board.model.Notice">
+        SELECT
+            board_id AS boardId,
+            title
+        FROM
+            board
+        WHERE
+            use_flag = 0
+            AND board_type = '1'
+            AND show_flag = '0'
+        ORDER BY
+            board_id DESC
+        LIMIT 1
+    </select>
+
+    <select id="selectNoticeList" parameterType="kr.co.nextplayer.base.board.dto.BoardReqDto" resultMap="NoticeListResultMap">
+        SELECT
+            A.board_id,
+            A.title,
+            A.use_flag,
+            DATE_FORMAT(A.reg_date, '%Y-%m-%d') AS reg_date,
+            DATE_FORMAT(A.reg_date, '%m-%d') AS parse_date,
+            B.public_file_id,
+            B.file_name,
+            SUBSTRING(B.file_save_path, LENGTH('/content_nextplayer') + 1) AS file_save_path
+        FROM
+            Board A
+            LEFT OUTER JOIN Public_File B ON B.foreign_type = 'Notice' AND sub_type = 'imgFile' AND A.board_id = B.foreign_id AND B.use_flag = 0
+            /*LEFT OUTER JOIN (
+                            SELECT
+                                foreign_id,
+                                public_file_id,
+                                file_name,
+                                SUBSTRING(file_save_path, LENGTH('/content_nextplayer') + 1) AS file_save_path
+                            FROM
+                                Public_File
+                            WHERE
+                                foreign_type = 'Notice'
+                                AND sub_type = 'imgFile'
+                                AND use_flag = 0
+                            ORDER BY
+                                public_file_id
+                            LIMIT 1
+            ) B ON A.board_id = B.foreign_id*/
+        WHERE
+            A.use_flag = 0
+            <if test="sKeyword != null and sKeyword != ''">
+            AND (title LIKE CONCAT('%', #{sKeyword} ,'%') OR content LIKE CONCAT('%', #{sKeyword}, '%'))
+            </if>
+            AND A.board_type = '1'
+        ORDER BY
+            A.board_id DESC
+        LIMIT
+            #{offset}, #{pageSize}
+    </select>
+
+    <resultMap id="NoticeDetailResultMap" type="kr.co.nextplayer.base.board.model.Notice">
+        <id column="board_id" property="boardId"/>
+        <result column="title" property="title"/>
+        <result column="content" property="content"/>
+        <result column="view_cnt" property="viewCnt"/>
+        <result column="reg_date" property="regDate"/>
+        <association property="noticeFiles" javaType="kr.co.nextplayer.base.board.model.PublicFile">
+            <result column="public_file_id" property="publicFileId"/>
+            <result column="file_save_name" property="fileSaveName"/>
+            <result column="file_name" property="fileName"/>
+            <result column="file_save_path" property="fileSavePath"/>
+            <result column="file_ext" property="fileExt"/>
+            <result column="file_size" property="fileSize"/>
+        </association>
+        <association property="imgFiles" javaType="kr.co.nextplayer.base.board.model.PublicFile">
+            <result column="img_public_file_id" property="publicFileId"/>
+            <result column="img_file_save_name" property="fileSaveName"/>
+            <result column="img_file_name" property="fileName"/>
+            <result column="img_file_save_path" property="fileSavePath"/>
+            <result column="img_file_ext" property="fileExt"/>
+            <result column="img_file_size" property="fileSize"/>
+        </association>
+    </resultMap>
+
+    <select id="selectNoticeInfo" parameterType="kr.co.nextplayer.base.board.dto.BoardReqDto" resultMap="NoticeDetailResultMap">
+        SELECT
+            A.board_id,
+            A.title,
+            A.content,
+            A.view_cnt,
+            DATE_FORMAT(A.reg_date, '%Y-%m-%d') AS reg_date,
+            DATE_FORMAT(A.reg_date, '%m-%d') AS parse_date,
+            B.public_file_id,
+            B.file_save_name,
+            B.file_name,
+            B.file_save_path,
+            B.file_ext,
+            B.file_size,
+            C.public_file_id AS img_public_file_id,
+            C.file_save_name AS img_file_save_name,
+            C.file_name AS img_file_name,
+            SUBSTRING(C.file_save_path, LENGTH('/content_nextplayer') + 1) AS img_file_save_path,
+            C.file_ext AS img_file_ext,
+            C.file_size AS img_file_size
+        FROM
+            Board A
+            LEFT OUTER JOIN Public_File B ON B.foreign_type = 'Notice' AND B.sub_type IS NULL AND A.board_id = B.foreign_id AND B.use_flag = 0
+            LEFT OUTER JOIN Public_File C ON C.foreign_type = 'Notice' AND C.sub_type = 'imgFile' AND A.board_id = C.foreign_id AND C.use_flag = 0
+        WHERE
+            A.use_flag = 0
+            AND A.board_id = #{boardId}
+    </select>
+
+    <update id="updateBoardViewCnt" parameterType="hashmap">
+        UPDATE
+            Board
+        SET
+            view_cnt = #{viewCnt}
+        WHERE
+            board_id = #{boardId}
+    </update>
+
+    <resultMap id="BannerListResultMap" type="kr.co.nextplayer.base.board.model.Banner">
+        <id column="banner_id" jdbcType="VARCHAR" property="bannerId"/>
+        <result column="title" property="title"/>
+        <result column="url_link" property="urlLink"/>
+        <result column="url_app_link" property="urlAppLink"/>
+        <result column="banner_type" property="bannerType"/>
+        <result column="banner_app_type" property="bannerAppType"/>
+        <result column="auth_flag" property="authFlag"/>
+        <result column="open_flag" property="openFlag"/>
+        <result column="config_key" property="configKey"/>
+
+        <association property="imgFiles" javaType="kr.co.nextplayer.base.board.model.PublicFile">
+            <result column="public_file_id" property="publicFileId" />
+            <result column="file_name" property="fileName" />
+            <result column="path" property="path" />
+            <result column="file_save_path" property="fileSavePath"/>
+            <result column="sub_type" property="subType" />
+        </association>
+    </resultMap>
+
+    <select id="selectBannerList" parameterType="kr.co.nextplayer.base.board.dto.BoardReqDto" resultMap="BannerListResultMap">
+        SELECT
+            A.banner_id,
+            A.title,
+            A.url_link,
+            A.url_app_link,
+            A.banner_type,
+            A.banner_app_type,
+            A.auth_flag,
+            B.public_file_id,
+            B.file_name,
+            SUBSTRING(B.file_save_path, LENGTH('/content_nextplayer') + 1) AS file_save_path,
+            B.sub_type,
+            C.open_flag
+        FROM
+            banner A
+            LEFT OUTER JOIN Public_File B ON B.foreign_type = 'Banner' AND A.banner_id = B.foreign_id AND B.use_flag = 0
+            INNER JOIN main_banner C ON A.banner_id = C.foreign_id AND C.foreign_type = 'Banner'
+        WHERE
+            A.use_flag = 0
+            AND C.use_flag = 0
+            AND NOW() BETWEEN C.show_sdate and C.show_edate
+        ORDER BY
+            C.banner_order
+    </select>
+
+    <update id="updateViewCnt" parameterType="java.util.HashMap">
+        UPDATE
+            ${type}
+        SET view_cnt = view_cnt + 1
+        WHERE
+            <choose>
+                <when test="type == 'Banner'">
+                banner_id = #{pk}
+                </when>
+                <when test="type == 'Education'">
+                education_id = #{pk}
+                </when>
+                <when test="type == 'Popup'">
+                    popup_id = #{pk}
+                </when>
+            </choose>
+    </update>
+
+
+    <resultMap id="PopupListResultMap" type="kr.co.nextplayer.base.board.model.Popup">
+        <id column="popup_id" jdbcType="VARCHAR" property="popupId"/>
+        <result column="title" property="title"/>
+        <result column="url_link" property="urlLink"/>
+        <result column="url_app_link" property="urlAppLink"/>
+        <result column="popup_type" property="popupType"/>
+        <result column="popup_app_type" property="popupAppType"/>
+        <result column="auth_flag" property="authFlag"/>
+
+        <association property="imgFiles" javaType="kr.co.nextplayer.base.board.model.PublicFile">
+            <result column="public_file_id" property="publicFileId" />
+            <result column="file_name" property="fileName" />
+            <result column="path" property="path" />
+            <result column="file_save_path" property="fileSavePath"/>
+            <result column="sub_type" property="subType" />
+        </association>
+    </resultMap>
+
+    <select id="selectPopupList" parameterType="kr.co.nextplayer.base.board.dto.BoardReqDto" resultMap="PopupListResultMap">
+        SELECT
+            A.popup_id,
+            A.title,
+            A.url_link,
+            A.url_app_link,
+            A.popup_type,
+            A.popup_app_type,
+            A.auth_flag,
+            B.public_file_id,
+            B.file_name,
+            SUBSTRING(B.file_save_path, LENGTH('/content_nextplayer') + 1) AS file_save_path
+        FROM
+            popup A
+            LEFT OUTER JOIN Public_File B ON B.foreign_type = 'Popup' AND A.popup_id = B.foreign_id AND B.use_flag = 0
+        WHERE
+            A.use_flag = 0
+            AND A.show_flag = 0
+            AND NOW() BETWEEN A.show_sdate and A.show_edate
+        ORDER BY
+            A.popup_id DESC
+    </select>
+
+    <resultMap id="SubBannerListResultMap" type="kr.co.nextplayer.base.board.model.Banner">
+        <id column="banner_cross_id" jdbcType="VARCHAR" property="bannerCrossId"/>
+        <result column="banner_id" property="bannerId"/>
+        <result column="title" property="title"/>
+        <result column="url_link" property="urlLink"/>
+        <result column="url_app_link" property="urlAppLink"/>
+        <result column="banner_type" property="bannerType"/>
+        <result column="banner_app_type" property="bannerAppType"/>
+        <result column="auth_flag" property="authFlag"/>
+        <result column="open_flag" property="openFlag"/>
+        <result column="config_key" property="configKey"/>
+
+        <association property="imgFiles" javaType="kr.co.nextplayer.base.board.model.PublicFile">
+            <result column="public_file_id" property="publicFileId" />
+            <result column="file_name" property="fileName" />
+            <result column="path" property="path" />
+            <result column="file_save_path" property="fileSavePath"/>
+            <result column="sub_type" property="subType" />
+        </association>
+    </resultMap>
+
+    <select id="selectSubBannerList" parameterType="java.lang.String" resultMap="SubBannerListResultMap">
+        SELECT
+            C.banner_cross_id,
+            A.banner_id,
+            A.title,
+            A.url_link,
+            A.url_app_link,
+            A.banner_type,
+            A.banner_app_type,
+            A.auth_flag,
+            B.public_file_id,
+            B.file_name,
+            SUBSTRING(B.file_save_path, LENGTH('/content_nextplayer') + 1) AS file_save_path,
+            B.sub_type,
+            D.config_key
+        FROM
+            banner A
+            LEFT OUTER JOIN Public_File B ON B.foreign_type = 'Banner' AND A.banner_id = B.foreign_id AND B.use_flag = 0
+            INNER JOIN banner_cross C ON A.banner_id = C.banner_id
+            INNER JOIN banner_config D on C.banner_config_id = D.banner_config_id
+        WHERE
+            A.use_flag = 0
+            AND C.use_flag = 0
+            AND C.show_flag = 0
+            AND D.use_flag = 0
+            AND D.show_flag = 0
+            <choose>
+                <when test="key.equals('cup')">
+                    AND D.config_key LIKE CONCAT('%', #{key}, '%')
+                </when>
+                <otherwise>
+                    AND D.config_key = #{key}
+                </otherwise>
+            </choose>
+            <if test='uage != null and uage != ""'>
+                AND (C.uage = null or C.uage = #{uage})
+            </if>
+            AND NOW() BETWEEN C.show_sdate and C.show_edate
+        ORDER BY
+            C.banner_order
+    </select>
+
+</mapper>

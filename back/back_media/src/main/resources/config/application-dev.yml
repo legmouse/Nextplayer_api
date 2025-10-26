@@ -1,0 +1,12 @@
+server.port: 8085
+
+spring:
+  redis:
+    host: 210.216.122.200
+    port: 7617
+  kafka:
+    bootstrap-servers:
+      - "127.0.0.1:9092"
+    consumer:
+      auto-offset-reset: earliest
+      group-id: admin-consumer

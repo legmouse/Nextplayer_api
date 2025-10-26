@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.co.nextplayer.base.front.mapper.test.TestMapper">
+
+    <resultMap id="testMap" type="kr.co.nextplayer.base.front.model.test.Test">
+        <id column="member_cd" jdbcType="VARCHAR" property="memberCd"/>
+        <result column="test" jdbcType="VARCHAR" property="test"/>
+    </resultMap>
+
+    <select id="getTestData" parameterType="String" resultMap="testMap">
+        select member_cd
+                , 1 as test
+          from member
+         where member_cd = #{memberCd}
+    </select>
+
+    <select id="getTestDataNoToken" resultMap="testMap">
+        select member_cd
+             , 1 as test
+        from member
+        limit 1
+    </select>
+
+</mapper>

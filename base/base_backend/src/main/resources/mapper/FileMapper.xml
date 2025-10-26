@@ -1,0 +1,133 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.co.nextplayer.base.backend.mapper.FileMapper">
+
+    <insert id="insertFileInfo" parameterType="kr.co.nextplayer.base.backend.dto.AttchFileInfoDto">
+        INSERT INTO Public_File(
+            foreign_id,
+            foreign_type,
+            <if test="subType != null and subType != ''">
+            sub_type,
+            </if>
+            file_save_name,
+            file_name,
+            file_save_path,
+            file_ext,
+            file_size,
+            file_url
+        )VALUES(
+            #{foreignId},
+            #{foreignType},
+            <if test="subType != null and subType != ''">
+            #{subType},
+            </if>
+            #{fileSaveName},
+            #{fileName},
+            #{fileSavePath},
+            #{fileExt},
+            #{fileSize},
+            #{fileUrl}
+        )
+    </insert>
+
+    <insert id="insertSummernoteFileInfo" parameterType="kr.co.nextplayer.base.backend.dto.AttchFileInfoDto">
+        INSERT INTO Public_File(
+        foreign_id,
+        foreign_type,
+        file_save_name,
+        file_name,
+        file_save_path,
+        file_ext,
+        file_size,
+        file_url
+        )VALUES(
+        #{foreignId},
+        #{foreignType},
+        #{fileSaveName},
+        #{fileName},
+        #{fileSavePath},
+        #{fileExt},
+        #{fileSize},
+        #{fileUrl}
+        )
+    </insert>
+
+    <select id="selectFileInfoList" parameterType="kr.co.nextplayer.base.backend.dto.AttchFileInfoDto" resultType="kr.co.nextplayer.base.backend.dto.AttchFileInfoDto">
+        SELECT
+            public_file_id,
+            file_save_name,
+            file_name,
+            file_save_path,
+            file_ext,
+            file_size
+        FROM
+            Public_File
+        WHERE
+            1=1
+          AND use_flag = '0'
+          AND foreign_id = #{foreignId}
+          AND foreign_type = #{foreignType}
+          <choose>
+              <when test="subType != '' and subType != null">
+                <choose>
+                    <when test="subType == 'imgFile'">
+                        AND sub_type = 'imgFile'
+                    </when>
+                    <otherwise>
+                        AND sub_type = #{subType}
+                    </otherwise>
+                </choose>
+              </when>
+              <otherwise>
+          AND sub_type IS NULL
+              </otherwise>
+          </choose>
+    </select>
+
+    <delete id="deleteFileInfo" parameterType="kr.co.nextplayer.base.backend.dto.AttchFileInfoDto">
+        UPDATE
+            Public_File
+        SET
+            use_flag = '1'
+        WHERE
+            public_file_id = #{publicFileId}
+    </delete>
+
+    <delete id="deleteFile" parameterType="kr.co.nextplayer.base.backend.dto.AttchFileInfoDto">
+        UPDATE
+            Public_File
+        SET
+            use_flag = '1'
+        WHERE
+            foreign_type = #{foreignType}
+            AND foreign_id = #{foreignId}
+            AND use_flag = '0'
+    </delete>
+
+    <select id="selectFileInfoView" parameterType="kr.co.nextplayer.base.backend.dto.AttchFileInfoDto" resultType="kr.co.nextplayer.base.backend.dto.AttchFileInfoDto">
+        SELECT
+            public_file_id,
+            file_save_name,
+            file_name,
+            file_save_path,
+            file_ext,
+            file_size,
+            file_url
+        FROM Public_File
+        WHERE public_file_id = #{publicFileId}
+          AND use_flag = '0'
+    </select>
+
+    <select id="selectMediaFileInfoView" parameterType="kr.co.nextplayer.base.backend.dto.MediaFileInfoDto" resultType="kr.co.nextplayer.base.backend.dto.MediaFileInfoDto">
+        SELECT
+            id AS file_id,
+            name,
+            original_name,
+            path,
+            CONCAT('/content_nextplayer/', path, '/', name) AS file_save_path,
+            SUBSTRING_INDEX(name, '.', -1) AS file_ext
+        FROM media_file
+        WHERE id = #{fileId}
+    </select>
+
+</mapper>

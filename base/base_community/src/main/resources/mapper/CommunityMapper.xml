@@ -1,0 +1,203 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.co.nextplayer.base.community.mapper.CommunityMapper">
+
+    <insert id="insertCommunity" parameterType="kr.co.nextplayer.base.community.dto.CommunityReqDto">
+        INSERT INTO Community (
+            member_cd, title, content, type
+            <if test="subType != null and subType !=''"> ,sub_type </if>
+        ) VALUES (
+            #{memberCd}, #{title}, #{content}, #{type}
+            <if test="subType != null and subType !=''"> ,#{subType} </if>
+        )
+        <selectKey order="AFTER" keyProperty="foreignId" resultType="String">
+            SELECT LAST_INSERT_ID();
+        </selectKey>
+    </insert>
+
+    <select id="selectCommunityListCount" parameterType="kr.co.nextplayer.base.community.dto.CommunityListReqDto" resultType="_int">
+        SELECT
+            COUNT(1)
+        FROM
+            Community
+        WHERE
+            use_flag = 0
+            AND delete_flag = 0
+            <if test="sKeyword != null and sKeyword != ''">
+                AND (title LIKE CONCAT('%', #{sKeyword}, '%') OR content LIKE CONCAT('%', #{sKeyword}, '%'))
+            </if>
+            <if test="type != null and type != ''">
+                AND type = #{type}
+            </if>
+            <if test="subType != null and subType != ''">
+                AND sub_type = #{subType}
+            </if>
+    </select>
+
+    <resultMap id="CommunityListResultMap" type="kr.co.nextplayer.base.community.model.Community">
+        <id column="community_id" jdbcType="VARCHAR" property="communityId"/>
+        <result column="member_cd" jdbcType="VARCHAR" property="memberCd"/>
+        <result column="title" jdbcType="VARCHAR" property="title"/>
+        <result column="content" jdbcType="VARCHAR" property="content"/>
+        <result column="source" jdbcType="VARCHAR" property="source"/>
+        <result column="type" jdbcType="VARCHAR" property="type"/>
+        <result column="sub_type" jdbcType="VARCHAR" property="subType"/>
+        <result column="reply_cnt" jdbcType="VARCHAR" property="replyCnt"/>
+        <result column="likes_cnt" jdbcType="VARCHAR" property="likesCnt"/>
+        <result column="view_cnt" jdbcType="VARCHAR" property="viewCnt"/>
+        <result column="reg_date" jdbcType="VARCHAR" property="regDate"/>
+    </resultMap>
+
+    <select id="selectCommunityList" parameterType="kr.co.nextplayer.base.community.dto.CommunityListReqDto" resultMap="CommunityListResultMap">
+        SELECT
+            A.community_id,
+            member_cd,
+            title,
+            content,
+            type,
+            CASE
+                WHEN sub_type = '0' THEN '이슈'
+                WHEN sub_type = '1' THEN '조언'
+                WHEN sub_type = '2' THEN '문의'
+            END AS sub_type,
+            DATE_FORMAT(reg_date, '%Y-%m-%d') AS reg_date
+            , IFNULL(B.cnt, 0) AS reply_cnt
+            , IFNULL(C.cnt, 0) AS likes_cnt
+            , IFNULL(A.view_cnt, 0) AS view_cnt
+        FROM
+            Community A
+            LEFT JOIN(
+                        SELECT
+                            COUNT(1) AS cnt,
+                            A.community_id
+                        FROM
+                            Community A
+                            INNER JOIN Reply B ON A.community_id = B.community_id
+                        WHERE
+                            B.use_flag = 0
+                        GROUP BY
+                            A.community_id
+                    ) B ON A.community_id = B.community_id
+            LEFT JOIN(
+                        SELECT
+                            COUNT(1) AS cnt,
+                            foreign_id
+                        FROM
+                            Likes
+                        WHERE
+                            use_flag = 0
+                            AND foreign_type = 'Community'
+                    ) C ON A.community_id = C.foreign_id
+        WHERE
+            use_flag = 0 AND delete_flag = 0
+            <if test="sKeyword != null and sKeyword != ''">
+                AND (title LIKE CONCAT('%', #{sKeyword}, '%') OR content LIKE CONCAT('%', #{sKeyword}, '%'))
+            </if>
+            <if test="subType != null and subType != ''">
+                AND sub_type = #{subType}
+            </if>
+        ORDER BY
+            <choose>
+                <when test="orderType == 'regDate'">
+                    community_id DESC
+                </when>
+                <when test="orderType == 'view'">
+                    view_cnt DESC
+                </when>
+            </choose>
+        LIMIT
+            #{sRow}, #{eCount}
+    </select>
+
+
+    <resultMap id="CommunityDetailResultMap" type="kr.co.nextplayer.base.community.model.Community">
+        <id column="community_id" jdbcType="VARCHAR" property="communityId"/>
+        <result column="member_cd" jdbcType="VARCHAR" property="memberCd"/>
+        <result column="title" jdbcType="VARCHAR" property="title"/>
+        <result column="content" jdbcType="VARCHAR" property="content"/>
+        <result column="type" jdbcType="VARCHAR" property="type"/>
+        <result column="sub_type" jdbcType="VARCHAR" property="subType"/>
+        <result column="likes_cnt" jdbcType="VARCHAR" property="likesCnt"/>
+        <result column="view_cnt" jdbcType="VARCHAR" property="viewCnt"/>
+        <result column="reg_date" jdbcType="VARCHAR" property="regDate"/>
+        <collection property="fileId" ofType="java.lang.String">
+            <result column="file_id" property="fileId"/>
+        </collection>
+    </resultMap>
+    <select id="selectCommunityDetail" parameterType="kr.co.nextplayer.base.community.dto.CommunityDetailReqDto" resultMap="CommunityDetailResultMap">
+        SELECT
+            A.community_id,
+            A.member_cd,
+            A.title,
+            A.content,
+            A.type,
+            CASE
+                WHEN A.sub_type = '0' THEN '이슈'
+                WHEN A.sub_type = '1' THEN '조언'
+                WHEN A.sub_type = '2' THEN '문의'
+                END AS sub_type,
+            DATE_FORMAT(A.reg_date, '%Y-%m-%d') AS reg_date,
+            B.id AS file_id,
+            IFNULL(C.cnt, 0) AS likes_cnt,
+            IFNULL(A.view_cnt, 0) AS view_cnt
+        FROM
+            Community A
+            LEFT JOIN media_file B ON A.community_id = B.foreign_id
+            LEFT JOIN(
+                SELECT
+                    COUNT(1) AS cnt
+                     ,foreign_id
+                FROM
+                    Likes
+                WHERE
+                    use_flag = 0
+                  AND foreign_type = 'community'
+            ) C ON A.community_id = C.foreign_id
+        WHERE
+            A.community_id = #{communityId}
+            AND use_flag = 0
+            AND delete_flag = 0
+    </select>
+
+    <update id="deleteCommunity" parameterType="String">
+        UPDATE
+            Community
+        SET
+            use_flag = '1',
+            delete_flag = '1',
+            upt_date = CURRENT_TIMESTAMP
+        WHERE
+            community_id = #{communityId}
+            /*AND member_cd = #{memberCd}*/
+    </update>
+
+    <update id="updateCommunity" parameterType="kr.co.nextplayer.base.community.dto.CommunityUpdateReqDto">
+        UPDATE
+            Community
+        <set>
+            <if test="title != null and title !=''">
+                title = #{title},
+            </if>
+            <if test="content != null and content !=''">
+                content = #{content},
+            </if>
+            <if test="subType != null and subType !=''">
+                sub_type = #{subType},
+            </if>
+            upt_date = CURRENT_TIMESTAMP
+        </set>
+        WHERE
+            community_id = #{communityId}
+            AND member_cd = #{memberCd}
+    </update>
+
+    <update id="updateCommunityViewCnt" parameterType="hashMap">
+        UPDATE
+            Community
+        SET
+            view_cnt = #{viewCnt}
+        WHERE
+            community_id = #{communityId}
+    </update>
+
+</mapper>

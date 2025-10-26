@@ -1,0 +1,16 @@
+server.port: 8111
+
+spring:
+  redis:
+    host: 127.0.0.1
+    port: 7617
+
+base_front:
+  grpc:
+    login: gproto+http://127.0.0.1:8112/
+
+nextplayer:
+  domainPath: https://mobile.nextplayer.co.kr
+
+logging:
+  config: classpath:config/logback-spring-prod.xml

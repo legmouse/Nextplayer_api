@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.co.nextplayer.base.backend.mapper.UageMapper">
+
+    <!--<select id="checkUserWithSessionKey" parameterType="hashmap"  resultType="hashmap">
+        SELECT * FROM User WHERE session_key = #{sessionId} AND session_date > now()
+    </select>-->
+
+    <select id="selectAreaList" parameterType="hashmap" resultType="hashmap">
+        SELECT *
+        FROM Area
+        WHERE use_flag = 0
+        <if test="areaSearch != null and !areaSearch.equals('') and areaSearch > 0 ">
+            AND area_name = #{sAreaName}
+        </if>
+        AND uage = #{ageGroup}
+
+        <if test="areaId != null and !areaId.equals('')  ">
+            AND area_id = #{area}
+        </if>
+
+    </select>
+
+    <!-- 설정 - 광역 정보 -->
+    <select id="selectAreaListCount" parameterType="hashmap" resultType="hashmap">
+        SELECT COUNT(*) AS totalCount
+        FROM Area
+        WHERE use_flag = 0
+        <if test="areaSearch != null and !areaSearch.equals('') and areaSearch > 0 ">
+            AND area_name = #{sAreaName}
+        </if>
+        AND uage = #{ageGroup}
+    </select>
+
+    <select id="selectAreaCount" parameterType="hashmap" resultType="hashmap">
+        SELECT COUNT(*) AS count
+        FROM Area
+        WHERE use_flag = 0
+          AND uage = #{selUage}
+          AND area_name = #{areaName}
+    </select>
+
+    <!-- 설정 - 광역 등록-->
+    <insert id="insertArea" parameterType="hashmap" >
+        <![CDATA[
+		INSERT INTO Area
+		(uage, area_name, reg_date)
+		VALUES
+		(#{selUage}, #{areaName}, now());
+		]]>
+
+        <selectKey resultType="int" keyProperty="areaId" order="AFTER">
+            SELECT LAST_INSERT_ID();
+        </selectKey>
+    </insert>
+
+
+    <!-- 설정 - 광역 수정-->
+    <update id="updateArea" parameterType="hashmap" >
+        UPDATE Area
+        SET
+        <choose>
+            <when test="useFlag != null and !useFlag.equals('') and useFlag > 0 ">
+                use_flag = #{useFlag}
+            </when>
+            <otherwise>
+                uage = #{selUage},
+                area_name = #{areaName} ,
+                show_flag = #{showFlag}
+            </otherwise>
+        </choose>
+        WHERE area_id = #{areaId}
+    </update>
+
+    <!-- 메뉴 가져오기 -->
+    <select id="selectCategoryMenu" parameterType="string" resultType="hashMap">
+        SELECT
+            category_name,
+            category_cd,
+            code_value
+        FROM
+            Category
+        WHERE
+            use_flag = 0
+            AND parent_cd = #{categoryType}
+            AND show_flag = '0'
+    </select>
+
+    <select id="selectCreatorList" parameterType="string" resultType="hashmap">
+        SELECT
+            creator_id,
+            creator_name,
+            media_type
+        FROM
+            Creator
+        WHERE
+            media_type = #{mediaType}
+            AND use_flag = 0
+    </select>
+
+    <update id="updateInterestAge" parameterType="java.lang.String">
+        UPDATE
+            Uage
+        SET interest_flag = '0'
+        WHERE interest_flag = '1';
+
+        UPDATE
+            Uage
+        SET interest_flag = '1'
+        WHERE uage_id = #{uageId}
+    </update>
+
+    <update id="updateHideAgeReset">
+        UPDATE
+            Uage
+        SET hide_age = '[]'
+    </update>
+
+    <update id="updateHideAge" parameterType="hashmap">
+        UPDATE
+            Uage
+        SET
+            hide_age =#{valueArr, typeHandler=kr.co.nextplayer.lib.util.mybatis.JsonTypeHandler}
+        WHERE
+            uage_id = #{uageId}
+    </update>
+
+</mapper>

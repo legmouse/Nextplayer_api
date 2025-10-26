@@ -1,0 +1,160 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.co.nextplayer.base.backend.mapper.CreatorMapper">
+
+    <select id="selectCreatorListCnt" parameterType="hashmap" resultType="_int">
+        SELECT
+            COUNT(1)
+        FROM
+            Creator
+        WHERE
+            media_type = #{mediaType}
+            AND use_flag = 0
+            <if test="sKeyword != null and sKeyword != ''">
+            AND creator_name LIKE CONCAT('%', #{sKeyword}, '%')
+            </if>
+    </select>
+
+    <!-- 미디어 리스트 -->
+    <select id="selectCreatorList" parameterType="hashmap" resultType="hashmap">
+        SELECT
+            creator_id,
+            media_type,
+            creator_name,
+            url_link,
+            channel_id,
+            use_flag,
+            show_flag,
+            DATE_FORMAT(reg_date ,'%Y-%m-%d') AS reg_date
+        FROM
+            Creator
+        WHERE
+            media_type = #{mediaType}
+            AND use_flag = 0
+            <if test="sKeyword != null and sKeyword != ''">
+                AND creator_name LIKE CONCAT('%', #{sKeyword}, '%')
+            </if>
+        ORDER BY
+            creator_id DESC
+        LIMIT ${sRow}, ${eCount}
+    </select>
+
+    <resultMap id="CreatorInfoResultMap" type="java.util.HashMap">
+        <id property="creator_id" column="creator_id"/>
+        <result property="media_type" column="media_type"/>
+        <result property="creator_name" column="creator_name"/>
+        <result property="url_link" column="url_link"/>
+        <result property="channel_id" column="channel_id"/>
+        <result property="use_flag" column="use_flag"/>
+        <result property="reg_date" column="reg_date"/>
+        <!--<collection property="imgFiles" ofType="java.util.HashMap" javaType="java.util.List">
+            <result property="public_file_id" column="public_file_id"/>
+            <result property="file_save_name" column="file_save_name"/>
+            <result property="sub_type" column="sub_type"/>
+            <result property="file_name" column="file_name"/>
+            <result property="file_ext" column="file_ext"/>
+        </collection>-->
+    </resultMap>
+
+    <select id="selectCreatorInfo" parameterType="hashmap" resultMap="CreatorInfoResultMap">
+        SELECT
+            A.creator_id,
+            A.media_type,
+            A.creator_name,
+            A.url_link,
+            A.channel_id,
+            A.use_flag,
+            /*B.public_file_id,
+            B.file_save_name,
+            B.sub_type,
+            B.file_name,
+            B.file_ext,*/
+            DATE_FORMAT(A.reg_date ,'%Y-%m-%d') AS reg_date
+        FROM
+            Creator A
+            /*LEFT JOIN Public_File B ON foreign_type = 'Creator' AND A.creator_id = B.foreign_id AND B.use_flag = 0*/
+        WHERE
+            A.creator_id = #{creatorId}
+    </select>
+
+    <insert id="insertCreator" parameterType="hashmap">
+        INSERT INTO Creator (
+                            media_type,
+                            <if test="creatorName != null and creatorName != ''">
+                            creator_name,
+                            </if>
+                            url_link,
+                            <if test="channelId != null and channelId != ''">
+                            channel_id,
+                            </if>
+                            use_flag,
+                            reg_date
+                           )
+                    VALUES(
+                            #{mediaType},
+                            <if test="creatorName != null and creatorName != ''">
+                            #{creatorName},
+                            </if>
+                            #{urlLink},
+                            <if test="channelId != null and channelId != ''">
+                            #{channelId},
+                            </if>
+                            #{useFlag},
+                            NOW()
+                          )
+        <selectKey keyProperty="creatorId" order="AFTER" resultType="String">
+            SELECT LAST_INSERT_ID()
+        </selectKey>
+    </insert>
+
+    <update id="updateCreator" parameterType="hashmap">
+        UPDATE
+            Creator
+        SET
+            <if test="mediaType != null and mediaType != ''">
+                media_type = #{mediaType},
+            </if>
+            <if test="creatorName != null and creatorName != ''">
+                creator_name = #{creatorName},
+            </if>
+            <if test="urlLink != null and urlLink != ''">
+                url_link = #{urlLink},
+            </if>
+            <if test="channelId != null and channelId != ''">
+                channel_id = #{channelId},
+            </if>
+            <if test="useFlag != null and useFlag != ''">
+                use_flag = #{useFlag}
+            </if>
+        WHERE
+            creator_id = #{creatorId}
+    </update>
+
+    <update id="updateCreatorDelete" parameterType="hashmap">
+        UPDATE
+            Creator
+        SET
+            use_flag = 1
+        WHERE
+            creator_id = #{creatorId}
+    </update>
+
+    <select id="selectImgFileInfo" parameterType="hashmap" resultType="hashmap">
+        SELECT
+            public_file_id,
+            file_name,
+            file_save_name,
+            file_ext,
+            sub_type
+        FROM
+            Public_File
+        WHERE
+        use_flag = 0
+            AND foreign_id = #{foreignId}
+            AND foreign_type = #{foreignType}
+            <if test="subType != null and subType != ''">
+                AND sub_type = #{subType}
+            </if>
+    </select>
+
+</mapper>

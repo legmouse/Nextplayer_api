@@ -1,0 +1,50 @@
+server.port: 8111
+
+spring:
+  profiles:
+    active: dev
+    group:
+      local: base-datasource, local-override
+      dev: base-datasource, local-override
+      prod: base-datasource
+  main:
+    web-application-type: REACTIVE
+  redis:
+    host: 192.168.1.12
+    port: 6379
+  mvc:
+    pathmatch:
+      matching-strategy: ANT_PATH_MATCHER
+  batch:
+    job:
+      enabled: false
+
+mybatis:
+  mapper-locations: classpath*:mapper/**/*.xml
+  config-location: classpath:config/mybatis-config.xml
+
+nextplayer:
+  client-id: 546f189b39f0be980b43a5d16c006c09
+  language-cookie-name: alpha_languageinfo #다국어 구분 쿠키
+  root-file-path: home/nas_data/ypbook #파일 업로드 위치
+  domainPath: http://127.0.0.1:8111
+  jwt:
+    secretKey: renS0Mz6ESEItE6OiI9ALw==KToaP17AikIAWoals8fgJg==
+
+logging:
+    config: classpath:config/logback-spring.xml
+    file:
+        path: logs/back_front
+
+springfox:
+  documentation:
+    swagger-ui:
+      base-url: /back_front/api/docs
+    open-api:
+      v3:
+        path: /back_front/api/docs/v3/api-docs
+
+base_front:
+  grpc:
+    login: gproto+http://127.0.0.1:8112/
+

@@ -1,0 +1,637 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.co.nextplayer.base.community.mapper.RequestMapper">
+
+    <insert id="insertRequest" parameterType="kr.co.nextplayer.base.community.dto.RequestDto">
+        INSERT INTO Request
+            (member_cd,
+                <if test="parentId != null and parentId != ''">
+                    foreign_parent_id,
+                </if>
+                <if test="parentType != null and parentType != ''">
+                    foreign_parent_type,
+                </if>
+                <if test="foreignId != null and foreignId != ''">
+                    foreign_id,
+                </if>
+                <if test="foreignType != null and foreignType != ''">
+                    foreign_type,
+                </if>
+                content,
+                request_type,
+                reg_date,
+                upd_date
+            )
+            VALUES
+                (#{memberCd},
+                <if test="parentId != null and parentId != ''">
+                    #{parentId},
+                </if>
+                <if test="parentType != null and parentType != ''">
+                    #{parentType},
+                </if>
+                <if test="foreignId != null and foreignId != ''">
+                    #{foreignId},
+                </if>
+                <if test="foreignType != null and foreignType != ''">
+                    #{foreignType},
+                </if>
+                #{content},
+                #{requestType},
+                NOW(),
+                NOW()
+            )
+        <selectKey order="AFTER" keyProperty="requestId" resultType="String">
+            SELECT LAST_INSERT_ID();
+        </selectKey>
+    </insert>
+
+    <resultMap id="RequestListResultMap" type="kr.co.nextplayer.base.community.model.Request">
+        <id column="request_id" jdbcType="VARCHAR" property="requestId"/>
+        <result column="content" jdbcType="VARCHAR" property="content"/>
+        <result column="parent_id" jdbcType="VARCHAR" property="parentId"/>
+        <result column="parent_type" jdbcType="VARCHAR" property="parentType"/>
+
+        <result column="foreign_id" jdbcType="VARCHAR" property="foreignId"/>
+        <result column="foreign_type" jdbcType="VARCHAR" property="foreignType"/>
+
+        <result column="request_type" jdbcType="VARCHAR" property="requestType"/>
+        <result column="use_flag" jdbcType="VARCHAR" property="useFlag"/>
+        <result column="answer" jdbcType="VARCHAR" property="answer"/>
+        <result column="answer_flag" jdbcType="VARCHAR" property="answerFlag"/>
+        <result column="secret_flag" jdbcType="VARCHAR" property="secretFlag"/>
+        <result column="reg_date" jdbcType="VARCHAR" property="regDate"/>
+        <result column="answer_date" jdbcType="VARCHAR" property="answerDate"/>
+        <association property="member" javaType="kr.co.nextplayer.base.community.model.Member">
+            <result column="member_cd" jdbcType="VARCHAR" property="memberCd"/>
+            <result column="member_id" jdbcType="VARCHAR" property="memberId"/>
+            <result column="member_nickName" jdbcType="VARCHAR" property="memberNickName"/>
+        </association>
+        <association property="mediaFile" javaType="kr.co.nextplayer.base.media.model.MediaFile">
+            <result column="file_id" property="fileId" />
+            <result column="name" property="name" />
+            <result column="original_name" property="originalName" />
+            <result column="path" property="path" />
+            <result column="file_path" property="filePath" />
+        </association>
+        <association property="answerImg" javaType="kr.co.nextplayer.base.community.model.PublicFile">
+            <result column="public_file_id" property="publicFileId" />
+            <result column="file_name" property="fileName" />
+            <result column="file_save_path" property="fileSavePath"/>
+        </association>
+    </resultMap>
+
+    <select id="selectRequestListCount" parameterType="kr.co.nextplayer.base.community.dto.RequestListDto" resultType="_int">
+        SELECT
+            COUNT(1)
+        FROM
+            Request
+        WHERE
+            use_flag = 0
+            AND member_cd = #{memberCd}
+            <choose>
+                <when test="sType == '0'.toString()">
+            AND (request_type = '0' OR request_type = '1')
+                </when>
+                <otherwise>
+            AND (request_type != '0' AND request_type != '1')
+                </otherwise>
+            </choose>
+
+            <if test="sKeyword != null and sKeyword != ''">
+                AND content LIKE CONCAT('%', #{sKeyword}, '%')
+            </if>
+    </select>
+
+    <select id="selectRequestList" parameterType="kr.co.nextplayer.base.community.dto.RequestListDto" resultMap="RequestListResultMap">
+        SELECT
+            t3.dense_rnk AS ROWNUM,
+            t3.request_id,
+            t3.member_cd,
+            t3.member_id,
+            t3.member_nickname,
+            t3.parent_id,
+            t3.parent_type,
+            t3.foreign_id,
+            t3.foreign_type,
+            t3.content,
+            t3.request_type,
+            t3.use_flag,
+            t3.answer,
+            t3.answer_flag,
+            t3.secret_flag,
+            t3.reg_date,
+            t3.answer_date,
+            t3.file_id,
+            t3.name,
+            t3.original_name,
+            t3.path,
+            t3.file_path,
+            t3.file_name,
+            t3.file_save_path
+        FROM
+            (
+                SELECT
+                    t2.request_id,
+                    t2.member_cd,
+                    t2.member_id,
+                    t2.member_nickname,
+                    t2.parent_id,
+                    t2.parent_type,
+                    t2.foreign_id,
+                    t2.foreign_type,
+                    t2.content,
+                    t2.request_type,
+                    t2.use_flag,
+                    t2.answer,
+                    t2.answer_flag,
+                    t2.secret_flag,
+                    t2.reg_date,
+                    t2.answer_date,
+                    t2.file_id,
+                    t2.name,
+                    t2.original_name,
+                    t2.path,
+                    t2.file_path,
+                    t2.file_name,
+                    t2.file_save_path,
+                    @RANK := IF(@BF_USER_DEPT = t2.request_id, @RANK, @RANK + 1) AS dense_rnk,
+                    @BF_USER_DEPT := t2.request_id
+                FROM
+                    (
+                        SELECT
+                            A.request_id,
+                            B.member_cd,
+                            B.member_id,
+                            B.member_nickname,
+                            A.foreign_parent_id AS parent_id,
+                            A.foreign_parent_type AS parent_type,
+                            A.foreign_id AS foreign_id,
+                            A.foreign_type AS foreign_type,
+                            content,
+                            request_type,
+                            A.use_flag,
+                            answer,
+                            answer_flag,
+                            secret_flag,
+                            DATE_FORMAT(A.reg_date, '%Y-%m-%d') AS reg_date,
+                            DATE_FORMAT(answer_date, '%Y-%m-%d') AS answer_date,
+                            C.id AS file_id,
+                            C.name,
+                            C.original_name,
+                            C.path,
+                            CONCAT(C.path, '/', C.name) AS file_path,
+                            D.file_name,
+                            SUBSTRING(D.file_save_path, LENGTH('/content_nextplayer') + 1) AS file_save_path
+                        FROM
+                            Request A
+                            INNER JOIN member B ON A.member_cd = B.member_cd
+                            LEFT OUTER JOIN media_file C ON C.foreign_type = 'request' AND A.request_id = C.foreign_id
+                            LEFT OUTER JOIN Public_File D ON D.foreign_type = 'Request' AND A.request_id = D.foreign_id AND D.use_flag ='0'
+                        WHERE
+                            A.use_flag = 0
+                            <choose>
+                                <when test="sType == '0'.toString()">
+                            AND (A.request_type = '0' OR A.request_type = '1')
+                                </when>
+                                <otherwise>
+                            AND (A.request_type != '0' AND A.request_type != '1')
+                                </otherwise>
+                            </choose>
+                            AND B.member_cd = #{memberCd}
+                            <if test="sKeyword != null and sKeyword != ''">
+                                AND content LIKE CONCAT('%', #{sKeyword}, '%')
+                            </if>
+                        ORDER BY
+                            A.request_id DESC
+                    ) t2
+                    JOIN (SELECT @RANK := 0, @BF_USER_DEPT := '') tmp
+            ) t3
+        WHERE
+            t3.dense_rnk BETWEEN #{sRow} AND #{eCount}
+        ORDER BY
+            CAST(t3.dense_rnk AS unsigned) ASC
+    </select>
+
+    <!--<select id="selectRequestList" parameterType="kr.co.nextplayer.base.community.dto.RequestListDto" resultMap="RequestListResultMap">
+        SELECT
+            request_id,
+            B.member_cd,
+            B.member_id,
+            B.member_nickname,
+            A.foreign_parent_id AS foreign_id,
+            A.foreign_parent_type AS foreign_type,
+            A.foreign_id AS child_foreign_id,
+            A.foreign_type AS child_foreign_type,
+            content,
+            request_type,
+            A.use_flag,
+            answer,
+            answer_flag,
+            secret_flag,
+            DATE_FORMAT(A.reg_date, '%Y-%m-%d') AS reg_date,
+            DATE_FORMAT(answer_date, '%Y-%m-%d') AS answer_date,
+            C.id AS file_id,
+            C.name,
+            C.original_name,
+            C.path,
+            CONCAT(C.path, '/', C.name) AS file_path
+        FROM
+            Request A
+            INNER JOIN member B ON A.member_cd = B.member_cd
+            LEFT OUTER JOIN media_file C ON C.foreign_type = 'request' AND A.request_id = C.foreign_id
+        WHERE
+            A.use_flag = 0
+            <if test="sKeyword != null and sKeyword != ''">
+            AND content LIKE CONCAT('%', #{sKeyword}, '%')
+            </if>
+            <if test="sType == '1'.toString()">
+            AND B.member_cd = #{memberCd}
+            </if>
+        ORDER BY
+            request_id DESC
+        LIMIT
+            #{sRow}, #{eCount}
+    </select>-->
+
+    <select id="selectRequestCupData" parameterType="hashmap" resultType="hashmap">
+        SELECT
+            cup_name
+            ,LEFT(#{parentTB}, 3) AS uage
+        FROM
+            ${parentTB} a
+        WHERE
+            a.use_flag = 0
+          AND a.cup_id = #{parentId}
+    </select>
+
+    <select id="selectRequestLeagueData" parameterType="hashmap" resultType="hashmap">
+        SELECT
+            league_name
+            ,LEFT(#{parentTB}, 3) AS uage
+        FROM
+            ${parentTB} a
+        WHERE
+            a.use_flag = 0
+          AND a.league_id = #{parentId}
+    </select>
+
+    <select id="selectRequestTeamData" parameterType="hashmap" resultType="hashmap">
+        SELECT
+            uage,
+            emblem,
+            nick_name
+        FROM
+            ${parentTB}
+        WHERE
+            use_flag = 0
+            AND team_id = ${parentId}
+    </select>
+
+    <select id="selectRequestCupMatchData" parameterType="hashmap" resultType="hashmap">
+        SELECT
+            a.match_date,
+            a.place,
+            a.home,
+            a.away,
+            a.home_score,
+            a.home_pk,
+            a.away_score,
+            a.away_pk,
+            b.team_id AS home_id,
+            c.team_id AS away_id,
+            b.emblem AS home_emblem,
+            c.emblem AS away_emblem,
+            LEFT(#{childTB}, 3) AS uage
+        FROM
+            ${childTB} a
+            INNER JOIN Team b ON a.home_id = b.team_id
+            INNER JOIN Team c ON a.away_id = c.team_id
+        WHERE
+            a.use_flag = 0
+            AND ${childKey} IN ${childId}
+    </select>
+
+    <select id="selectRequestLeagueMatchData" parameterType="hashmap" resultType="hashmap">
+        SELECT
+            a.match_date,
+            a.place,
+            a.home,
+            a.away,
+            a.home_score,
+            a.away_score,
+            b.team_id AS home_id,
+            c.team_id AS away_id,
+            b.emblem AS home_emblem,
+            c.emblem AS away_emblem,
+            LEFT(#{childTB}, 3) AS uage
+        FROM
+            ${childTB} a
+            INNER JOIN Team b ON a.home_id = b.team_id
+            INNER JOIN Team c ON a.away_id = c.team_id
+        WHERE
+            a.use_flag = 0
+            AND ${childKey} IN ${childId}
+    </select>
+
+    <select id="selectSearchCupInfo" parameterType="hashmap" resultType="hashmap">
+        SELECT
+            A.cup_id
+            ,A.cup_name
+            ,B.place
+            ,B.home
+            ,B.home_id
+            ,B.away
+            ,B.away_id
+            ,B.home_score
+            ,B.home_pk
+            ,B.away_pk
+            ,B.away_score
+            ,B.match_date
+            ,DATE_FORMAT(SUBSTRING_INDEX(B.match_date,' ',1 ), '%Y%m%d') AS pdate
+            ,TIMESTAMPDIFF(minute, CONCAT(DATE_FORMAT(SUBSTRING_INDEX(B.match_date,' ',1 ), '%Y-%m-%d'), " ", right(B.match_date,5) + ':00'), now()) AS time_diff
+            ,SUBSTRING(B.match_date, 6) AS parse_date
+            ,C.emblem AS home_emblem
+            ,D.emblem AS away_emblem
+            ,'Sub' AS match_category
+            ,B.cup_sub_match_id AS foreign_id
+        FROM
+            ${cupInfoTB} A
+            INNER JOIN ${cupSubMatchTB} B ON A.cup_id = B.cup_id
+            INNER JOIN Team C ON B.home_id = C.team_id
+            INNER JOIN Team D ON B.away_id = D.team_id
+        WHERE
+            B.use_flag = 0
+            AND DATE_FORMAT(match_date, '%Y-%m-%d 00:00:00') BETWEEN DATE_FORMAT(#{sDate}, '%Y-%m-%d 00:00:00') AND DATE_FORMAT(#{sDate}, '%Y-%m-%d 23:59:59')
+            <if test="sKeyword != null and sKeyword != ''">
+            AND (B.home LIKE CONCAT('%', #{sKeyword}, '%') OR B.away LIKE CONCAT('%', #{sKeyword}, '%'))
+            </if>
+        UNION ALL
+
+        SELECT
+            A.cup_id
+            ,A.cup_name
+            ,B.place
+            ,B.home
+            ,B.home_id
+            ,B.away
+            ,B.away_id
+            ,B.home_score
+            ,B.home_pk
+            ,B.away_pk
+            ,B.away_score
+            ,B.match_date
+            ,DATE_FORMAT(SUBSTRING_INDEX(B.match_date,' ',1 ), '%Y%m%d') AS pdate
+            ,TIMESTAMPDIFF(minute, CONCAT(DATE_FORMAT(SUBSTRING_INDEX(B.match_date,' ',1 ), '%Y-%m-%d'), " ", right(B.match_date,5) + ':00'), now()) AS time_diff
+            ,SUBSTRING(B.match_date, 6) AS parse_date
+            ,C.emblem AS home_emblem
+            ,D.emblem AS away_emblem
+            ,'Main' AS match_category
+            ,B.cup_main_match_id AS foreign_id
+        FROM
+            ${cupInfoTB} A
+            INNER JOIN ${cupMainMatchTB} B ON A.cup_id = B.cup_id
+            INNER JOIN Team C ON B.home_id = C.team_id
+            INNER JOIN Team D ON B.away_id  = D.team_id
+        WHERE
+            B.use_flag = 0
+            AND DATE_FORMAT(match_date, '%Y-%m-%d 00:00:00') BETWEEN DATE_FORMAT(#{sDate}, '%Y-%m-%d 00:00:00') AND DATE_FORMAT(#{sDate}, '%Y-%m-%d 23:59:59')
+            <if test="sKeyword != null and sKeyword != ''">
+            AND (B.home LIKE CONCAT('%', #{sKeyword}, '%') OR B.away LIKE CONCAT('%', #{sKeyword}, '%'))
+            </if>
+        UNION ALL
+
+        SELECT
+            A.cup_id
+            ,A.cup_name
+            ,B.place
+            ,B.home
+            ,B.home_id
+            ,B.away
+            ,B.away_id
+            ,B.home_score
+            ,B.home_pk
+            ,B.away_pk
+            ,B.away_score
+            ,B.match_date
+            ,DATE_FORMAT(SUBSTRING_INDEX(B.match_date,' ',1 ), '%Y%m%d') AS pdate
+            ,TIMESTAMPDIFF(minute, CONCAT(DATE_FORMAT(SUBSTRING_INDEX(B.match_date,' ',1 ), '%Y-%m-%d'), " ", right(B.match_date,5) + ':00'), now()) AS time_diff
+            ,SUBSTRING(B.match_date, 6) AS parse_date
+            ,C.emblem AS home_emblem
+            ,D.emblem AS away_emblem
+            ,'Tour' AS match_category
+            ,B.cup_tour_match_id AS foreign_id
+        FROM
+            ${cupInfoTB} A
+            INNER JOIN ${cupTourMatchTB} B ON A.cup_id = B.cup_id
+            INNER JOIN Team C ON B.home_id = C.team_id
+            INNER JOIN Team D ON B.away_id  = D.team_id
+        WHERE
+            B.use_flag = 0
+            AND DATE_FORMAT(match_date, '%Y-%m-%d 00:00:00') BETWEEN DATE_FORMAT(#{sDate}, '%Y-%m-%d 00:00:00') AND DATE_FORMAT(#{sDate}, '%Y-%m-%d 23:59:59')
+            <if test="sKeyword != null and sKeyword != ''">
+            AND (B.home LIKE CONCAT('%', #{sKeyword}, '%') OR B.away LIKE CONCAT('%', #{sKeyword}, '%'))
+            </if>
+    </select>
+
+    <select id="selectSearchLeagueInfo" parameterType="hashmap" resultType="hashmap">
+        SELECT
+            A.league_id
+            ,A.league_name
+            ,A.play_sdate
+            ,A.play_edate
+            ,B.place
+            ,B.home
+            ,B.home_id
+            ,B.away
+            ,B.away_id
+            ,B.home_score
+            ,B.away_score
+            ,B.match_date
+            ,C.emblem AS home_emblem
+            ,D.emblem AS away_emblem
+            ,'League' AS match_category
+            ,B.league_match_id AS foreign_id
+        FROM
+            ${leagueInfoTB} A
+            INNER JOIN ${leagueMatchTB} B ON A.league_id = B.league_id
+            INNER JOIN Team C ON B.home_id = C.team_id
+            INNER JOIN Team D ON B.away_id = D.team_id
+        WHERE
+            A.use_flag = 0
+            AND DATE_FORMAT(B.match_date, '%Y-%m-%d 00:00:00') BETWEEN DATE_FORMAT(#{sDate}, '%Y-%m-%d 00:00:00') AND DATE_FORMAT(#{sDate}, '%Y-%m-%d 23:59:59')
+            <if test="sKeyword != null and sKeyword != ''">
+                AND (B.home LIKE CONCAT('%', #{sKeyword}, '%') OR B.away LIKE CONCAT('%', #{sKeyword}, '%'))
+            </if>
+    </select>
+
+    <select id="selectSearchTeamInfo" parameterType="hashmap" resultType="hashmap">
+        SELECT
+            team_id,
+            uage,
+            emblem,
+            addr,
+            nick_name
+        FROM
+            Team
+        WHERE
+            uage = #{ageGroup}
+            AND use_flag = 0
+            <if test="sKeyword != '' and sKeyword != null">
+                AND (team_name LIKE CONCAT('%', #{sKeyword}, '%') OR nick_name LIKE CONCAT('%', #{sKeyword}, '%'))
+            </if>
+    </select>
+
+    <resultMap id="SuggestListResultMap" type="kr.co.nextplayer.base.community.model.Suggest">
+        <id column="suggest_id" jdbcType="VARCHAR" property="suggestId"/>
+        <result column="title" jdbcType="VARCHAR" property="title"/>
+        <result column="content" jdbcType="VARCHAR" property="content"/>
+        <result column="use_flag" jdbcType="VARCHAR" property="useFlag"/>
+        <result column="secret_flag" jdbcType="VARCHAR" property="secretFlag"/>
+        <result column="reg_date" jdbcType="VARCHAR" property="regDate"/>
+        <result column="answer" jdbcType="VARCHAR" property="answer"/>
+        <result column="answer_flag" jdbcType="VARCHAR" property="answerFlag"/>
+        <result column="answer_date" jdbcType="VARCHAR" property="answerDate"/>
+        <association property="member" javaType="kr.co.nextplayer.base.community.model.Member">
+            <result column="member_cd" jdbcType="VARCHAR" property="memberCd"/>
+            <result column="member_id" jdbcType="VARCHAR" property="memberId"/>
+            <result column="member_nickName" jdbcType="VARCHAR" property="memberNickName"/>
+        </association>
+        <association property="mediaFile" javaType="kr.co.nextplayer.base.media.model.MediaFile">
+            <result column="file_id" property="fileId" />
+            <result column="name" property="name" />
+            <result column="original_name" property="originalName" />
+            <result column="path" property="path" />
+            <result column="file_path" property="filePath" />
+        </association>
+        <association property="answerImg" javaType="kr.co.nextplayer.base.community.model.PublicFile">
+            <result column="public_file_id" property="publicFileId" />
+            <result column="file_name" property="fileName" />
+            <result column="file_save_path" property="fileSavePath"/>
+        </association>
+    </resultMap>
+
+    <select id="selectSuggestCount" parameterType="kr.co.nextplayer.base.community.dto.SuggestListDto" resultType="_int">
+        SELECT
+            COUNT(1)
+        FROM
+        Suggest
+        WHERE
+            use_flag = 0
+            AND suggest_type = '0'
+            AND member_cd = #{memberCd}
+            <if test="sKeyword != null and sKeyword != ''">
+            AND (title LIKE CONCAT('%', #{sKeyword}, '%') OR content LIKE CONCAT('%', #{sKeyword}, '%'))
+            </if>
+    </select>
+
+
+    <select id="selectSuggestList" parameterType="kr.co.nextplayer.base.community.dto.SuggestListDto" resultMap="SuggestListResultMap">
+        SELECT
+            t3.suggest_id,
+            t3.member_cd,
+            t3.member_id,
+            t3.member_nickname,
+            t3.title,
+            t3.content,
+            t3.answer,
+            t3.answer_flag,
+            t3.secret_flag,
+            t3.answer_date,
+            t3.reg_date,
+            t3.file_id,
+            t3.name,
+            t3.original_name,
+            t3.path,
+            t3.file_path,
+            t3.file_name,
+            t3.file_save_path
+        FROM
+            (
+                SELECT
+                    t2.suggest_id,
+                    t2.member_cd,
+                    t2.member_id,
+                    t2.member_nickname,
+                    t2.title,
+                    t2.content,
+                    t2.answer,
+                    t2.answer_flag,
+                    t2.secret_flag,
+                    t2.answer_date,
+                    t2.reg_date,
+                    t2.file_id,
+                    t2.name,
+                    t2.original_name,
+                    t2.path,
+                    t2.file_path,
+                    t2.file_name,
+                    t2.file_save_path,
+                    @RANK := IF(@BF_USER_DEPT = t2.suggest_id, @RANK, @RANK + 1) AS dense_rnk,
+                    @BF_USER_DEPT := t2.suggest_id
+                FROM (
+                        SELECT
+                            suggest_id,
+                            B.member_cd,
+                            B.member_id,
+                            B.member_nickname,
+                            title,
+                            content,
+                            answer,
+                            answer_flag,
+                            secret_flag,
+                            DATE_FORMAT(answer_date, '%Y-%m-%d') AS answer_date,
+                            DATE_FORMAT(A.reg_date, '%Y-%m-%d') AS reg_date,
+                            C.id AS file_id,
+                            C.name,
+                            C.original_name,
+                            C.path,
+                            CONCAT(C.path, '/', C.name) AS file_path,
+                            D.file_name,
+                            SUBSTRING(D.file_save_path, LENGTH('/content_nextplayer') + 1) AS file_save_path
+                        FROM
+                            Suggest A
+                            INNER JOIN member B ON A.member_cd = B.member_cd
+                            LEFT OUTER JOIN media_file C ON C.foreign_type = 'suggest' AND A.suggest_id = C.foreign_id
+                            LEFT OUTER JOIN Public_File D ON D.foreign_type = 'Suggest' AND A.suggest_id = D.foreign_id AND D.use_flag ='0'
+                        WHERE
+                            A.use_flag = 0
+                            AND suggest_type = '0'
+                            AND B.member_cd = #{memberCd}
+                            <if test="sKeyword != null and sKeyword != ''">
+                            AND (title LIKE CONCAT('%', #{sKeyword}, '%') OR content LIKE CONCAT('%', #{sKeyword}, '%'))
+                            </if>
+                        ORDER BY
+                            suggest_id DESC
+                ) t2
+                JOIN (SELECT @RANK := 0, @BF_USER_DEPT := '') tmp
+        ) t3
+        WHERE
+            t3.dense_rnk BETWEEN #{sRow} AND #{eCount}
+        ORDER BY
+            CAST(t3.dense_rnk AS unsigned) ASC
+    </select>
+
+    <insert id="insertSuggest" parameterType="kr.co.nextplayer.base.community.dto.SuggestDto">
+        INSERT INTO Suggest(
+            member_cd, title, content, suggest_type, secret_flag, reg_date
+        ) VALUES  (
+                      #{memberCd}, #{title}, #{content}, '0', #{secretFlag}, NOW()
+                  )
+        <selectKey order="AFTER" keyProperty="suggestId" resultType="String">
+            SELECT LAST_INSERT_ID();
+        </selectKey>
+    </insert>
+
+    <insert id="insertPartnership" parameterType="kr.co.nextplayer.base.community.dto.PartnershipDto">
+        INSERT INTO Suggest(
+            member_cd, customer, phone, email, content, suggest_type, reg_date
+        ) VALUES  (
+            #{memberCd}, #{customer}, #{phone}, #{email}, #{content}, '1', NOW()
+        )
+        <selectKey order="AFTER" keyProperty="suggestId" resultType="String">
+            SELECT LAST_INSERT_ID();
+        </selectKey>
+    </insert>
+
+</mapper>

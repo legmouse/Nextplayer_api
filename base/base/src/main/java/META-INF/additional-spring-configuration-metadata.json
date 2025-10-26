@@ -1,0 +1,7 @@
+{"properties": [
+  {
+    "name": "base-datasource",
+    "type": "kr.co.nextplayer.base.config.BaseDataSourceConfigProperties",
+    "description": "Default DataSource(JDBC) Properties"
+  }
+]}

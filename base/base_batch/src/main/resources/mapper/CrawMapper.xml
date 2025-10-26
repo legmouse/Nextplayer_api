@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.co.nextplayer.base.batch.mapper.CrawMapper">
+
+    <select id="selectCrawMatchList" parameterType="java.lang.String" resultType="kr.co.nextplayer.base.batch.dto.CupCrawMatchList">
+        select *
+        from (
+             SELECT
+                 a.cup_id,
+                 a.cup_name_origin as title,
+                 COALESCE(b.cup_sub_match_id, c.cup_main_match_id, d.cup_tour_match_id) AS match_id,
+                 CASE
+                     WHEN b.cup_sub_match_id IS NOT NULL THEN 'SUB'
+                     WHEN c.cup_main_match_id IS NOT NULL THEN 'MAIN'
+                     WHEN d.cup_tour_match_id IS NOT NULL THEN 'TOUR'
+                     END AS match_type,
+                 CASE
+                     WHEN b.cup_sub_match_id IS NOT NULL THEN b.match_order
+                     WHEN c.cup_main_match_id IS NOT NULL THEN c.match_order
+                     WHEN d.cup_tour_match_id IS NOT NULL THEN d.match_order
+                     END AS match_order,
+                 upper(#{age}) as age_group
+             FROM
+                 ${age}_cup_info a
+                 LEFT JOIN ${age}_cup_sub_match b ON a.cup_id = b.cup_id and DATE_FORMAT(b.match_date, '%Y-%m-%d') = CURDATE() and right(b.match_date, 5) <![CDATA[<=]]> DATE_FORMAT(NOW(), '%H:%i')
+                 LEFT JOIN ${age}_cup_main_match c ON a.cup_id = c.cup_id and DATE_FORMAT(c.match_date, '%Y-%m-%d') = CURDATE() and right(c.match_date, 5) <![CDATA[<=]]> DATE_FORMAT(NOW(), '%H:%i')
+                 LEFT JOIN ${age}_cup_tour_match d ON a.cup_id = d.cup_id and DATE_FORMAT(d.match_date, '%Y-%m-%d') = CURDATE() and right(d.match_date, 5) <![CDATA[<=]]> DATE_FORMAT(NOW(), '%H:%i')
+             WHERE
+               a.use_flag = 0
+               AND a.auto_craw_flag = 1
+        ) a
+        where a.match_id is not null
+    </select>
+
+    <select id="selectCrawMatchDataList" parameterType="java.lang.String" resultType="kr.co.nextplayer.base.batch.dto.CupCrawMatchList">
+        select *
+        from (
+                 SELECT
+                     a.cup_id,
+                     a.cup_name_origin as title,
+                     COALESCE(b.cup_sub_match_id, c.cup_main_match_id, d.cup_tour_match_id) AS match_id,
+                     CASE
+                         WHEN b.cup_sub_match_id IS NOT NULL THEN 'SUB'
+                         WHEN c.cup_main_match_id IS NOT NULL THEN 'MAIN'
+                         WHEN d.cup_tour_match_id IS NOT NULL THEN 'TOUR'
+                         END AS match_type,
+                     CASE
+                         WHEN b.cup_sub_match_id IS NOT NULL THEN b.match_order
+                         WHEN c.cup_main_match_id IS NOT NULL THEN c.match_order
+                         WHEN d.cup_tour_match_id IS NOT NULL THEN d.match_order
+                         END AS match_order,
+                     CASE
+                         WHEN b.cup_sub_match_id IS NOT NULL THEN b.after_end_craw_cnt
+                         WHEN c.cup_main_match_id IS NOT NULL THEN c.after_end_craw_cnt
+                         WHEN d.cup_tour_match_id IS NOT NULL THEN d.after_end_craw_cnt
+                         END AS after_end_craw_cnt,
+                     CASE
+                         WHEN b.cup_sub_match_id IS NOT NULL THEN b.end_flag
+                         WHEN c.cup_main_match_id IS NOT NULL THEN c.end_flag
+                         WHEN d.cup_tour_match_id IS NOT NULL THEN d.end_flag END AS end_flag,
+                     upper(#{age}) as age_group
+                 FROM
+                     ${age}_cup_info a
+                     LEFT JOIN ${age}_cup_sub_match b ON a.cup_id = b.cup_id and DATE_FORMAT(b.match_date, '%Y-%m-%d') = CURDATE() and right(b.match_date, 5) <![CDATA[<=]]> DATE_FORMAT(date_add(NOW(), INTERVAL 1 HOUR), '%H:%i')
+                     LEFT JOIN ${age}_cup_main_match c ON a.cup_id = c.cup_id and DATE_FORMAT(c.match_date, '%Y-%m-%d') = CURDATE() and right(c.match_date, 5) <![CDATA[<=]]> DATE_FORMAT(date_add(NOW(), INTERVAL 1 HOUR), '%H:%i')
+                     LEFT JOIN ${age}_cup_tour_match d ON a.cup_id = d.cup_id and DATE_FORMAT(d.match_date, '%Y-%m-%d') = CURDATE() and right(d.match_date, 5) <![CDATA[<=]]> DATE_FORMAT(date_add(NOW(), INTERVAL 1 HOUR), '%H:%i')
+                 WHERE
+                   a.use_flag = 0
+                   AND a.auto_craw_data_flag = 1
+             ) a
+        where a.after_end_craw_cnt = 0
+    </select>
+
+    <update id="updateAfterEndCnt" parameterType="java.util.HashMap">
+        update ${cupMatchTB}
+        set after_end_craw_cnt = after_end_craw_cnt + 1
+        where ${fieldNm} = #{matchId}
+    </update>
+</mapper>

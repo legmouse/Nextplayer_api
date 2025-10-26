@@ -1,0 +1,391 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.co.nextplayer.base.board.mapper.EducationMapper">
+
+    <resultMap id="EducationResultMap" type="kr.co.nextplayer.base.board.model.Education">
+        <id column="education_id" property="educationId"/>
+        <result column="goods_id" property="goodsId"/>
+        <result column="title" property="title"/>
+        <result column="content" property="content"/>
+        <result column="summary" property="summary"/>
+        <result column="play_time" property="playTime"/>
+        <result column="show_flag" property="showFlag"/>
+        <result column="isChecked" property="isChecked"/>
+        <result column="reg_date" property="regDate"/>
+        <association property="imgFile" javaType="kr.co.nextplayer.base.file.model.PublicFileModel">
+            <result column="public_file_id" property="publicFileId"/>
+            <result column="file_save_name" property="fileSaveName"/>
+            <result column="file_name" property="fileName"/>
+            <result column="file_save_path" property="fileSavePath"/>
+            <result column="file_ext" property="fileExt"/>
+            <result column="file_size" property="fileSize"/>
+        </association>
+    </resultMap>
+
+    <select id="selectEducationCount" parameterType="kr.co.nextplayer.base.board.dto.EducationReqDto" resultType="_int">
+        SELECT
+            COUNT(1)
+        FROM
+            education
+        WHERE
+            use_flag = 0
+    </select>
+
+    <select id="selectEducationList" parameterType="kr.co.nextplayer.base.board.dto.EducationReqDto" resultMap="EducationResultMap">
+        SELECT
+            A.education_id,
+            A.goods_id,
+            A.title,
+            A.summary,
+            A.play_time,
+            A.show_flag,
+            A.reg_date,
+            IFNULL(B.cnt, '0') AS isChecked,
+            C.public_file_id,
+            C.file_save_name,
+            C.file_name,
+            SUBSTRING(C.file_save_path, LENGTH('/content_nextplayer') + 1) AS file_save_path,
+            C.file_ext,
+            C.file_size
+        FROM
+            education A
+            LEFT JOIN (
+                        SELECT
+                            education_id,
+                            COUNT(member_cd) AS cnt
+                        FROM
+                            education_auth
+                        WHERE
+                            use_flag = 0
+                            AND member_cd = #{memberCd}
+                        GROUP BY
+                            education_id
+            ) B ON A.education_id = B.education_id
+            LEFT JOIN public_file C ON A.education_id = C.foreign_id AND C.foreign_type = 'Education' AND C.use_flag = 0
+        WHERE
+            A.use_flag = 0
+        ORDER BY
+            A.education_id DESC
+        LIMIT
+            #{offset}, #{pageSize}
+    </select>
+
+    <resultMap id="EducationDetailResultMap" type="kr.co.nextplayer.base.board.model.Education">
+        <id column="education_id" property="educationId"/>
+        <result column="goods_id" property="goodsId"/>
+        <result column="title" property="title"/>
+        <result column="content" property="content"/>
+        <result column="summary" property="summary"/>
+        <result column="play_time" property="playTime"/>
+        <result column="show_flag" property="showFlag"/>
+        <result column="isChecked" property="isChecked"/>
+        <result column="url_link" property="urlLink"/>
+        <result column="preview_link" property="previewLink"/>
+        <result column="move_url" property="moveUrl"/>
+        <result column="reg_date" property="regDate"/>
+        <association property="faqList" javaType="kr.co.nextplayer.base.board.model.Faq">
+            <id column="faq_id" property="faqId"/>
+            <result column="question" property="question"/>
+            <result column="answer" property="answer"/>
+        </association>
+    </resultMap>
+    <select id="selectEducationDetail" parameterType="kr.co.nextplayer.base.board.dto.EducationReqDto" resultMap="EducationDetailResultMap">
+        SELECT
+            A.education_id,
+            A.goods_id,
+            A.title,
+            A.summary,
+            A.content,
+            A.play_time,
+            A.show_flag,
+            A.reg_date,
+            CASE
+                WHEN IFNULL(B.cnt, 0) > 0 THEN '1'
+                ELSE '0'
+            END AS isChecked,
+            A.url_link,
+            A.preview_link,
+            A.move_url,
+            C.faq_id,
+            C.question,
+            C.answer
+        FROM
+            education A
+            LEFT JOIN (
+                        SELECT
+                            education_id,
+                            COUNT(member_cd) AS cnt
+                        FROM
+                            education_auth
+                        WHERE
+                            use_flag = 0
+                            AND education_id = #{educationId}
+                            AND member_cd = #{memberCd}
+            ) B ON A.education_id = B.education_id
+            LEFT JOIN faq C ON A.education_id = C.foreign_id AND C.foreign_type = 'Education' AND C.use_flag = 0
+        WHERE
+            A.use_flag = 0
+            AND A.education_id = #{educationId}
+    </select>
+
+    <select id="selectEducationQuestionCount" parameterType="kr.co.nextplayer.base.board.dto.EducationReqDto" resultType="_int">
+        SELECT
+            COUNT(1)
+        FROM
+            request
+        WHERE
+            foreign_parent_id = #{educationId}
+            AND foreign_parent_type = 'Education'
+            AND use_flag = 0
+    </select>
+
+    <select id="selectSearchEducationByGoods" parameterType="kr.co.nextplayer.base.board.dto.EducationAuthReqDto" resultMap="EducationDetailResultMap">
+        SELECT
+            education_id,
+            goods_id,
+            title
+        FROM
+            education
+        WHERE
+            use_flag = 0
+            AND goods_id = #{goodsId}
+    </select>
+
+    <select id="selectCheckEducationAuthDuplicate" parameterType="kr.co.nextplayer.base.board.dto.EducationAuthReqDto" resultType="_int">
+        SELECT
+            COUNT(1)
+        FROM
+            education_auth
+        WHERE
+            use_flag = 0
+            AND education_id = #{educationId}
+            AND member_cd = #{memberCd}
+    </select>
+
+    <insert id="insertEducationAuth" parameterType="java.util.HashMap">
+        INSERT INTO education_auth
+            (education_id, member_cd, use_flag)
+        VALUES
+            (#{educationId}, #{memberCd}, '0')
+    </insert>
+
+    <select id="selectColumnCnt" parameterType="kr.co.nextplayer.base.board.dto.ColumnReqDto" resultType="_int">
+        SELECT
+            COUNT(1)
+        FROM
+            education_column
+        WHERE
+            use_flag = 0
+            <if test="sKeyword != null and sKeyword != ''">
+                AND title LIKE CONCAT('%', #{sKeyword}, '%')
+            </if>
+            <if test="columnType != null and columnType != ''">
+                AND column_type = #{columnType}
+            </if>
+    </select>
+
+    <resultMap id="ColumnResultMap" type="kr.co.nextplayer.base.board.model.Column">
+        <id column="education_column_id" property="educationColumnId"/>
+        <result column="title" property="title"/>
+        <result column="writer" property="writer"/>
+        <result column="content" property="content"/>
+        <result column="summary" property="summary"/>
+        <result column="url_link" property="urlLink"/>
+        <result column="column_type" property="columnType"/>
+        <result column="show_flag" property="showFlag"/>
+        <result column="submit_date" property="submitDate"/>
+        <result column="reg_date" property="regDate"/>
+        <result column="mType" jdbcType="VARCHAR" property="mType"/>
+        <association property="imgFile" javaType="kr.co.nextplayer.base.file.model.PublicFileModel">
+            <result column="public_file_id" property="publicFileId"/>
+            <result column="file_save_name" property="fileSaveName"/>
+            <result column="file_name" property="fileName"/>
+            <result column="file_save_path" property="fileSavePath"/>
+            <result column="file_ext" property="fileExt"/>
+            <result column="file_size" property="fileSize"/>
+        </association>
+    </resultMap>
+    <select id="selectColumnList" parameterType="kr.co.nextplayer.base.board.dto.ColumnReqDto" resultMap="ColumnResultMap">
+        SELECT
+            A.education_column_id,
+            A.title,
+            A.writer,
+            A.summary,
+            A.use_flag,
+            A.show_flag,
+            A.column_type,
+            A.submit_date,
+            A.reg_date,
+            B.public_file_id,
+            B.file_save_name,
+            B.file_name,
+            SUBSTRING(B.file_save_path, LENGTH('/content_nextplayer') + 1) AS file_save_path,
+            B.file_ext,
+            B.file_size
+        FROM
+            education_column A
+            LEFT JOIN public_file B ON A.education_column_id = B.foreign_id AND B.foreign_type = 'Column' AND B.use_flag = 0
+        WHERE
+            A.use_flag = 0
+            AND A.show_flag = 0
+            <if test="sKeyword != null and !sKeyword.equals('') ">
+                AND A.title LIKE CONCAT('%', #{sKeyword}, '%')
+            </if>
+            <if test="columnType != null and columnType != ''">
+                AND A.column_type = #{columnType}
+            </if>
+        ORDER BY
+            A.education_column_id DESC
+        LIMIT
+            #{offset}, #{pageSize}
+    </select>
+
+    <select id="selectColumnDetail" parameterType="kr.co.nextplayer.base.board.dto.ColumnReqDto" resultMap="ColumnResultMap">
+        SELECT
+            A.education_column_id,
+            A.title,
+            A.writer,
+            A.summary,
+            A.content,
+            A.url_link,
+            A.show_flag,
+            A.column_type,
+            A.reg_date,
+            A.submit_date
+        FROM
+            education_column A
+        WHERE
+            A.use_flag = 0
+          AND A.education_column_id = #{educationColumnId}
+    </select>
+
+    <select id="selectPrevNextColumn" parameterType="kr.co.nextplayer.base.board.dto.ColumnReqDto" resultMap="ColumnResultMap">
+        SELECT
+            RES.*,
+            (CASE
+                 WHEN RES.RN = RES1.RN -1 THEN 'next'
+                 WHEN RES.RN = RES1.RN    THEN 'cur'
+                 WHEN RES.RN = RES1.RN +1 THEN 'prev'
+                END) AS mType
+        FROM
+            (
+                SELECT
+                    @ROW_NUM := @ROW_NUM + 1 AS RN,
+                    A.education_column_id,
+                    A.title,
+                    A.writer,
+                    A.column_type,
+                    A.submit_date
+                FROM (
+                    SELECT
+                    A.education_column_id,
+                    A.title,
+                    A.writer,
+                    A.column_type,
+                    A.submit_date
+                    FROM
+                    education_column A
+                    WHERE
+                    A.use_flag = 0
+                    AND A.show_flag = 0
+                    AND A.column_type = #{columnType}
+                    ) A,
+                    (SELECT @row_num := 0) TMP ORDER BY submit_date DESC, education_column_id DESC
+            ) RES
+                INNER JOIN (
+                SELECT
+                    DA.*
+                FROM
+                    (
+                        SELECT
+                            @ROWNUM := @ROWNUM + 1 AS RN
+                                    , A.education_column_id
+                        FROM
+                            (
+                            SELECT
+                            education_column_id
+                                , DATE_FORMAT(submit_date, '%Y-%m-%d') AS submit_date
+                            FROM
+                            education_column
+                            WHERE
+                            use_flag = 0
+                            AND show_flag = 0
+                            AND column_type = #{columnType}
+                            ) A, (SELECT @ROWNUM := 0) TMP ORDER BY submit_date DESC, education_column_id DESC
+                    ) DA
+                WHERE
+                    DA.education_column_id = #{educationColumnId}
+            ) RES1 ON RES.RN = RES1.RN || RES.RN = RES1.RN -1 || RES.RN = RES1.RN + 1
+    </select>
+
+    <update id="updateColumnViewCnt" parameterType="kr.co.nextplayer.base.board.dto.ColumnReqDto">
+        UPDATE
+            education_column
+        SET
+            view_cnt = view_cnt + 1
+        WHERE
+            education_column_id = #{educationColumnId}
+    </update>
+
+    <resultMap id="EducationFileMap" type="kr.co.nextplayer.base.board.model.EduFile">
+        <id column="education_file_id" jdbcType="VARCHAR" property="educationFileId"/>
+        <result column="title" jdbcType="VARCHAR" property="title"/>
+        <result column="member_cd" jdbcType="VARCHAR" property="memberCd"/>
+        <result column="reg_date" jdbcType="VARCHAR" property="regDate"/>
+        <association property="eduFile" javaType="kr.co.nextplayer.base.file.model.PublicFileModel">
+            <result column="public_file_id" property="publicFileId"/>
+            <result column="file_save_name" property="fileSaveName"/>
+            <result column="file_name" property="fileName"/>
+            <result column="file_save_path" property="fileSavePath"/>
+            <result column="file_ext" property="fileExt"/>
+            <result column="file_size" property="fileSize"/>
+        </association>
+    </resultMap>
+    <select id="selectEducationFileList" parameterType="kr.co.nextplayer.base.board.dto.EducationAuthReqDto" resultMap="EducationFileMap">
+        SELECT
+            A.education_file_id,
+            A.title,
+            A.member_cd,
+            B.public_file_id,
+            B.file_name,
+            B.file_ext
+        FROM
+            education_file A
+            INNER JOIN public_file B ON A.education_file_id = B.foreign_id AND B.foreign_type = 'EduFile'
+        WHERE
+            A.use_flag = 0
+            AND A.member_cd  = #{memberCd}
+    </select>
+
+    <select id="selectHomeColumnList" parameterType="hashmap" resultMap="ColumnResultMap">
+        SELECT
+            A.education_column_id,
+            A.title,
+            A.writer,
+            A.summary,
+            A.use_flag,
+            A.show_flag,
+            A.column_type,
+            A.submit_date,
+            A.reg_date,
+            B.public_file_id,
+            B.file_save_name,
+            B.file_name,
+            SUBSTRING(B.file_save_path, LENGTH('/content_nextplayer') + 1) AS file_save_path,
+            B.file_ext,
+            B.file_size
+        FROM
+            education_column A
+            LEFT JOIN public_file B ON A.education_column_id = B.foreign_id AND B.foreign_type = 'Column' AND B.use_flag = 0
+            INNER JOIN main_column C ON A.education_column_id = C.education_column_id
+        WHERE
+            A.use_flag = 0
+            AND C.use_flag = 0
+            AND C.show_flag = 0
+        ORDER BY
+            C.column_order
+        LIMIT
+            0, 4
+    </select>
+
+</mapper>

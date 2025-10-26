@@ -1,0 +1,282 @@
+
+
+
+/*버튼*/
+
+*.btn-more{
+    background-color: rgba(0,0,0,1);
+    position: fixed;
+    right:10px;
+    bottom:10px;
+    border-radius: 100px;
+    width:60px;
+    height:60px;
+    z-index: 1;
+    text-align: center;
+    line-height: 56px;
+    box-sizing: border-box;
+    padding-left: 3px;
+    background: #5054ac;
+    background: -webkit-linear-gradient(left, #2db4d1 , #5054ac);
+    background: -o-linear-gradient(right, #2db4d1 , #5054ac);
+    background: -moz-linear-gradient(right, #2db4d1 , #5054ac);
+    background: linear-gradient(to right, #2db4d1 , #5054ac);
+    color:#fff;
+    cursor: pointer;
+  }
+  *.btn-more i{
+    color:#fff;
+    font-size: 30px;
+  }
+  *.btn-small{
+    border-radius:5px;
+    display: inline-block;
+    width:50px;
+    height:18px;
+    font-size: 10px;
+    text-align: center;
+    line-height: 18px;
+  }
+  *.btn-small.white{
+    background-color: rgba(255,255,255,1);
+    color: #2D9DE0;
+  }
+  *.btn-small.gray{
+    background-color: #bbb;
+    color: #fff;
+  }
+  *.btn-small.blue-o{
+    color: #46B9FE;
+    border:1px solid #46B9FE;
+    background-color: rgba(0,0,0,.0);
+  }
+  *.btn-small.purple{
+    background-color: #827BEA;
+    color: #fff;
+  }
+  *.btn-small.purple-o{
+    color: #827BEA;
+    border:1px solid #827BEA;
+    background-color: rgba(0,0,0,.0);
+  }
+  *.btn-small.gray-o{
+    color: #bbb;
+    border: 1px solid #bbb;
+  
+  }
+  *.btn-small.alpha{
+    background-color: rgba(255,255,255,.2);
+    color: #fff;
+  }
+  
+  *.btn-large{
+    border-radius:5px;
+    display: inline-block;
+    padding: 0 10px;
+    height:28px;
+    font-size:12px;
+    text-align: center;
+    line-height:28px;
+    border: 0px;
+    cursor: pointer;
+    box-sizing: border-box;
+    vertical-align: middle;
+  }
+  td *.btn-large{
+    border-radius:5px;
+    display: inline-block;
+    padding: 0 7px;
+    height:28px;
+    font-size:10px;
+    text-align: center;
+    line-height:28px;
+    border: 0px;
+    cursor: pointer;
+    box-sizing: border-box;
+    vertical-align: middle;
+  }
+  *.btn-large.yellow-pink{
+    background: #CE4F82;
+    background: -webkit-linear-gradient(left, #ea947b , #c33184);
+    background: -o-linear-gradient(right, #ea947b , #c33184);
+    background: -moz-linear-gradient(right, #ea947b , #c33184);
+    background: linear-gradient(to right, #ea947b , #c33184);
+    color: #fff;
+  }
+  *.btn-large.blue{
+    background: #1c5bb2;
+    color:#fff;
+  }
+  *.btn-large.default{
+  background-color: rgba(57,65,87,1);
+  color:#fff;
+  }
+  *.btn-large.gray{
+    background-color: rgba(0,0,0,.2);
+    color:#fff;
+  }
+  *.btn-large.gray-o{
+    background-color: rgba(0,0,0,.0);
+    border: 1px solid rgba(0,0,0,.2);
+    color:#333;
+  }
+  *.btn-large.blue-o{
+    color: rgba(57,65,87,1);
+    border: 1px solid rgba(57,65,87,1);
+    background-color: rgba(57,65,87,.3);
+  }
+  *.btn-large.alpha{
+    background-color: rgba(255,255,255,.2);
+    color: #999;
+  }
+  *.btn-large.none{
+    background-color: rgba(255,255,255,.0);
+    color: #999;
+  }
+  
+  *.btn-large.x{
+    padding-right: 20px;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16.186' height='16' viewBox='0 0 16.186 16'%3E%3Cg id='close' transform='translate(0 -1.844)'%3E%3Cg id='close_1_' transform='translate(0.001 1.844)'%3E%3Cpath id='패스_242' data-name='패스 242' d='M1.535,18.431a1.533,1.533,0,0,1-1.089-.368,1.533,1.533,0,0,1,0-2.162L13.463,2.885A1.533,1.533,0,0,1,15.7,4.97L2.608,18.063A1.533,1.533,0,0,1,1.535,18.431Z' transform='translate(-0.001 -2.439)'/%3E%3Cpath id='패스_243' data-name='패스 243' d='M15.987,17.836a1.533,1.533,0,0,1-1.073-.445L1.9,4.374A1.533,1.533,0,0,1,4.059,2.213L17.152,15.229a1.533,1.533,0,0,1,.071,2.167q-.035.037-.071.071a1.533,1.533,0,0,1-1.165.368Z' transform='translate(-1.451 -1.844)'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E%0A");
+    background-repeat: no-repeat;
+    background-position: calc(100% - 7px);
+    background-size: 7px;
+  }
+
+  *.btn-add{
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    border-radius: 10px;
+    background-color: #111;
+    color:#fff;
+    box-shadow: none;
+    border: 0;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='22.737' height='22.755' viewBox='0 0 22.737 22.755'%3E%3Cg id='close' transform='translate(-1.327 10.142) rotate(-45)'%3E%3Cg id='close_1_' transform='translate(0.001 1.844)'%3E%3Cpath id='패스_242' data-name='패스 242' d='M1.535,18.431a1.533,1.533,0,0,1-1.089-.368,1.533,1.533,0,0,1,0-2.162L13.463,2.885A1.533,1.533,0,0,1,15.7,4.97L2.608,18.063A1.533,1.533,0,0,1,1.535,18.431Z' transform='translate(-0.001 -2.439)' fill='%23fff'/%3E%3Cpath id='패스_243' data-name='패스 243' d='M15.987,17.836a1.533,1.533,0,0,1-1.073-.445L1.9,4.374A1.533,1.533,0,0,1,4.059,2.213L17.152,15.229a1.533,1.533,0,0,1,.071,2.167q-.035.037-.071.071a1.533,1.533,0,0,1-1.165.368Z' transform='translate(-1.451 -1.844)' fill='%23fff'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E%0A");
+    background-repeat: no-repeat;
+    background-position: 50% 50%;
+    background-size: 50%;
+    vertical-align: middle;
+    margin: auto 3px auto 0;
+  }
+
+  *.btn-minus{
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    border-radius: 10px;
+    background-color: #111;
+    color:#fff;
+    box-shadow: none;
+    border: 0;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='2' viewBox='0 0 8 2'%3E%3Cline id='선_1' data-name='선 1' x2='8' transform='translate(0 1)' fill='none' stroke='%23fff' stroke-width='2'/%3E%3C/svg%3E%0A");
+    background-repeat: no-repeat;
+    background-position: 50% 50%;
+    background-size: 9px;
+    vertical-align: middle;
+    margin: auto 3px auto 0;
+  }
+
+
+
+
+
+
+
+
+/*타입별 그리드*/
+div.type2 {
+    display: grid;
+    grid-template-columns: 100px 1fr;
+    gap: 5px
+}
+
+div.type3 {
+    display: grid;
+    grid-template-columns: 100px 1fr 100px;
+    gap: 5px
+}
+div.type4 {
+  display: grid;
+  grid-template-columns: 200px 100px 1fr 100px;
+  gap: 5px
+}
+div.type5 {
+  display: grid;
+  grid-template-columns:1fr 100px;
+  gap: 5px
+}
+.box-group{
+    float: right;
+}
+
+
+
+/*기타 기본 스타일*/
+p.summary {
+    font-size: 11px;
+    color: #aaa
+}
+
+select {
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='10' viewBox='0 0 14 10'%3E%3Cpath id='다각형_4' data-name='다각형 4' d='M7,0l7,10H0Z' transform='translate(14 10) rotate(180)'/%3E%3C/svg%3E%0A") !important;
+    background-position: calc(100% - 10px) 50% !important;
+    background-repeat: no-repeat !important;
+    background-size: 7px !important;
+}
+
+div.team_name{
+    /*display: grid;
+    grid-template-columns: 26px 1fr;
+    text-align: left;
+    border-bottom: 1px solid #eee;
+    font-size: 12px;
+    line-height: 20px;
+    padding: 10px 10px 10px 10px;*/
+    display: grid;
+    grid-template-columns: 26px 1fr 100px;
+    text-align: left;
+    border-bottom: 1px solid #eee;
+    font-size: 12px;
+    line-height: 20px;
+    padding: 10px 10px 10px 10px;
+}
+img.amblr{
+    height: 20px;
+}
+img.profile{
+  max-height: 70px;
+  
+}
+div.out_profile {
+  position: relative;
+  display: inline-block;
+  width: 70px;
+  height: 70px;
+  background-color: #eee;
+  background-image: url("data:image/svg+xml,%3Csvg id='user_2_' data-name='user (2)' xmlns='http://www.w3.org/2000/svg' width='512' height='512' viewBox='0 0 512 512'%3E%3Cg id='그룹_707' data-name='그룹 707'%3E%3Cpath id='패스_261' data-name='패스 261' d='M437.02,330.98a255.018,255.018,0,0,0-97.281-61.018A147.947,147.947,0,0,0,404,148C404,66.393,337.607,0,256,0S108,66.393,108,148a147.945,147.945,0,0,0,64.262,121.962A256.4,256.4,0,0,0,0,512H40c0-119.1,96.9-216,216-216s216,96.9,216,216h40A254.331,254.331,0,0,0,437.02,330.98ZM256,256A108,108,0,1,1,364,148,108.122,108.122,0,0,1,256,256Z'/%3E%3C/g%3E%3C/svg%3E%0A");
+  background-repeat: no-repeat;
+  background-size: 20px;
+  background-position:  50% 50%;
+}
+div.out_profile button{
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16.186' viewBox='0 0 16 16.186'%3E%3Cg id='close' transform='translate(-1.844 16.187) rotate(-90)'%3E%3Cg id='close_1_' transform='translate(0.001 1.844)'%3E%3Cpath id='패스_242' data-name='패스 242' d='M1.535,18.431a1.533,1.533,0,0,1-1.089-.368,1.533,1.533,0,0,1,0-2.162L13.463,2.885A1.533,1.533,0,0,1,15.7,4.97L2.608,18.063A1.533,1.533,0,0,1,1.535,18.431Z' transform='translate(-0.001 -2.439)' fill='%23fff'/%3E%3Cpath id='패스_243' data-name='패스 243' d='M15.987,17.836a1.533,1.533,0,0,1-1.073-.445L1.9,4.374A1.533,1.533,0,0,1,4.059,2.213L17.152,15.229a1.533,1.533,0,0,1,.071,2.167q-.035.037-.071.071a1.533,1.533,0,0,1-1.165.368Z' transform='translate(-1.451 -1.844)' fill='%23fff'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E%0A");
+  position: absolute;
+  right:0;
+  top:0;
+  width: 16px;
+  height: 16px;
+  border: 0;
+  box-shadow: none;
+  background-color: #111;
+  background-size: 50%;
+  background-repeat: no-repeat;
+  background-position: 50% 50%;
+}
+/*2023 08 03 css 수정*/
+td.l_left{
+    text-align: left;
+    white-space: normal;
+}

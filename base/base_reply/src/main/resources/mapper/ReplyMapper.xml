@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.co.nextplayer.base.reply.mapper.ReplyMapper">
+
+    <insert id="insertReply" parameterType="kr.co.nextplayer.base.reply.dto.ReplyReqDto">
+        INSERT INTO Reply
+            (community_id, member_cd, content <if test="parentId != null and parentId != ''">, parent_id </if>)
+        VALUES
+            (#{communityId}, #{memberCd}, #{content} <if test="parentId != null and parentId != ''">, #{parentId} </if>)
+    </insert>
+
+    <update id="updateReply" parameterType="kr.co.nextplayer.base.reply.dto.ReplyReqDto">
+        UPDATE
+            Reply
+        <set>
+            <if test="content != null and content != ''">
+                content = #{content},
+            </if>
+            upt_date = CURRENT_TIMESTAMP
+        </set>
+        WHERE
+            reply_id = #{replyId}
+            AND member_cd = #{memberCd}
+    </update>
+
+    <update id="deleteReply" parameterType="kr.co.nextplayer.base.reply.dto.ReplyReqDto">
+        UPDATE
+            Reply
+        SET
+            use_flag = '1'
+        WHERE
+            reply_id = #{replyId}
+            AND member_cd = #{memberCd}
+    </update>
+
+    <resultMap id="replyResultMap" type="kr.co.nextplayer.base.reply.model.Reply">
+        <id property="replyId" column="reply_id"/>
+        <result property="communityId" column="community_id"/>
+        <result property="parentId" column="parent_id" />
+        <result property="memberCd" column="member_cd"/>
+        <result property="content" column="content"/>
+        <result property="bestFlag" column="best_flag"/>
+        <result property="useFlag" column="use_flag"/>
+        <result property="likesCnt" column="likes_cnt"/>
+        <result property="regDate" column="reg_date"/>
+        <result property="likeCnt" column="likeCnt" />
+        <collection property="replies" column="reply_id" ofType="kr.co.nextplayer.base.reply.model.Reply"  select="selectRepliesByParentId"/>
+    </resultMap>
+
+    <select id="selectReplyList" parameterType="String" resultMap="replyResultMap">
+        SELECT
+            reply_id,
+            community_id,
+            member_cd,
+            content,
+            parent_id,
+            use_flag,
+            reg_date
+
+        FROM
+            Reply A
+
+        WHERE
+            community_id = #{communityId}
+            AND parent_id IS NULL
+    </select>
+
+    <select id="selectRepliesByParentId" resultMap="replyResultMap">
+        SELECT
+            reply_id,
+            community_id,
+            member_cd,
+            content,
+            parent_id,
+            use_flag,
+            reg_date
+
+        FROM
+            Reply A
+
+        WHERE
+            parent_id = #{replyId}
+    </select>
+
+    <select id="selectReplyLikesCnt" parameterType="String" resultType="int">
+        SELECT
+            COUNT(1) AS likeCnt
+             -- ,foreign_id AS reply_id
+        FROM
+            Likes
+        WHERE
+            use_flag = 0
+          AND foreign_id = #{replyId}
+          AND foreign_type = 'Reply'
+    </select>
+
+</mapper>

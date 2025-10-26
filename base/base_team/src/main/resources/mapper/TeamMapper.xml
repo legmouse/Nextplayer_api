@@ -1,0 +1,2075 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.co.nextplayer.base.team.mapper.TeamMapper">
+
+    <resultMap id="TeamInfoBaseResultMap" type="kr.co.nextplayer.base.team.model.Team">
+        <id column="team_id" jdbcType="INTEGER" property="teamId"/>
+        <result column="team" jdbcType="VARCHAR" property="team"/>
+        <result column="teams" jdbcType="VARCHAR" property="teams"/>
+        <result column="uage" jdbcType="VARCHAR" property="uage"/>
+        <result column="area_name" jdbcType="VARCHAR" property="areaName"/>
+        <result column="team_type" jdbcType="VARCHAR" property="teamType"/>
+        <result column="team_name" jdbcType="VARCHAR" property="teamName"/>
+        <result column="nick_name" jdbcType="VARCHAR" property="nickName"/>
+        <result column="addr" jdbcType="VARCHAR" property="addr"/>
+        <result column="phone" jdbcType="VARCHAR" property="phone"/>
+        <result column="fax" jdbcType="VARCHAR" property="fax"/>
+        <result column="emblem" jdbcType="VARCHAR" property="emblem"/>
+        <result column="pId" jdbcType="VARCHAR" property="pId"/>
+        <result column="pId_name" jdbcType="VARCHAR" property="pIdName"/>
+        <result column="use_flag" jdbcType="VARCHAR" property="useFlag"/>
+        <result column="reg_date" jdbcType="VARCHAR" property="regDate"/>
+        <result column="plays" jdbcType="VARCHAR" property="plays"/>
+        <result column="win" jdbcType="VARCHAR" property="win"/>
+        <result column="lose" jdbcType="VARCHAR" property="lose"/>
+        <result column="draw" jdbcType="VARCHAR" property="draw"/>
+        <result column="points" jdbcType="VARCHAR" property="points"/>
+        <result column="ga" jdbcType="VARCHAR" property="ga"/>
+        <result column="gd" jdbcType="VARCHAR" property="gd"/>
+        <result column="gf" jdbcType="VARCHAR" property="gf"/>
+        <result column="played" jdbcType="VARCHAR" property="played"/>
+        <result column="play_year" jdbcType="VARCHAR" property="playYear"/>
+        <result column="won" jdbcType="VARCHAR" property="won"/>
+        <result column="lost" jdbcType="VARCHAR" property="lost"/>
+        <result column="avgGf" jdbcType="VARCHAR" property="avgGf"/>
+        <result column="avgGa" jdbcType="VARCHAR" property="avgGa"/>
+        <result column="c_avg_gf" jdbcType="VARCHAR" property="cAvgGf"/>
+        <result column="c_avg_ga" jdbcType="VARCHAR" property="cAvgGa"/>
+        <result column="c_won" jdbcType="VARCHAR" property="cWon"/>
+        <result column="c_lost" jdbcType="VARCHAR" property="cLost"/>
+        <result column="c_draw" jdbcType="VARCHAR" property="cDraw"/>
+        <result column="c_ga" jdbcType="VARCHAR" property="cGa"/>
+        <result column="c_gf" jdbcType="VARCHAR" property="cGf"/>
+        <result column="c_played" jdbcType="VARCHAR" property="cPlayed"/>
+        <result column="l_avg_gf" jdbcType="VARCHAR" property="lAvgGa"/>
+        <result column="l_avg_ga" jdbcType="VARCHAR" property="lAvgGf"/>
+        <result column="l_won" jdbcType="VARCHAR" property="lWon"/>
+        <result column="l_lost" jdbcType="VARCHAR" property="lLost"/>
+        <result column="l_draw" jdbcType="VARCHAR" property="lDraw"/>
+        <result column="l_ga" jdbcType="VARCHAR" property="lGa"/>
+        <result column="l_gf" jdbcType="VARCHAR" property="lGf"/>
+        <result column="l_played" jdbcType="VARCHAR" property="lPlayed"/>
+
+        <result column="t_won" jdbcType="VARCHAR" property="tWon"/>
+        <result column="t_lost" jdbcType="VARCHAR" property="tLost"/>
+        <result column="t_draw" jdbcType="VARCHAR" property="tDraw"/>
+
+        <result column="pdate" jdbcType="VARCHAR" property="pDate"/>
+        <result column="rank" jdbcType="VARCHAR" property="rank"/>
+    </resultMap>
+
+    <resultMap id="MatchBaseResultMap" type="kr.co.nextplayer.base.team.model.Team">
+        <id column="team_id" jdbcType="INTEGER" property="teamId"/>
+        <result column="team" jdbcType="VARCHAR" property="team"/>
+        <result column="teams" jdbcType="VARCHAR" property="teams"/>
+        <association property="match" javaType="kr.co.nextplayer.base.team.model.Match">
+            <result column="league_id" jdbcType="VARCHAR" property="leagueId"/>
+            <result column="cup_id" jdbcType="VARCHAR" property="cupId"/>
+            <result column="cup_name" jdbcType="VARCHAR" property="cupName"/>
+            <result column="league_match_id" jdbcType="VARCHAR" property="leagueMatchId"/>
+            <result column="cup_sub_match_id" jdbcType="VARCHAR" property="cupSubMatchId"/>
+            <result column="round" jdbcType="VARCHAR" property="round"/>
+            <result column="place" jdbcType="VARCHAR" property="place"/>
+            <result column="playdate" jdbcType="VARCHAR" property="playDate"/>
+            <result column="pdate" jdbcType="VARCHAR" property="pDate"/>
+            <result column="ptime" jdbcType="VARCHAR" property="pTime"/>
+            <result column="match_date" jdbcType="TIMESTAMP" property="matchDate"/>
+            <result column="time_diff" jdbcType="VARCHAR" property="timeDiff"/>
+            <result column="home_id" jdbcType="VARCHAR" property="homeId"/>
+            <result column="away_id" jdbcType="VARCHAR" property="awayId"/>
+            <result column="home_score" jdbcType="VARCHAR" property="homeScore"/>
+            <result column="away_score" jdbcType="VARCHAR" property="awayScore"/>
+            <result column="home_pk" jdbcType="VARCHAR" property="homePk"/>
+            <result column="away_pk" jdbcType="VARCHAR" property="awayPk"/>
+            <result column="home_emblem" jdbcType="VARCHAR" property="homeEmblem"/>
+            <result column="away_emblem" jdbcType="VARCHAR" property="awayEmblem"/>
+            <result column="home_type" jdbcType="VARCHAR" property="homeType"/>
+            <result column="away_type" jdbcType="VARCHAR" property="awayType"/>
+            <result column="match_type" jdbcType="VARCHAR" property="matchType"/>
+            <result column="total_type" jdbcType="VARCHAR" property="totalType"/>
+            <result column="reason" jdbcType="VARCHAR" property="reason"/>
+            <result column="parse_date" jdbcType="VARCHAR" property="parseDate"/>
+            <result column="result" jdbcType="VARCHAR" property="result"/>
+        </association>
+    </resultMap>
+
+    <resultMap id="MatchResultMap" type="kr.co.nextplayer.base.team.model.Match">
+        <result column="league_id" jdbcType="VARCHAR" property="leagueId"/>
+        <result column="cup_id" jdbcType="VARCHAR" property="cupId"/>
+        <result column="cup_name" jdbcType="VARCHAR" property="cupName"/>
+        <result column="league_match_id" jdbcType="VARCHAR" property="leagueMatchId"/>
+        <result column="cup_sub_match_id" jdbcType="VARCHAR" property="cupSubMatchId"/>
+        <result column="round" jdbcType="VARCHAR" property="round"/>
+        <result column="place" jdbcType="VARCHAR" property="place"/>
+        <result column="playdate" jdbcType="VARCHAR" property="playDate"/>
+        <result column="pdate" jdbcType="VARCHAR" property="pDate"/>
+        <result column="ptime" jdbcType="VARCHAR" property="pTime"/>
+        <result column="match_date" jdbcType="TIMESTAMP" property="matchDate"/>
+        <result column="time_diff" jdbcType="VARCHAR" property="timeDiff"/>
+        <result column="home_id" jdbcType="VARCHAR" property="homeId"/>
+        <result column="home" jdbcType="VARCHAR" property="home"/>
+        <result column="away" jdbcType="VARCHAR" property="away"/>
+        <result column="away_id" jdbcType="VARCHAR" property="awayId"/>
+        <result column="home_score" jdbcType="VARCHAR" property="homeScore"/>
+        <result column="away_score" jdbcType="VARCHAR" property="awayScore"/>
+        <result column="home_pk" jdbcType="VARCHAR" property="homePk"/>
+        <result column="away_pk" jdbcType="VARCHAR" property="awayPk"/>
+        <result column="home_emblem" jdbcType="VARCHAR" property="homeEmblem"/>
+        <result column="away_emblem" jdbcType="VARCHAR" property="awayEmblem"/>
+        <result column="home_type" jdbcType="VARCHAR" property="homeType"/>
+        <result column="away_type" jdbcType="VARCHAR" property="awayType"/>
+        <result column="match_type" jdbcType="VARCHAR" property="matchType"/>
+        <result column="total_type" jdbcType="VARCHAR" property="totalType"/>
+        <result column="cup_type" jdbcType="VARCHAR" property="cupType"/>
+        <result column="reason" jdbcType="VARCHAR" property="reason"/>
+        <result column="parse_date" jdbcType="VARCHAR" property="parseDate"/>
+        <result column="result" jdbcType="VARCHAR" property="result"/>
+        <result column="progress" jdbcType="VARCHAR" property="progress"/>
+        <result column="play_sdate" jdbcType="VARCHAR" property="playSDate"/>
+        <result column="play_edate" jdbcType="VARCHAR" property="playEDate"/>
+    </resultMap>
+
+    <resultMap id="LeagueResultMap" type="kr.co.nextplayer.base.league.model.League">
+        <result column="league_id" jdbcType="VARCHAR" property="leagueId"/>
+        <result column="league_match_id" jdbcType="VARCHAR" property="leagueMatchId"/>
+        <result column="round" jdbcType="VARCHAR" property="round"/>
+        <result column="playdate" jdbcType="VARCHAR" property="playDate"/>
+        <result column="pdate" jdbcType="VARCHAR" property="pDate"/>
+        <result column="ptime" jdbcType="VARCHAR" property="pTime"/>
+        <result column="match_date" jdbcType="TIMESTAMP" property="matchDate"/>
+        <result column="time_diff" jdbcType="VARCHAR" property="timeDiff"/>
+        <result column="home_id" jdbcType="VARCHAR" property="homeId"/>
+        <result column="away_id" jdbcType="VARCHAR" property="awayId"/>
+        <result column="home_score" jdbcType="VARCHAR" property="homeScore"/>
+        <result column="away_score" jdbcType="VARCHAR" property="awayScore"/>
+        <result column="home_pk" jdbcType="VARCHAR" property="homePk"/>
+        <result column="away_pk" jdbcType="VARCHAR" property="awayPk"/>
+        <result column="home_emblem" jdbcType="VARCHAR" property="homeEmblem"/>
+        <result column="away_emblem" jdbcType="VARCHAR" property="awayEmblem"/>
+        <result column="home_type" jdbcType="VARCHAR" property="homeType"/>
+        <result column="away_type" jdbcType="VARCHAR" property="awayType"/>
+        <result column="match_type" jdbcType="VARCHAR" property="matchType"/>
+        <result column="reason" jdbcType="VARCHAR" property="reason"/>
+        <result column="parse_date" jdbcType="VARCHAR" property="parseDate"/>
+        <result column="l_league_id" jdbcType="VARCHAR" property="lLeagueId"/>
+        <result column="l_team_id" jdbcType="VARCHAR" property="lTeamId"/>
+        <result column="info_league_id" jdbcType="VARCHAR" property="infoLeagueId"/>
+        <result column="team_id" jdbcType="VARCHAR" property="teamId"/>
+        <result column="uage" jdbcType="VARCHAR" property="uage"/>
+        <result column="area_name" jdbcType="VARCHAR" property="areaName"/>
+        <result column="team_type" jdbcType="VARCHAR" property="teamType"/>
+        <result column="team_name" jdbcType="VARCHAR" property="teamName"/>
+        <result column="nick_name" jdbcType="VARCHAR" property="nickName"/>
+        <result column="emblem" jdbcType="VARCHAR" property="emblem"/>
+        <result column="use_flag" jdbcType="VARCHAR" property="useFlag"/>
+
+    </resultMap>
+
+    <!-- 광역별 클럽 리스트 -->
+    <select id="selectAreaTeamList" parameterType="kr.co.nextplayer.base.team.dto.TeamDto" resultType="hashmap">
+        SELECT
+            A.*
+        FROM
+            (
+                SELECT
+                    a.team_id,
+                    a.uage,
+                    a.team_type,
+                    a.nick_name,
+                    a.emblem,
+                    a.addr,
+                    SUM(IFNULL(a.c_played, 0) + IFNULL(b.l_played, 0)) AS plays,
+                    SUM(IFNULL(a.c_won, 0) + IFNULL(b.l_won, 0)) AS win,
+                    SUM(IFNULL(a.c_draw, 0) + IFNULL(b.l_draw, 0)) AS draw,
+                    SUM(IFNULL(a.c_lost, 0) + IFNULL(b.l_lost, 0)) AS lose,
+                    SUM(IFNULL(a.c_gf, 0) + IFNULL(b.l_gf, 0)) AS gf,
+                    SUM(IFNULL(a.c_ga, 0) + IFNULL(b.l_ga, 0)) AS ga,
+                    SUM(IFNULL(a.c_gd, 0) + IFNULL(b.l_gd, 0)) AS gd,
+                    SUM(IFNULL(a.c_points, 0) + IFNULL(b.l_points, 0)) AS points,
+                    IFNULL(TRUNCATE(SUM(IFNULL(a.c_points, 0) + IFNULL(b.l_points, 0)) / SUM(IFNULL(a.c_played, 0) + IFNULL(b.l_played, 0)), 1), 0) AS avg_point
+                FROM
+                    (
+                        SELECT
+                            a.team_id, a.team_type, a.nick_name, a.emblem, a.uage, a.use_flag, a.addr,
+                            b.c_team_id, b.cup_id,
+                            b.cup_name, b.play_sdate, b.play_edate, b.cup_type,
+                            SUM(c_played) AS c_played,
+                            SUM(c_won) AS c_won,
+                            SUM(c_draw) AS c_draw,
+                            SUM(c_lost) AS c_lost,
+                            SUM(c_gf) AS c_gf,
+                            SUM(c_ga) AS c_ga,
+                            SUM(c_gd) AS c_gd,
+                            SUM(c_points) AS c_points
+                        FROM
+                            (
+                                SELECT
+                                    team_id, a.uage, a.addr, team_type, team_name, nick_name, emblem, a.use_flag
+                                FROM
+                                    Team a
+                                    INNER JOIN Area b ON a.area_name = b.area_name
+                                WHERE
+                                    a.uage REGEXP (#{ageGroup})
+                                    AND a.use_flag = 0
+                                    <if test="areaId != null and !areaId.equals('') and !areaId.equals('-1') ">
+                                        AND b.area_id = #{areaId}
+                                    </if>
+                                    <if test="teamType != null and !teamType.equals('') and !teamType.equals('-1') ">
+                                        AND a.team_type = #{teamType}
+                                    </if>
+                                    <if test="sNickName != null and !sNickName.equals('') ">
+                                        AND a.nick_name REGEXP (#{sNickName})
+                                    </if>
+                            ) a
+                            LEFT JOIN
+                                    (
+                                        SELECT
+                                            b.cup_name, b.play_sdate, b.play_edate, b.cup_type, a.*
+                                        FROM
+                                            (
+                                                SELECT
+                                                    team_id AS c_team_id, A.cup_id,
+                                                    SUM(played1 + played2 + played3) AS c_played,
+                                                    SUM(won1 + won2 + won3) AS c_won,
+                                                    SUM(draw1 + draw2 + draw3) AS c_draw,
+                                                    SUM(lost1 + lost2 + lost3) AS c_lost,
+                                                    SUM(gf1 + gf2 + gf3) AS c_gf,
+                                                    SUM(ga1 + ga2 + ga3) AS c_ga,
+                                                    SUM(gd1 + gd2 + gd3) AS c_gd,
+                                                    SUM(points1 + points2 + points3) AS c_points
+                                                FROM
+                                                    ${cupResultTB} A
+                                                    INNER JOIN ${cupInfoTB} i ON A.cup_id = i.cup_id AND i.play_flag = 0 AND i.use_flag = 0
+                                                WHERE
+                                                    A.use_flag = 0
+                                                GROUP BY A.cup_id, A.team_id
+                                            ) a
+                                            INNER JOIN
+                                                    (
+                                                        SELECT
+                                                            cup_id, cup_name, play_sdate, play_edate, cup_type
+                                                        FROM
+                                                            ${cupInfoTB}
+                                                        WHERE
+                                                            use_flag = 0
+                                                            AND play_flag = 0
+                                                            <choose>
+                                                                <when test="sYear != null and sYear != '' ">
+                                                                    AND play_sdate <![CDATA[>=]]> CONCAT(#{sYear},"-01-01 00:00:00")
+                                                                    AND play_sdate <![CDATA[<=]]> CONCAT(#{sYear},"-12-31 23:59:59")
+                                                                    AND play_edate <![CDATA[>=]]> CONCAT(#{sYear},"-01-01 00:00:00")
+                                                                    AND play_edate <![CDATA[<=]]> CONCAT(#{sYear},"-12-31 23:59:59")
+                                                                </when>
+                                                                <otherwise>
+                                                                    AND play_sdate <![CDATA[>=]]> CONCAT(YEAR(CURDATE()),"-01-01 00:00:00")
+                                                                    AND play_sdate <![CDATA[<=]]> CONCAT(YEAR(CURDATE()),"-12-31 23:59:59")
+                                                                    AND play_edate <![CDATA[>=]]> CONCAT(YEAR(CURDATE()),"-01-01 00:00:00")
+                                                                    AND play_edate <![CDATA[<=]]> CONCAT(YEAR(CURDATE()),"-12-31 23:59:59")
+                                                                </otherwise>
+                                                            </choose>
+                                                    ) b ON a.cup_id = b.cup_id
+                                    ) b ON a.team_id = b.c_team_id
+                    GROUP BY a.team_id
+                    ) a
+                    LEFT JOIN
+                            (
+                                SELECT
+                                    a.l_team_id,
+                                    a.league_id,
+                                    a.l_points,
+                                    SUM(a.l_played) AS l_played,
+                                    SUM(a.l_won) AS l_won,
+                                    SUM(a.l_draw) AS l_draw,
+                                    SUM(a.l_lost) AS l_lost,
+                                    SUM(a.l_gf) AS l_gf,
+                                    SUM(a.l_ga) AS l_ga,
+                                    SUM(a.l_gd) AS l_gd,
+                                    SUM(a.l_points) AS l_point
+                                FROM
+                                    (
+                                        SELECT
+                                            team_id as l_team_id,
+                                            league_id,
+                                            SUM( points + points_add ) AS l_points,
+                                            played AS l_played,
+                                            won AS l_won,
+                                            draw AS l_draw,
+                                            lost AS l_lost,
+                                            gf AS l_gf,
+                                            ga AS l_ga,
+                                            gd AS l_gd
+                                        FROM
+                                            ${leagueResultTB}
+                                        WHERE
+                                            use_flag = 0
+                                        GROUP BY league_id, team_id
+                                    ) a
+                                    INNER JOIN
+                                                (
+                                                SELECT
+                                                    league_id, league_name, play_sdate, play_edate
+                                                FROM
+                                                    ${leagueInfoTB}
+                                                WHERE use_flag = 0
+                                                <choose>
+                                                    <when test="sYear != null and sYear != '' ">
+                                                        AND play_sdate <![CDATA[>=]]> CONCAT(#{sYear},"-01-01 00:00:00")
+                                                        AND play_sdate <![CDATA[<=]]> CONCAT(#{sYear},"-12-31 23:59:59")
+                                                        AND play_edate <![CDATA[>=]]> CONCAT(#{sYear},"-01-01 00:00:00")
+                                                        AND play_edate <![CDATA[<=]]> CONCAT(#{sYear},"-12-31 23:59:59")
+                                                    </when>
+                                                    <otherwise>
+                                                        AND play_sdate <![CDATA[>=]]> CONCAT(YEAR(CURDATE()),"-01-01 00:00:00")
+                                                        AND play_sdate <![CDATA[<=]]> CONCAT(YEAR(CURDATE()),"-12-31 23:59:59")
+                                                        AND play_edate <![CDATA[>=]]> CONCAT(YEAR(CURDATE()),"-01-01 00:00:00")
+                                                        AND play_edate <![CDATA[<=]]> CONCAT(YEAR(CURDATE()),"-12-31 23:59:59")
+                                                    </otherwise>
+                                                </choose>
+                                                ) b ON a.league_id = b.league_id
+                            GROUP BY a.l_team_id
+                            ) b ON a.team_id = b.l_team_id
+                GROUP BY a.team_id
+            ) A
+        WHERE
+            A.plays <![CDATA[>]]> 0
+        ORDER BY
+        points DESC, win DESC, gd DESC, gf DESC
+
+    </select>
+
+    <select id="selectInterestTeamData" parameterType="kr.co.nextplayer.base.team.dto.TeamDto" resultType="hashmap">
+        SELECT
+            A.*
+        FROM
+            (
+            SELECT
+                a.team_id,
+                a.uage,
+                a.team_type,
+                a.nick_name,
+                a.emblem,
+                a.addr,
+                SUM(IFNULL(a.c_played, 0) + IFNULL(b.l_played, 0)) AS plays,
+                SUM(IFNULL(a.c_won, 0) + IFNULL(b.l_won, 0)) AS win,
+                SUM(IFNULL(a.c_draw, 0) + IFNULL(b.l_draw, 0)) AS draw,
+                SUM(IFNULL(a.c_lost, 0) + IFNULL(b.l_lost, 0)) AS lose,
+                SUM(IFNULL(a.c_gf, 0) + IFNULL(b.l_gf, 0)) AS gf,
+                SUM(IFNULL(a.c_ga, 0) + IFNULL(b.l_ga, 0)) AS ga,
+                SUM(IFNULL(a.c_gd, 0) + IFNULL(b.l_gd, 0)) AS gd,
+                SUM(IFNULL(a.c_points, 0) + IFNULL(b.l_points, 0)) AS points,
+                IFNULL(TRUNCATE(SUM(IFNULL(a.c_points, 0) + IFNULL(b.l_points, 0)) / SUM(IFNULL(a.c_played, 0) + IFNULL(b.l_played, 0)), 1), 0) AS avg_point
+            FROM
+                (
+                SELECT
+                    a.team_id, a.team_type, a.nick_name, a.emblem, a.uage, a.use_flag, a.addr,
+                    b.c_team_id, b.cup_id,
+                    b.cup_name, b.play_sdate, b.play_edate, b.cup_type,
+                    SUM(c_played) AS c_played,
+                    SUM(c_won) AS c_won,
+                    SUM(c_draw) AS c_draw,
+                    SUM(c_lost) AS c_lost,
+                    SUM(c_gf) AS c_gf,
+                    SUM(c_ga) AS c_ga,
+                    SUM(c_gd) AS c_gd,
+                    SUM(c_points) AS c_points
+                FROM
+                    (
+                    SELECT
+                        team_id, a.uage, a.addr, team_type, team_name, nick_name, emblem, a.use_flag
+                    FROM
+                        Team a
+                    WHERE
+                        a.team_id = #{teamId}
+                    ) a
+                    LEFT JOIN
+                            (
+                            SELECT
+                                b.cup_name, b.play_sdate, b.play_edate, b.cup_type, a.*
+                            FROM
+                                (
+                                SELECT
+                                    team_id AS c_team_id, A.cup_id,
+                                    SUM(played1 + played2 + played3) AS c_played,
+                                    SUM(won1 + won2 + won3) AS c_won,
+                                    SUM(draw1 + draw2 + draw3) AS c_draw,
+                                    SUM(lost1 + lost2 + lost3) AS c_lost,
+                                    SUM(gf1 + gf2 + gf3) AS c_gf,
+                                    SUM(ga1 + ga2 + ga3) AS c_ga,
+                                    SUM(gd1 + gd2 + gd3) AS c_gd,
+                                    SUM(points1 + points2 + points3) AS c_points
+                                FROM
+                                    ${cupResultTB} A
+                                    INNER JOIN ${cupInfoTB} i ON A.cup_id = i.cup_id AND i.play_flag = 0 AND i.use_flag = 0
+                                WHERE
+                                    A.use_flag = 0
+                                    AND A.team_id = #{teamId}
+                                GROUP BY A.cup_id, A.team_id
+                                ) a
+                                INNER JOIN
+                                        (
+                                        SELECT
+                                            A.cup_id, A.cup_name, play_sdate, play_edate, cup_type
+                                        FROM
+                                            ${cupInfoTB} A
+                                            INNER JOIN ${cupTeamTB} B ON A.cup_id = B.cup_id
+                                        WHERE
+                                            A.use_flag = 0
+                                            AND B.team_id = #{teamId}
+                                            AND play_flag = 0
+                                            <choose>
+                                                <when test="sYear != null and sYear != '' ">
+                                            AND play_sdate <![CDATA[>=]]> CONCAT(#{sYear},"-01-01 00:00:00")
+                                            AND play_sdate <![CDATA[<=]]> CONCAT(#{sYear},"-12-31 23:59:59")
+                                            AND play_edate <![CDATA[>=]]> CONCAT(#{sYear},"-01-01 00:00:00")
+                                            AND play_edate <![CDATA[<=]]> CONCAT(#{sYear},"-12-31 23:59:59")
+                                                </when>
+                                                <otherwise>
+                                            AND play_sdate <![CDATA[>=]]> CONCAT(YEAR(CURDATE()),"-01-01 00:00:00")
+                                            AND play_sdate <![CDATA[<=]]> CONCAT(YEAR(CURDATE()),"-12-31 23:59:59")
+                                            AND play_edate <![CDATA[>=]]> CONCAT(YEAR(CURDATE()),"-01-01 00:00:00")
+                                            AND play_edate <![CDATA[<=]]> CONCAT(YEAR(CURDATE()),"-12-31 23:59:59")
+                                                </otherwise>
+                                            </choose>
+                                        ) b ON a.cup_id = b.cup_id
+                            ) b ON a.team_id = b.c_team_id
+                GROUP BY a.team_id
+                ) a
+                LEFT JOIN
+                        (
+                        SELECT
+                            a.l_team_id,
+                            a.league_id,
+                            a.l_points,
+                            SUM(a.l_played) AS l_played,
+                            SUM(a.l_won) AS l_won,
+                            SUM(a.l_draw) AS l_draw,
+                            SUM(a.l_lost) AS l_lost,
+                            SUM(a.l_gf) AS l_gf,
+                            SUM(a.l_ga) AS l_ga,
+                            SUM(a.l_gd) AS l_gd,
+                            SUM(a.l_points) AS l_point
+                        FROM
+                            (
+                            SELECT
+                                team_id as l_team_id,
+                                league_id,
+                                SUM( points + points_add ) AS l_points,
+                                played AS l_played,
+                                won AS l_won,
+                                draw AS l_draw,
+                                lost AS l_lost,
+                                gf AS l_gf,
+                                ga AS l_ga,
+                                gd AS l_gd
+                            FROM
+                                ${leagueResultTB}
+                            WHERE
+                                use_flag = 0
+                                AND team_id = #{teamId}
+                            GROUP BY league_id, team_id
+                            ) a
+                            INNER JOIN
+                                    (
+                                    SELECT
+                                        A.league_id, A.league_name, play_sdate, play_edate
+                                    FROM
+                                        ${leagueInfoTB} A
+                                        INNER JOIN ${leagueTeamTB} B ON A.league_id = B.league_id
+                                    WHERE
+                                        A.use_flag = 0
+                                        AND B.team_id = #{teamId}
+                                        <choose>
+                                            <when test="sYear != null and sYear != '' ">
+                                        AND play_sdate <![CDATA[>=]]> CONCAT(#{sYear},"-01-01 00:00:00")
+                                        AND play_sdate <![CDATA[<=]]> CONCAT(#{sYear},"-12-31 23:59:59")
+                                        AND play_edate <![CDATA[>=]]> CONCAT(#{sYear},"-01-01 00:00:00")
+                                        AND play_edate <![CDATA[<=]]> CONCAT(#{sYear},"-12-31 23:59:59")
+                                            </when>
+                                            <otherwise>
+                                        AND play_sdate <![CDATA[>=]]> CONCAT(YEAR(CURDATE()),"-01-01 00:00:00")
+                                        AND play_sdate <![CDATA[<=]]> CONCAT(YEAR(CURDATE()),"-12-31 23:59:59")
+                                        AND play_edate <![CDATA[>=]]> CONCAT(YEAR(CURDATE()),"-01-01 00:00:00")
+                                        AND play_edate <![CDATA[<=]]> CONCAT(YEAR(CURDATE()),"-12-31 23:59:59")
+                                            </otherwise>
+                                        </choose>
+                                    ) b ON a.league_id = b.league_id
+                        GROUP BY a.l_team_id
+                        ) b ON a.team_id = b.l_team_id
+            GROUP BY a.team_id
+            ) A
+    </select>
+
+    <!-- 학원클럽 - 요약정보 - 해당연도 승무패, 득/실, 평균 득/실점 -->
+    <select id="selectTeamResultByYear" parameterType="kr.co.nextplayer.base.team.dto.TeamDto" resultType="kr.co.nextplayer.base.team.dto.TeamResultDto">
+        SELECT a.team_id,
+        SUM(IFNULL(played, 0)) AS played,
+        SUM(IFNULL(won, 0)) AS won,
+        SUM(IFNULL(draw, 0)) AS draw,
+        SUM(IFNULL(lost, 0)) AS lost,
+        SUM(IFNULL(gf, 0)) AS gf,
+        SUM(IFNULL(ga, 0)) AS ga,
+
+        IFNULL(TRUNCATE(SUM(IFNULL(gf, 0)) / SUM(IFNULL(played, 0)), 1), 0) AS avg_gf,
+        IFNULL(TRUNCATE(SUM(IFNULL(ga, 0)) / SUM(IFNULL(played, 0)), 1), 0) AS avg_ga
+
+        FROM
+        (
+
+        SELECT team_id,
+        SUM(played1 + played2 + played3) AS played,
+        SUM(won1 + won2 + won3) AS won,
+        SUM(draw1 + draw2 + draw3) AS draw,
+        SUM(lost1 + lost2 + lost3) AS lost,
+        SUM(gf1 + gf2 + gf3) AS gf,
+        SUM(ga1 + ga2 + ga3) AS ga
+        FROM
+        (
+        SELECT cup_id, play_sdate
+        FROM ${cupInfoTB}
+        WHERE use_flag = 0
+        AND play_flag = 0
+
+        <choose>
+            <when test="sYear != null and sYear != '' ">
+                AND play_sdate <![CDATA[>=]]> CONCAT(#{sYear},"-01-01 00:00:00")
+                AND play_sdate <![CDATA[<=]]> CONCAT(#{sYear},"-12-31 23:59:59")
+                AND play_edate <![CDATA[>=]]> CONCAT(#{sYear},"-01-01 00:00:00")
+                AND play_edate <![CDATA[<=]]> CONCAT(#{sYear},"-12-31 23:59:59")
+            </when>
+            <otherwise>
+                AND play_sdate <![CDATA[>=]]> CONCAT(YEAR(CURDATE()),"-01-01 00:00:00")
+                AND play_sdate <![CDATA[<=]]> CONCAT(YEAR(CURDATE()),"-12-31 23:59:59")
+                AND play_edate <![CDATA[>=]]> CONCAT(YEAR(CURDATE()),"-01-01 00:00:00")
+                AND play_edate <![CDATA[<=]]> CONCAT(YEAR(CURDATE()),"-12-31 23:59:59")
+            </otherwise>
+        </choose>
+
+        ) a INNER JOIN
+        (
+        SELECT
+            team_id, a.cup_id,played1,won1,draw1,lost1,gf1,ga1,played2,won2,draw2,lost2,gf2,ga2,played3,won3,draw3,lost3,gf3,ga3
+        FROM ${cupResultTB} a
+        INNER JOIN ${cupInfoTB} i ON a.cup_id = i.cup_id AND i.use_flag = 0 AND i.play_flag = 0
+
+        WHERE i.use_flag = 0
+        AND team_id = #{teamId}
+        ) b
+        ON a.cup_id = b.cup_id
+
+        UNION
+
+        SELECT team_id,
+        SUM(played) AS played,
+        SUM(won) AS won,
+        SUM(draw) AS draw,
+        SUM(lost) AS lost,
+        SUM(gf) AS gf,
+        SUM(ga) AS ga
+        FROM
+        (
+        SELECT league_id, play_sdate
+        FROM ${leagueInfoTB}
+        WHERE use_flag = 0
+
+        <choose>
+            <when test="sYear != null and sYear != '' ">
+                AND play_sdate <![CDATA[>=]]> CONCAT(#{sYear},"-01-01 00:00:00")
+                AND play_sdate <![CDATA[<=]]> CONCAT(#{sYear},"-12-31 23:59:59")
+                AND play_edate <![CDATA[>=]]> CONCAT(#{sYear},"-01-01 00:00:00")
+                AND play_edate <![CDATA[<=]]> CONCAT(#{sYear},"-12-31 23:59:59")
+            </when>
+            <otherwise>
+                AND play_sdate <![CDATA[>=]]> CONCAT(YEAR(CURDATE()),"-01-01 00:00:00")
+                AND play_sdate <![CDATA[<=]]> CONCAT(YEAR(CURDATE()),"-12-31 23:59:59")
+                AND play_edate <![CDATA[>=]]> CONCAT(YEAR(CURDATE()),"-01-01 00:00:00")
+                AND play_edate <![CDATA[<=]]> CONCAT(YEAR(CURDATE()),"-12-31 23:59:59")
+            </otherwise>
+        </choose>
+
+        ) a INNER JOIN
+        (
+        SELECT team_id,league_id,played, won, draw, lost, gf, ga
+        FROM ${leagueResultTB}
+        WHERE use_flag = 0
+        AND team_id = #{teamId}
+        ) b
+        ON a.league_id = b.league_id
+
+        ) a
+
+    </select>
+
+    <select id="selectTeamResultByYearGraph" parameterType="kr.co.nextplayer.base.team.dto.TeamDto" resultType="hashmap">
+        SELECT
+            a.pDate AS year,
+			SUM(IFNULL(a.played, 0)) AS played,
+			SUM(IFNULL(a.won, 0)) AS won,
+			SUM(IFNULL(a.draw, 0)) AS draw,
+			SUM(IFNULL(a.lost, 0)) AS lost,
+			SUM(IFNULL(a.gf, 0)) AS gf,
+			SUM(IFNULL(a.ga, 0)) AS ga,
+			IFNULL(TRUNCATE(SUM(IFNULL(a.gf, 0)) / SUM(IFNULL(a.played, 0)), 1), 0) AS avg_gf,
+			IFNULL(TRUNCATE(SUM(IFNULL(a.ga, 0)) / SUM(IFNULL(a.played, 0)), 1), 0) AS avg_ga
+        FROM
+            (
+            SELECT
+            team_id,
+            SUM(played1 + played2 + played3) AS played,
+            SUM(won1 + won2 + won3) AS won,
+            SUM(draw1 + draw2 + draw3) AS draw,
+            SUM(lost1 + lost2 + lost3) AS lost,
+            SUM(gf1 + gf2 + gf3) AS gf,
+            SUM(ga1 + ga2 + ga3) AS ga,
+            DATE_FORMAT(a.play_sdate, '%Y') AS pDate
+            FROM
+            (
+            SELECT cup_id, play_sdate
+            FROM ${cupInfoTB}
+            WHERE use_flag = 0
+            AND play_flag = 0
+            ) a INNER JOIN
+            (
+            SELECT team_id, a.cup_id,played1,won1,draw1,lost1,gf1,ga1,played2,won2,draw2,lost2,gf2,ga2,played3,won3,draw3,lost3,gf3,ga3
+            FROM ${cupResultTB} a
+            INNER JOIN ${cupInfoTB} i ON a.cup_id = i.cup_id AND i.use_flag = 0 AND i.play_flag = 0
+            WHERE i.use_flag = 0
+            AND team_id = #{teamId}
+            ) b ON a.cup_id = b.cup_id
+            GROUP BY
+            DATE_FORMAT(a.play_sdate, '%Y')
+            UNION ALL
+            SELECT
+            b.team_id,
+            SUM(b.played) AS played,
+            SUM(b.won) AS won,
+            SUM(b.draw) AS draw,
+            SUM(b.lost) AS lost,
+            SUM(b.gf) AS gf,
+            SUM(b.ga) AS ga,
+            DATE_FORMAT(a.play_sdate, '%Y') AS pDate
+            FROM
+            (
+            SELECT league_id, play_sdate
+            FROM ${leagueInfoTB}
+            WHERE use_flag = 0
+            ) a INNER JOIN
+            (
+            SELECT team_id,league_id,played, won, draw, lost, gf, ga
+            FROM ${leagueResultTB}
+            WHERE use_flag = 0
+            AND team_id = #{teamId}
+            ) b ON a.league_id = b.league_id
+            GROUP BY
+            DATE_FORMAT(a.play_sdate, '%Y')
+            ) a
+        GROUP BY a.pDate
+    </select>
+
+    <!-- 학원클럽 - 요약정보 - 연도별 평균 득/실점 -->
+    <select id="selectTeamAvgGoal" parameterType="kr.co.nextplayer.base.team.dto.TeamDto" resultType="hashmap">
+        SELECT a.team_id, a.play_year,
+               SUM(played) AS played,
+               SUM(gf) AS gf,
+               SUM(ga) AS ga,
+
+               CAST(TRUNCATE(SUM(IFNULL(gf, 0)) / SUM(IFNULL(played, 0)), 1) AS CHAR) AS avg_gf,
+               CAST(TRUNCATE(SUM(IFNULL(ga, 0)) / SUM(IFNULL(played, 0)), 1) AS CHAR) AS avg_ga
+
+        FROM
+            (
+
+                SELECT team_id, DATE_FORMAT( play_sdate, '%Y') AS play_year,
+                       SUM(played1 + played2 + played3) AS played,
+                       SUM(gf1 + gf2 + gf3) AS gf,
+                       SUM(ga1 + ga2 + ga3) AS ga
+                FROM
+                    (
+                        SELECT cup_id, play_sdate
+                        FROM ${cupInfoTB}
+                        WHERE use_flag = 0
+                        AND play_flag = 0
+                    ) a INNER JOIN
+                    (
+                        SELECT team_id,a.cup_id,played1,won1,draw1,lost1,gf1,ga1,played2,won2,draw2,lost2,gf2,ga2,played3,won3,draw3,lost3,gf3,ga3
+                        FROM ${cupResultTB} a
+                         INNER JOIN ${cupInfoTB} i ON a.cup_id = i.cup_id AND i.use_flag = 0 AND i.play_flag = 0
+                        WHERE i.use_flag = 0
+                          AND team_id = #{teamId}
+                    ) b
+                    ON a.cup_id = b.cup_id
+                GROUP BY DATE_FORMAT( play_sdate, '%Y')
+
+                UNION ALL
+
+                SELECT team_id, DATE_FORMAT( play_sdate, '%Y') AS play_year,
+                       SUM(played) AS played,
+                       SUM(gf) AS gf,
+                       SUM(ga) AS ga
+                FROM
+                    (
+                        SELECT league_id, play_sdate
+                        FROM ${leagueInfoTB}
+                        WHERE use_flag = 0
+                    ) a INNER JOIN
+                    (
+                        SELECT team_id,league_id,played,gf,ga
+                        FROM ${leagueResultTB}
+                        WHERE use_flag = 0
+                          AND team_id = #{teamId}
+                    ) b
+                    ON a.league_id = b.league_id
+                GROUP BY DATE_FORMAT( play_sdate, '%Y')
+
+            ) a
+        GROUP BY play_year
+        ORDER BY play_year ASC
+
+    </select>
+
+    <!-- 학원클럽 - 요약정보 -  리그+대회 경기결과 리스트 -->
+    <select id="selectTeamTotalMatch" parameterType="kr.co.nextplayer.base.team.dto.TeamDto" resultType="hashmap">
+        SELECT
+            1 AS total_type,
+            DATE_FORMAT(SUBSTRING_INDEX(match_date,' ',1 ), '%Y%m%d') AS pdate,
+            a.match_date, a.place,
+        TIMESTAMPDIFF(minute, CONCAT(DATE_FORMAT(SUBSTRING_INDEX(match_date,' ',1 ), '%Y-%m-%d'), " ", right(a.match_date,5) + ':00'), now()) AS time_diff,
+        a.video_live, a.video_rep, a.video_high,
+
+        a.home_id, a.home,  a.home_score, 0 AS home_pk,
+        b.emblem AS home_emblem, b.team_type AS home_type,
+        a.away_id, a.away, a.away_score, 0 AS away_pk,
+        c.emblem AS away_emblem, c.team_type AS away_type,
+        a.match_type, a.reason, a.league_id
+
+        FROM ${leagueMatchTB} a
+        INNER JOIN Team b
+        ON a.home_id = b.team_id
+        INNER JOIN Team c
+        ON a.away_id  = c.team_id
+        WHERE a.use_flag = 0
+        AND a.home_id = #{teamId}
+
+        <choose>
+            <when test="sYear != null and sYear != '' ">
+                AND SUBSTRING_INDEX(a.match_date , ' ', 1) <![CDATA[>=]]> CONCAT(#{sYear},"-01-01 00:00:00")
+                AND SUBSTRING_INDEX(a.match_date , ' ', 1) <![CDATA[<=]]> CONCAT(#{sYear},"-12-31 23:59:59")
+            </when>
+            <otherwise>
+                AND SUBSTRING_INDEX(a.match_date , ' ', 1) <![CDATA[>=]]> CONCAT(YEAR(CURDATE()),"-01-01 00:00:00")
+                AND SUBSTRING_INDEX(a.match_date , ' ', 1) <![CDATA[<=]]> CONCAT(YEAR(CURDATE()),"-12-31 23:59:59")
+            </otherwise>
+        </choose>
+
+        UNION ALL
+
+        SELECT 1 AS total_type,
+        DATE_FORMAT(SUBSTRING_INDEX(match_date,' ',1 ), '%Y%m%d') AS pdate,
+        a.match_date, a.place,
+
+        <!-- 			TIMESTAMPDIFF(minute, CONCAT(DATE_FORMAT(SUBSTRING_INDEX(match_date,' ',1 ), '%Y-%m-%d'), " ", right(a.match_date,5) + ':00'), CURDATE()) AS time_diff, -->
+        TIMESTAMPDIFF(minute, CONCAT(DATE_FORMAT(SUBSTRING_INDEX(match_date,' ',1 ), '%Y-%m-%d'), " ", right(a.match_date,5) + ':00'), now()) AS time_diff,
+        a.video_live, a.video_rep, a.video_high,
+
+        a.home_id, a.home,  a.home_score, 0 AS home_pk,
+        b.emblem AS home_emblem, b.team_type AS home_type,
+        a.away_id, a.away, a.away_score, 0 AS away_pk,
+        c.emblem AS away_emblem, c.team_type AS away_type,
+        a.match_type, a.reason, a.league_id
+
+        FROM ${leagueMatchTB} a
+        INNER JOIN Team b
+        ON a.home_id = b.team_id
+        INNER JOIN Team c
+        ON a.away_id  = c.team_id
+        WHERE a.use_flag = 0
+        AND a.away_id = #{teamId}
+
+        <choose>
+            <when test="sYear != null and sYear != '' ">
+                AND SUBSTRING_INDEX(a.match_date , ' ', 1) <![CDATA[>=]]> CONCAT(#{sYear},"-01-01 00:00:00")
+                AND SUBSTRING_INDEX(a.match_date , ' ', 1) <![CDATA[<=]]> CONCAT(#{sYear},"-12-31 23:59:59")
+            </when>
+            <otherwise>
+                AND SUBSTRING_INDEX(a.match_date , ' ', 1) <![CDATA[>=]]> CONCAT(YEAR(CURDATE()),"-01-01 00:00:00")
+                AND SUBSTRING_INDEX(a.match_date , ' ', 1) <![CDATA[<=]]> CONCAT(YEAR(CURDATE()),"-12-31 23:59:59")
+            </otherwise>
+        </choose>
+
+        UNION ALL
+
+        SELECT 2 AS total_type,
+        DATE_FORMAT(SUBSTRING_INDEX(match_date,' ',1 ), '%Y%m%d') AS pdate,
+        a.match_date, a.place,
+
+        <!-- 			TIMESTAMPDIFF(minute, CONCAT(DATE_FORMAT(SUBSTRING_INDEX(match_date,' ',1 ), '%Y-%m-%d'), " ", right(a.match_date,5) + ':00'), CURDATE()) AS time_diff, -->
+        TIMESTAMPDIFF(minute, CONCAT(DATE_FORMAT(SUBSTRING_INDEX(match_date,' ',1 ), '%Y-%m-%d'), " ", right(a.match_date,5) + ':00'), now()) AS time_diff,
+        a.video_live, a.video_rep, a.video_high,
+
+        a.home_id, a.home,  a.home_score, a.home_pk,
+        b.emblem AS home_emblem, b.team_type AS home_type,
+        a.away_id, a.away, a.away_score, a.away_pk,
+        c.emblem AS away_emblem, c.team_type AS away_type,
+        a.match_type, a.reason, a.cup_id
+
+        FROM ${cupSubMatchTB} a
+        INNER JOIN ${cupInfoTB} i on a.cup_id = i.cup_id and i.play_flag = 0 and i.use_flag = 0
+        INNER JOIN Team b
+        ON a.home_id = b.team_id
+        INNER JOIN Team c
+        ON a.away_id  = c.team_id
+        WHERE a.use_flag = 0
+        AND a.home_id = #{teamId}
+        <choose>
+            <when test="sYear != null and sYear != '' ">
+                AND SUBSTRING_INDEX(a.match_date , ' ', 1) <![CDATA[>=]]> CONCAT(#{sYear},"-01-01 00:00:00")
+                AND SUBSTRING_INDEX(a.match_date , ' ', 1) <![CDATA[<=]]> CONCAT(#{sYear},"-12-31 23:59:59")
+            </when>
+            <otherwise>
+                AND SUBSTRING_INDEX(a.match_date , ' ', 1) <![CDATA[>=]]> CONCAT(YEAR(CURDATE()),"-01-01 00:00:00")
+                AND SUBSTRING_INDEX(a.match_date , ' ', 1) <![CDATA[<=]]> CONCAT(YEAR(CURDATE()),"-12-31 23:59:59")
+            </otherwise>
+        </choose>
+
+        UNION ALL
+
+        SELECT 2 AS total_type,
+        DATE_FORMAT(SUBSTRING_INDEX(match_date,' ',1 ), '%Y%m%d') AS pdate,
+        a.match_date, a.place,
+
+        <!-- 			TIMESTAMPDIFF(minute, CONCAT(DATE_FORMAT(SUBSTRING_INDEX(match_date,' ',1 ), '%Y-%m-%d'), " ", right(a.match_date,5) + ':00'), CURDATE()) AS time_diff, -->
+        TIMESTAMPDIFF(minute, CONCAT(DATE_FORMAT(SUBSTRING_INDEX(match_date,' ',1 ), '%Y-%m-%d'), " ", right(a.match_date,5) + ':00'), now()) AS time_diff,
+        a.video_live, a.video_rep, a.video_high,
+
+        a.home_id, a.home,  a.home_score, a.home_pk,
+        b.emblem AS home_emblem, b.team_type AS home_type,
+        a.away_id, a.away, a.away_score, a.away_pk,
+        c.emblem AS away_emblem, c.team_type AS away_type,
+        a.match_type, a.reason, a.cup_id
+
+        FROM ${cupSubMatchTB} a
+        INNER JOIN ${cupInfoTB} i on a.cup_id = i.cup_id and i.play_flag = 0 and i.use_flag = 0
+        INNER JOIN Team b
+        ON a.home_id = b.team_id
+        INNER JOIN Team c
+        ON a.away_id  = c.team_id
+        WHERE a.use_flag = 0
+        AND a.away_id = #{teamId}
+        <choose>
+            <when test="sYear != null and sYear != '' ">
+                AND SUBSTRING_INDEX(a.match_date , ' ', 1) <![CDATA[>=]]> CONCAT(#{sYear},"-01-01 00:00:00")
+                AND SUBSTRING_INDEX(a.match_date , ' ', 1) <![CDATA[<=]]> CONCAT(#{sYear},"-12-31 23:59:59")
+            </when>
+            <otherwise>
+                AND SUBSTRING_INDEX(a.match_date , ' ', 1) <![CDATA[>=]]> CONCAT(YEAR(CURDATE()),"-01-01 00:00:00")
+                AND SUBSTRING_INDEX(a.match_date , ' ', 1) <![CDATA[<=]]> CONCAT(YEAR(CURDATE()),"-12-31 23:59:59")
+            </otherwise>
+        </choose>
+
+        UNION ALL
+
+        SELECT 2 AS total_type,
+        DATE_FORMAT(SUBSTRING_INDEX(match_date,' ',1 ), '%Y%m%d') AS pdate,
+        a.match_date, a.place,
+
+        <!-- 			TIMESTAMPDIFF(minute, CONCAT(DATE_FORMAT(SUBSTRING_INDEX(match_date,' ',1 ), '%Y-%m-%d'), " ", right(a.match_date,5) + ':00'), CURDATE()) AS time_diff, -->
+        TIMESTAMPDIFF(minute, CONCAT(DATE_FORMAT(SUBSTRING_INDEX(match_date,' ',1 ), '%Y-%m-%d'), " ", right(a.match_date,5) + ':00'), now()) AS time_diff,
+        a.video_live, a.video_rep, a.video_high,
+
+        a.home_id, a.home,  a.home_score, a.home_pk,
+        b.emblem AS home_emblem, b.team_type AS home_type,
+        a.away_id, a.away, a.away_score, a.away_pk,
+        c.emblem AS away_emblem, c.team_type AS away_type,
+        a.match_type, a.reason, a.cup_id
+
+        FROM ${cupMainMatchTB} a
+        INNER JOIN ${cupInfoTB} i on a.cup_id = i.cup_id and i.play_flag = 0 and i.use_flag = 0
+        INNER JOIN Team b
+        ON a.home_id = b.team_id
+        INNER JOIN Team c
+        ON a.away_id  = c.team_id
+        WHERE a.use_flag = 0
+        AND a.home_id = #{teamId}
+        <choose>
+            <when test="sYear != null and sYear != '' ">
+                AND SUBSTRING_INDEX(a.match_date , ' ', 1) <![CDATA[>=]]> CONCAT(#{sYear},"-01-01 00:00:00")
+                AND SUBSTRING_INDEX(a.match_date , ' ', 1) <![CDATA[<=]]> CONCAT(#{sYear},"-12-31 23:59:59")
+            </when>
+            <otherwise>
+                AND SUBSTRING_INDEX(a.match_date , ' ', 1) <![CDATA[>=]]> CONCAT(YEAR(CURDATE()),"-01-01 00:00:00")
+                AND SUBSTRING_INDEX(a.match_date , ' ', 1) <![CDATA[<=]]> CONCAT(YEAR(CURDATE()),"-12-31 23:59:59")
+            </otherwise>
+        </choose>
+
+        UNION ALL
+
+        SELECT 2 AS total_type,
+        DATE_FORMAT(SUBSTRING_INDEX(match_date,' ',1 ), '%Y%m%d') AS pdate,
+        a.match_date, a.place,
+
+        <!-- 			TIMESTAMPDIFF(minute, CONCAT(DATE_FORMAT(SUBSTRING_INDEX(match_date,' ',1 ), '%Y-%m-%d'), " ", right(a.match_date,5) + ':00'), CURDATE()) AS time_diff, -->
+        TIMESTAMPDIFF(minute, CONCAT(DATE_FORMAT(SUBSTRING_INDEX(match_date,' ',1 ), '%Y-%m-%d'), " ", right(a.match_date,5) + ':00'), now()) AS time_diff,
+        a.video_live, a.video_rep, a.video_high,
+
+        a.home_id, a.home,  a.home_score, a.home_pk,
+        b.emblem AS home_emblem, b.team_type AS home_type,
+        a.away_id, a.away, a.away_score, a.away_pk,
+        c.emblem AS away_emblem, c.team_type AS away_type,
+        a.match_type, a.reason, a.cup_id
+
+        FROM ${cupMainMatchTB} a
+        INNER JOIN ${cupInfoTB} i on a.cup_id = i.cup_id and i.play_flag = 0 and i.use_flag = 0
+        INNER JOIN Team b
+        ON a.home_id = b.team_id
+        INNER JOIN Team c
+        ON a.away_id  = c.team_id
+        WHERE a.use_flag = 0
+        AND a.away_id = #{teamId}
+        <choose>
+            <when test="sYear != null and sYear != '' ">
+                AND SUBSTRING_INDEX(a.match_date , ' ', 1) <![CDATA[>=]]> CONCAT(#{sYear},"-01-01 00:00:00")
+                AND SUBSTRING_INDEX(a.match_date , ' ', 1) <![CDATA[<=]]> CONCAT(#{sYear},"-12-31 23:59:59")
+            </when>
+            <otherwise>
+                AND SUBSTRING_INDEX(a.match_date , ' ', 1) <![CDATA[>=]]> CONCAT(YEAR(CURDATE()),"-01-01 00:00:00")
+                AND SUBSTRING_INDEX(a.match_date , ' ', 1) <![CDATA[<=]]> CONCAT(YEAR(CURDATE()),"-12-31 23:59:59")
+            </otherwise>
+        </choose>
+
+        UNION ALL
+
+        SELECT 2 AS total_type,
+        DATE_FORMAT(SUBSTRING_INDEX(match_date,' ',1 ), '%Y%m%d') AS pdate,
+        a.match_date, a.place,
+
+        <!-- 			TIMESTAMPDIFF(minute, CONCAT(DATE_FORMAT(SUBSTRING_INDEX(match_date,' ',1 ), '%Y-%m-%d'), " ", right(a.match_date,5) + ':00'), CURDATE()) AS time_diff, -->
+        TIMESTAMPDIFF(minute, CONCAT(DATE_FORMAT(SUBSTRING_INDEX(match_date,' ',1 ), '%Y-%m-%d'), " ", right(a.match_date,5) + ':00'), now()) AS time_diff,
+        a.video_live, a.video_rep, a.video_high,
+
+        a.home_id, a.home,  a.home_score, a.home_pk,
+        b.emblem AS home_emblem, b.team_type AS home_type,
+        a.away_id, a.away, a.away_score, a.away_pk,
+        c.emblem AS away_emblem, c.team_type AS away_type,
+        a.match_type, a.reason, a.cup_id
+
+        FROM ${cupTourMatchTB} a
+        INNER JOIN ${cupInfoTB} i on a.cup_id = i.cup_id and i.play_flag = 0 and i.use_flag = 0
+        INNER JOIN Team b
+        ON a.home_id = b.team_id
+        INNER JOIN Team c
+        ON a.away_id  = c.team_id
+        WHERE a.use_flag = 0
+        AND a.home_id = #{teamId}
+        <choose>
+            <when test="sYear != null and sYear != '' ">
+                AND SUBSTRING_INDEX(a.match_date , ' ', 1) <![CDATA[>=]]> CONCAT(#{sYear},"-01-01 00:00:00")
+                AND SUBSTRING_INDEX(a.match_date , ' ', 1) <![CDATA[<=]]> CONCAT(#{sYear},"-12-31 23:59:59")
+            </when>
+            <otherwise>
+                AND SUBSTRING_INDEX(a.match_date , ' ', 1) <![CDATA[>=]]> CONCAT(YEAR(CURDATE()),"-01-01 00:00:00")
+                AND SUBSTRING_INDEX(a.match_date , ' ', 1) <![CDATA[<=]]> CONCAT(YEAR(CURDATE()),"-12-31 23:59:59")
+            </otherwise>
+        </choose>
+
+        UNION ALL
+
+        SELECT 2 AS total_type,
+        DATE_FORMAT(SUBSTRING_INDEX(match_date,' ',1 ), '%Y%m%d') AS pdate,
+        a.match_date, a.place,
+
+        <!-- 			TIMESTAMPDIFF(minute, CONCAT(DATE_FORMAT(SUBSTRING_INDEX(match_date,' ',1 ), '%Y-%m-%d'), " ", right(a.match_date,5) + ':00'), CURDATE()) AS time_diff, -->
+        TIMESTAMPDIFF(minute, CONCAT(DATE_FORMAT(SUBSTRING_INDEX(match_date,' ',1 ), '%Y-%m-%d'), " ", right(a.match_date,5) + ':00'), now()) AS time_diff,
+        a.video_live, a.video_rep, a.video_high,
+
+        a.home_id, a.home,  a.home_score, a.home_pk,
+        b.emblem AS home_emblem, b.team_type AS home_type,
+        a.away_id, a.away, a.away_score, a.away_pk,
+        c.emblem AS away_emblem, c.team_type AS away_type,
+        a.match_type, a.reason, a.cup_id
+
+        FROM ${cupTourMatchTB} a
+        INNER JOIN ${cupInfoTB} i on a.cup_id = i.cup_id and i.play_flag = 0 and i.use_flag = 0
+        INNER JOIN Team b
+        ON a.home_id = b.team_id
+        INNER JOIN Team c
+        ON a.away_id  = c.team_id
+        WHERE a.use_flag = 0
+        AND a.away_id = #{teamId}
+        <choose>
+            <when test="sYear != null and sYear != '' ">
+                AND SUBSTRING_INDEX(a.match_date , ' ', 1) <![CDATA[>=]]> CONCAT(#{sYear},"-01-01 00:00:00")
+                AND SUBSTRING_INDEX(a.match_date , ' ', 1) <![CDATA[<=]]> CONCAT(#{sYear},"-12-31 23:59:59")
+            </when>
+            <otherwise>
+                AND SUBSTRING_INDEX(a.match_date , ' ', 1) <![CDATA[>=]]> CONCAT(YEAR(CURDATE()),"-01-01 00:00:00")
+                AND SUBSTRING_INDEX(a.match_date , ' ', 1) <![CDATA[<=]]> CONCAT(YEAR(CURDATE()),"-12-31 23:59:59")
+            </otherwise>
+        </choose>
+
+        ORDER BY pdate DESC
+    </select>
+
+    <!-- 학원클럽 - 대회/리그정보 - 해당연도 승무패, 득/실, 평균 득/실점 -->
+    <select id="selectTeamResultByYear2" parameterType="kr.co.nextplayer.base.team.dto.TeamDto" resultType="kr.co.nextplayer.base.team.dto.TeamCupLeagueInfoDto">
+        SELECT
+            a.*,
+            IFNULL(TRUNCATE(SUM(IFNULL(c_gf, 0)) / SUM(IFNULL(c_played, 0)), 1), 0) AS c_avg_gf,
+            IFNULL(TRUNCATE(SUM(IFNULL(c_ga, 0)) / SUM(IFNULL(c_played, 0)), 1), 0) AS c_avg_ga,
+            IFNULL(TRUNCATE(SUM(IFNULL(l_gf, 0)) / SUM(IFNULL(l_played, 0)), 1), 0) AS l_avg_gf,
+            IFNULL(TRUNCATE(SUM(IFNULL(l_ga, 0)) / SUM(IFNULL(l_played, 0)), 1), 0) AS l_avg_ga
+        FROM
+            (
+                SELECT
+                    a.*,
+                    IFNULL(b.l_played, 0) AS l_played,
+                    IFNULL(b.l_won,  0) AS l_won,
+                    IFNULL(b.l_draw,  0) AS l_draw,
+                    IFNULL(b.l_lost,  0) AS l_lost,
+                    IFNULL(b.l_gf,  0) AS l_gf,
+                    IFNULL(b.l_ga,  0) AS l_ga
+                FROM
+                    (
+                        SELECT
+                            a.team_id ,
+                            IFNULL(b.c_played, 0) AS c_played,
+                            IFNULL(b.c_won,  0) AS c_won,
+                            IFNULL(b.c_draw,  0) AS c_draw,
+                            IFNULL(b.c_lost,  0) AS c_lost,
+                            IFNULL(b.c_gf,  0) AS c_gf,
+                            IFNULL(b.c_ga, 0) AS c_ga
+                        FROM
+                            (
+                                SELECT team_id
+                                FROM Team
+                                WHERE team_id = #{teamId}
+                            ) a
+                            LEFT JOIN
+                                    (
+                                        SELECT
+                                            team_id,
+                                            SUM(played1 + played2 + played3) AS c_played,
+                                            SUM(won1 + won2 + won3) AS c_won,
+                                            SUM(draw1 + draw2 + draw3) AS c_draw,
+                                            SUM(lost1 + lost2 + lost3) AS c_lost,
+                                            SUM(gf1 + gf2 + gf3) AS c_gf,
+                                            SUM(ga1 + ga2 + ga3) AS c_ga
+                                        FROM
+                                            (
+                                                SELECT cup_id, play_sdate
+                                                FROM ${cupInfoTB}
+                                                WHERE use_flag = 0
+                                                AND play_flag = 0
+                                                <choose>
+                                                    <when test="sYear != null and sYear != '' ">
+                                                        AND play_sdate <![CDATA[>=]]> CONCAT(#{sYear},"-01-01 00:00:00")
+                                                        AND play_sdate <![CDATA[<=]]> CONCAT(#{sYear},"-12-31 23:59:59")
+                                                        AND play_edate <![CDATA[>=]]> CONCAT(#{sYear},"-01-01 00:00:00")
+                                                        AND play_edate <![CDATA[<=]]> CONCAT(#{sYear},"-12-31 23:59:59")
+                                                    </when>
+                                                    <otherwise>
+                                                        AND play_sdate <![CDATA[>=]]> CONCAT(YEAR(CURDATE()),"-01-01 00:00:00")
+                                                        AND play_sdate <![CDATA[<=]]> CONCAT(YEAR(CURDATE()),"-12-31 23:59:59")
+                                                        AND play_edate <![CDATA[>=]]> CONCAT(YEAR(CURDATE()),"-01-01 00:00:00")
+                                                        AND play_edate <![CDATA[<=]]> CONCAT(YEAR(CURDATE()),"-12-31 23:59:59")
+                                                    </otherwise>
+                                                </choose>
+                                            ) a
+                                            INNER JOIN
+                                                    (
+                                                        SELECT
+                                                            team_id,
+                                                            a.cup_id,
+                                                            played1,won1,draw1,lost1,gf1,ga1,
+                                                            played2,won2,draw2,lost2,gf2,ga2,
+                                                            played3,won3,draw3,lost3,gf3,ga3
+                                                        FROM ${cupResultTB} a
+                                                        INNER JOIN ${cupInfoTB} i ON a.cup_id = i.cup_id AND i.use_flag = 0 AND i.play_flag = 0
+                                                        WHERE
+                                                            i.use_flag = 0
+                                                            AND team_id = #{teamId}
+                                                    ) b ON a.cup_id = b.cup_id
+                                    ) b ON a.team_id = b.team_id
+                    ) a
+                    LEFT JOIN
+                            (
+                                SELECT
+                                    team_id,
+                                    SUM(played) AS l_played,
+                                    SUM(points + points_add) AS l_points,
+                                    SUM(won) AS l_won,
+                                    SUM(draw) AS l_draw,
+                                    SUM(lost) AS l_lost,
+                                    SUM(gf) AS l_gf,
+                                    SUM(ga) AS l_ga
+                                FROM
+                                    (
+                                        SELECT league_id, play_sdate
+                                        FROM ${leagueInfoTB}
+                                        WHERE
+                                            use_flag = 0
+                                            <choose>
+                                                <when test="sYear != null and sYear != '' ">
+                                                    AND play_sdate <![CDATA[>=]]> CONCAT(#{sYear},"-01-01 00:00:00")
+                                                    AND play_sdate <![CDATA[<=]]> CONCAT(#{sYear},"-12-31 23:59:59")
+                                                    AND play_edate <![CDATA[>=]]> CONCAT(#{sYear},"-01-01 00:00:00")
+                                                    AND play_edate <![CDATA[<=]]> CONCAT(#{sYear},"-12-31 23:59:59")
+                                                </when>
+                                                <otherwise>
+                                                    AND play_sdate <![CDATA[>=]]> CONCAT(YEAR(CURDATE()),"-01-01 00:00:00")
+                                                    AND play_sdate <![CDATA[<=]]> CONCAT(YEAR(CURDATE()),"-12-31 23:59:59")
+                                                    AND play_edate <![CDATA[>=]]> CONCAT(YEAR(CURDATE()),"-01-01 00:00:00")
+                                                    AND play_edate <![CDATA[<=]]> CONCAT(YEAR(CURDATE()),"-12-31 23:59:59")
+                                                </otherwise>
+                                            </choose>
+                                    ) a
+                                    INNER JOIN
+                                            (
+                                                SELECT team_id,league_id,played, won, draw, lost, gf, ga , points, points_add
+                                                FROM ${leagueResultTB}
+                                                WHERE
+                                                    use_flag = 0
+                                                    AND team_id = #{teamId}
+                                            ) b ON a.league_id = b.league_id
+                            ) b ON a.team_id = b.team_id
+            ) a
+
+    </select>
+
+    <!-- 학원클럽 - 대회정보 - 대회 경기 수 추이 -->
+    <select id="selectTeamCupPlayedByYear" parameterType="kr.co.nextplayer.base.team.dto.TeamDto" resultType="hashmap">
+        SELECT b.team_id,  play_year,
+               SUM(b.played1 + b.played2 + b.played3) AS played
+        FROM
+            (
+                SELECT cup_id, cup_name, cup_team, DATE_FORMAT( play_sdate, '%Y') AS play_year
+                FROM ${cupInfoTB}
+                WHERE use_flag = 0
+                AND play_flag = 0
+            ) a INNER JOIN
+            (
+                SELECT team_id, a.cup_id, played1, played2, played3
+                FROM ${cupResultTB} a
+                INNER JOIN ${cupInfoTB} i ON a.cup_id = i.cup_id AND i.use_flag = 0 AND i.play_flag = 0
+                WHERE i.use_flag = 0
+                  AND team_id = #{teamId}
+            ) b
+            ON a.cup_id = b.cup_id
+        GROUP BY play_year ASC
+    </select>
+
+    <!-- 학원클럽 - 대회정보 - 대회 평균 득/실점 추이 -->
+    <select id="selectTeamCupAvgGoalByYear" parameterType="kr.co.nextplayer.base.team.dto.TeamDto" resultType="hashmap">
+        SELECT team_id, DATE_FORMAT( play_sdate, '%Y') AS play_year,
+               SUM(played1 + played2 + played3) AS played,
+               SUM(gf1 + gf2 + gf3) AS gf,
+               SUM(ga1 + ga2 + ga3) AS ga,
+               TRUNCATE(IFNULL(SUM(gf1 + gf2 + gf3), 0) / IFNULL(SUM(played1 + played2 + played3), 0), 1) AS avg_gf,
+               TRUNCATE(IFNULL(SUM(ga1 + ga2 + ga3), 0) / IFNULL(SUM(played1 + played2 + played3), 0), 1) AS avg_ga
+        FROM
+            (
+                SELECT cup_id, play_sdate
+                FROM ${cupInfoTB}
+                WHERE use_flag = 0
+                AND play_flag = 0
+            ) a INNER JOIN
+            (
+                SELECT team_id,a.cup_id,played1,gf1,ga1,played2,gf2,ga2,played3,gf3,ga3
+                FROM ${cupResultTB} a
+                INNER JOIN ${cupInfoTB} i ON a.cup_id = i.cup_id AND i.use_flag = 0 AND i.play_flag = 0
+                WHERE i.use_flag = 0
+                  AND team_id = #{teamId}
+            ) b
+            ON a.cup_id = b.cup_id
+        GROUP BY DATE_FORMAT( play_sdate, '%Y')
+    </select>
+
+    <!-- 학원클럽 - 요약정보 - 전체, 대회, 리그 승무패  -->
+    <select id="selectTeamMatchResult" parameterType="kr.co.nextplayer.base.team.dto.TeamDto" resultType="kr.co.nextplayer.base.team.dto.TeamTotalResultDto">
+        SELECT
+            a.*,
+            b.l_won,
+            b.l_draw,
+            b.l_lost,
+            c_won + l_won AS t_won,
+            c_draw + l_draw AS t_draw,
+            c_lost + l_lost AS t_lost
+        FROM
+            (
+            SELECT
+                IFNULL(team_id, #{teamId}) AS team_id,
+                SUM(a.won) AS c_won,
+                SUM(a.draw) AS c_draw,
+                SUM(a.lost) AS c_lost
+            FROM
+                (
+                    SELECT
+                        a.cup_id,
+                        team_id,
+                        SUM(won1 + won2 + won3) AS won,
+                        SUM(draw1 + draw2 + draw3) AS draw,
+                        SUM(lost1 + lost2 + lost3) AS lost
+                    FROM
+                        ${cupResultTB} a
+                        INNER JOIN ${cupInfoTB} i ON a.cup_id = i.cup_id AND i.use_flag = 0 AND i.play_flag = 0
+                    WHERE
+                        a.use_flag = 0
+                        AND team_id = #{teamId}
+                    GROUP BY cup_id
+                ) a
+                INNER JOIN
+                            (
+                                SELECT
+                                    cup_id
+                                FROM
+                                    ${cupInfoTB}
+                                WHERE
+                                    use_flag = 0
+                                    AND play_flag = 0
+                                    <choose>
+                                        <when test="sYear != null and sYear != '' ">
+                                    AND play_sdate <![CDATA[>=]]> CONCAT(#{sYear},"-01-01 00:00:00")
+                                    AND play_sdate <![CDATA[<=]]> CONCAT(#{sYear},"-12-31 23:59:59")
+                                    AND play_edate <![CDATA[>=]]> CONCAT(#{sYear},"-01-01 00:00:00")
+                                    AND play_edate <![CDATA[<=]]> CONCAT(#{sYear},"-12-31 23:59:59")
+                                        </when>
+                                        <otherwise>
+                                    AND play_sdate <![CDATA[>=]]> CONCAT(YEAR(CURDATE()),"-01-01 00:00:00")
+                                    AND play_sdate <![CDATA[<=]]> CONCAT(YEAR(CURDATE()),"-12-31 23:59:59")
+                                    AND play_edate <![CDATA[>=]]> CONCAT(YEAR(CURDATE()),"-01-01 00:00:00")
+                                    AND play_edate <![CDATA[<=]]> CONCAT(YEAR(CURDATE()),"-12-31 23:59:59")
+                                        </otherwise>
+                                    </choose>
+                            ) b ON a.cup_id = b.cup_id
+            ) a
+            INNER JOIN
+                        (
+                            SELECT
+                                IFNULL(team_id, #{teamId}) AS team_id,
+                                SUM(a.won) AS l_won,
+                                SUM(a.draw) AS l_draw,
+                                SUM(a.lost) AS l_lost
+                            FROM
+                                (
+                                    SELECT
+                                        league_id,
+                                        team_id,
+                                        won,
+                                        draw,
+                                        lost
+                                    FROM
+                                        ${leagueResultTB}
+                                    WHERE
+                                        use_flag = 0
+                                        AND team_id = #{teamId}
+                                    GROUP BY league_id
+                                ) a
+                                INNER JOIN
+                                            (
+                                                SELECT
+                                                    league_id
+                                                FROM
+                                                    ${leagueInfoTB}
+                                                WHERE
+                                                    use_flag = 0
+                                                    <choose>
+                                                        <when test="sYear != null and sYear != '' ">
+                                                    AND play_sdate <![CDATA[>=]]> CONCAT(#{sYear},"-01-01 00:00:00")
+                                                    AND play_sdate <![CDATA[<=]]> CONCAT(#{sYear},"-12-31 23:59:59")
+                                                    AND play_edate <![CDATA[>=]]> CONCAT(#{sYear},"-01-01 00:00:00")
+                                                    AND play_edate <![CDATA[<=]]> CONCAT(#{sYear},"-12-31 23:59:59")
+                                                        </when>
+                                                        <otherwise>
+                                                    AND play_sdate <![CDATA[>=]]> CONCAT(YEAR(CURDATE()),"-01-01 00:00:00")
+                                                    AND play_sdate <![CDATA[<=]]> CONCAT(YEAR(CURDATE()),"-12-31 23:59:59")
+                                                    AND play_edate <![CDATA[>=]]> CONCAT(YEAR(CURDATE()),"-01-01 00:00:00")
+                                                    AND play_edate <![CDATA[<=]]> CONCAT(YEAR(CURDATE()),"-12-31 23:59:59")
+                                                        </otherwise>
+                                                    </choose>
+                                            ) b ON a.league_id = b.league_id
+                        ) b ON a.team_id = b.team_id
+    </select>
+
+    <!-- 학원클럽 - 요약정보 - 해당연도 승무패, 득/실, 평균 득/실점 리뉴얼-->
+    <select id="selectTeamResultByYearRenewal" parameterType="kr.co.nextplayer.base.team.dto.TeamDto" resultType="hashmap">
+        SELECT
+            a.team_id,
+            SUM(IFNULL(played, 0)) AS played,
+            SUM(IFNULL(won, 0)) AS won,
+            SUM(IFNULL(draw, 0)) AS draw,
+            SUM(IFNULL(lost, 0)) AS lost,
+            SUM(IFNULL(gf, 0)) AS gf,
+            SUM(IFNULL(ga, 0)) AS ga,
+            ROUND(SUM(IFNULL(won, 0)) / SUM(IFNULL(played, 0)), 4) * 100 AS avg_won,
+            ROUND(SUM(IFNULL(lost, 0)) / SUM(IFNULL(played, 0)), 4) * 100 AS avg_lost,
+            sdate
+        FROM
+            (
+                SELECT
+                    team_id,
+                    SUM(played1 + played2 + played3) AS played,
+                    SUM(won1 + won2 + won3) AS won,
+                    SUM(draw1 + draw2 + draw3) AS draw,
+                    SUM(lost1 + lost2 + lost3) AS lost,
+                    SUM(gf1 + gf2 + gf3) AS gf,
+                    SUM(ga1 + ga2 + ga3) AS ga
+                        ,DATE_FORMAT(a.play_sdate, '%Y') AS sdate
+                FROM
+                    (
+                        SELECT
+                            cup_id, play_sdate
+                        FROM
+                            ${cupInfoTB}
+                        WHERE
+                            use_flag = 0
+                            AND play_flag = 0
+                    ) a INNER JOIN
+                    (
+                        SELECT
+                            team_id,a.cup_id,played1,won1,draw1,lost1,gf1,ga1,played2,won2,draw2,lost2,gf2,ga2,played3,won3,draw3,lost3,gf3,ga3
+                        FROM
+                            ${cupResultTB} a
+                            INNER JOIN ${cupInfoTB} i ON a.cup_id = i.cup_id AND i.use_flag = 0 AND i.play_flag = 0
+                        WHERE
+                            a.use_flag = 0
+                          AND team_id =#{teamId}
+                    ) b ON a.cup_id = b.cup_id
+                GROUP BY
+                    DATE_FORMAT(a.play_sdate, '%Y')
+
+                UNION
+
+                SELECT
+                    team_id,
+                    SUM(played) AS played,
+                    SUM(won) AS won,
+                    SUM(draw) AS draw,
+                    SUM(lost) AS lost,
+                    SUM(gf) AS gf,
+                    SUM(ga) AS ga
+                        , DATE_FORMAT(a.play_sdate, '%Y')
+                FROM
+                    (
+                        SELECT
+                            league_id, play_sdate
+                        FROM
+                            ${leagueInfoTB}
+                        WHERE
+                            use_flag = 0
+                    ) a
+                        INNER JOIN (
+                        SELECT
+                            team_id,league_id,played, won, draw, lost, gf, ga
+                        FROM
+                            ${leagueResultTB}
+                        WHERE
+                            use_flag = 0
+                          AND team_id = #{teamId}
+                    ) b ON a.league_id = b.league_id
+                GROUP BY
+                    DATE_FORMAT(a.play_sdate, '%Y')
+            ) a
+        GROUP BY
+            a.sdate
+    </select>
+
+    <!-- 상대전적 - 승무패  (홈team1기준 ) -->
+    <select id="selectVwOpponentResultRenewal" parameterType="kr.co.nextplayer.base.team.dto.TeamDto" resultType="hashmap">
+        SELECT
+            SUM(A.win + A.pk_win) AS won,
+            SUM(A.lose + A.pk_lose) AS lost,
+            SUM(A.draw) AS draw
+            ,CASE
+                 WHEN A.sdate != NULL THEN A.sdate ELSE A.n END AS sdate
+        FROM
+            (
+            SELECT
+                win, draw, lose, sdate, Y.n, pk_win, pk_lose
+            FROM
+                (
+                SELECT
+                    @N:= @N +1 AS n
+                FROM
+                    vw_U18_Game_Record, (SELECT @N:= 2013 FROM DUAL) NN
+                WHERE
+                    @N <![CDATA[<]]> DATE_FORMAT(NOW(), '%Y')
+                ) Y
+                LEFT OUTER JOIN(
+                                SELECT
+                                    homeId ,
+                                    IFNULL(SUM(homeScore <![CDATA[>]]> awayScore), 0) AS win,
+                                    IFNULL(SUM(homePk <![CDATA[>]]> awayPk), 0) AS pk_win,
+                                    IFNULL(SUM(homeScore <![CDATA[<]]> awayScore), 0) AS lose,
+                                    IFNULL(SUM(homePk <![CDATA[<]]> awayPk), 0) AS pk_lose,
+                /*IFNULL(SUM(homeScore <![CDATA[=]]> awayScore), 0) AS draw*/
+                                    CASE
+                                        WHEN
+                                            DATE_ADD(matchCalcDate, INTERVAL 120 MINUTE) <![CDATA[<=]]> NOW() AND IFNULL(SUM(homeScore = awayScore), 0) AND IFNULL(SUM(homePk = 0), 0) THEN IFNULL(SUM(awayScore = homeScore), 0)
+                                        ELSE 0
+                                    END AS draw
+                                    ,DATE_FORMAT(matchCalcDate, '%Y') AS sdate
+                                FROM
+                                    ${opponentGameVW}
+                                WHERE
+                                    homeId = #{teamId1}
+                                    AND awayId =  #{teamId2}
+                /*AND matchCalcDate <![CDATA[<]]> CURDATE()*/
+                                GROUP BY
+                                    DATE_FORMAT(matchCalcDate, '%Y')
+
+                                UNION ALL
+                                SELECT
+                                    awayId ,
+                                    IFNULL(SUM(awayScore <![CDATA[>]]> homeScore), 0) AS win,
+                                    IFNULL(SUM(awayPk <![CDATA[>]]> homePk), 0) AS pk_win,
+                                    IFNULL(SUM(awayScore <![CDATA[<]]> homeScore), 0) AS lose,
+                                    IFNULL(SUM(awayPk <![CDATA[<]]> homePk), 0) AS pk_lose,
+                /*IFNULL(SUM(awayScore <![CDATA[=]]> homeScore), 0) AS draw*/
+                                    CASE
+                                        WHEN DATE_ADD(matchCalcDate, INTERVAL 120 MINUTE) <![CDATA[<=]]> NOW() AND IFNULL(SUM(homeScore = awayScore), 0) AND IFNULL(SUM(awayPk = 0), 0) THEN IFNULL(SUM(awayScore = homeScore), 0)
+                                        ELSE 0
+                                    END AS draw
+                                    ,DATE_FORMAT(matchCalcDate, '%Y') AS sdate
+                                FROM
+                                    ${opponentGameVW}
+                                WHERE
+                                    homeId = #{teamId2}
+                                    AND awayId =  #{teamId1}
+                /*AND matchCalcDate <![CDATA[<]]> CURDATE()*/
+                                GROUP BY
+                                    DATE_FORMAT(matchCalcDate, '%Y')
+
+                                ) a ON a.sdate = Y.n
+            ORDER BY
+                Y.n DESC
+            ) A
+        GROUP BY
+            A.n
+        ORDER BY
+            A.n DESC
+    </select>
+
+
+    <resultMap id="EnterTeamResultMap" type="kr.co.nextplayer.base.team.model.EnterTeam">
+        <id column="team_id" jdbcType="VARCHAR" property="teamId"/>
+        <result column="team" jdbcType="VARCHAR" property="team"/>
+        <result column="nick_name" jdbcType="VARCHAR" property="nickName"/>
+        <result column="enterCnt" jdbcType="INTEGER" property="enterCnt"/>
+    </resultMap>
+
+    <select id="selectEnterTeamInfo" parameterType="kr.co.nextplayer.base.team.dto.TeamDto" resultMap="EnterTeamResultMap">
+        SELECT
+            A.nick_name,
+            A.team_id,
+            COUNT(A.team_id) AS enterCnt
+        FROM(
+            SELECT
+                A.nick_name,
+                A.team_id
+            FROM
+                Team A
+                INNER JOIN (
+                            SELECT
+                                *
+                            FROM
+                                (
+                                    SELECT
+                                        A.player_id,
+                                        A.team_id,
+                                        A.year,
+                                        A.use_flag
+                                        ,MIN(A.year) AS minYear
+                                    FROM
+                                        Player_History A
+                                        INNER JOIN(
+                                                    SELECT
+                                                        *
+                                                    FROM
+                                                        Player_History
+                                                    WHERE
+                                                        use_flag = 0
+                                                        AND delete_flag = 0
+                                                        AND team_id = #{teamId}
+                                        ) B ON A.player_id = B.player_id
+                                    WHERE
+                                        A.use_flag = 0
+                                        <choose>
+                                            <when test="ageGroup == 'U22' or ageGroup == 'U20'">
+                                        AND A.team_type = 4
+                                            </when>
+                                            <when test="ageGroup == 'U18' or ageGroup == 'U17'">
+                                        AND A.team_type = 3
+                                            </when>
+                                            <when test="ageGroup == 'U15' or ageGroup == 'U14'">
+                                        AND A.team_type = 2
+                                            </when>
+                                            <when test="ageGroup == 'U12' or ageGroup == 'U11'">
+                                        AND A.team_type = 1
+                                            </when>
+                                        </choose>
+                                    GROUP BY
+                                        B.player_id
+                                ) A
+                            WHERE
+                            A.minYear = #{sYear}
+                ) B ON A.team_id = B.team_id
+            GROUP BY
+                B.player_id
+        ) A
+        GROUP BY
+            A.team_id
+    </select>
+
+    <resultMap id="EnterRosterResultMap" type="kr.co.nextplayer.base.team.model.RosterTeam">
+        <id column="team_id" jdbcType="VARCHAR" property="teamId"/>
+        <result column="name" jdbcType="VARCHAR" property="name"/>
+        <result column="position" jdbcType="VARCHAR" property="position"/>
+        <result column="birthday" jdbcType="VARCHAR" property="birthday"/>
+        <result column="nationalCnt" jdbcType="INTEGER" property="nationalCnt"/>
+        <result column="localCnt" jdbcType="INTEGER" property="localCnt"/>
+        <result column="fiveAreaCnt" jdbcType="INTEGER" property="fiveAreaCnt"/>
+        <result column="allAreaCnt" jdbcType="INTEGER" property="allAreaCnt"/>
+        <result column="futureCnt" jdbcType="INTEGER" property="futureCnt"/>
+        <result column="eliteCnt" jdbcType="INTEGER" property="eliteCnt"/>
+    </resultMap>
+    <select id="selectRosterTeamInfo" parameterType="kr.co.nextplayer.base.team.dto.TeamDto" resultMap="EnterRosterResultMap">
+        SELECT
+            C.name,
+            C.position,
+            COUNT(1) AS enterCnt,
+            A.team_id,
+            B.birthday,
+            B.nationalCnt,
+            B.localCnt,
+            B.fiveAreaCnt,
+            B.allAreaCnt,
+            B.futureCnt,
+            B.eliteCnt
+        FROM
+            Team A
+            INNER JOIN
+                        (
+                            SELECT
+                                B.player_id,
+                                B.team_id,
+                                A.roster_type,
+                                A.type,
+                                COALESCE(SUM(CASE WHEN A.type = 0 THEN 1 ELSE 0 END), 0) AS 'localCnt',
+                                COALESCE(SUM(CASE WHEN A.type = 1 THEN 1 ELSE 0 END), 0) AS 'fiveAreaCnt',
+                                COALESCE(SUM(CASE WHEN A.type = 2 THEN 1 ELSE 0 END), 0) AS 'allAreaCnt',
+                                COALESCE(SUM(CASE WHEN A.type = 3 THEN 1 ELSE 0 END), 0) AS 'futureCnt',
+                                COALESCE(SUM(CASE WHEN A.type = 4 THEN 1 ELSE 0 END), 0) AS 'eliteCnt',
+                                COALESCE(SUM(CASE WHEN A.roster_type = 0 THEN 1 ELSE 0 END), 0) AS 'nationalCnt',
+                                DATE_FORMAT(C.birthday, '%y.%m.%d') AS birthday
+                            FROM
+                                Roster A
+                                INNER JOIN Roster_Player B ON A.roster_id = B.roster_id
+                                INNER JOIN Player C ON B.player_id = C.player_id
+                            WHERE
+                                A.year = #{sYear}
+                                AND B.team_id = #{teamId}
+                                AND A.use_flag = 0
+                                AND A.use_flag = 0
+                                AND A.delete_flag = 0
+                                AND B.use_flag = 0
+                                AND B.delete_flag = 0
+                                AND C.use_flag = 0
+                                AND C.delete_flag = 0
+                            GROUP BY
+                                C.player_id
+                        ) B ON A.team_id = B.team_id
+            INNER JOIN Player C ON B.player_id = C.player_id
+        GROUP BY
+            C.player_id
+    </select>
+
+    <select id="selectTeamListForMedia" parameterType="kr.co.nextplayer.base.team.dto.TeamDto" resultType="hashmap">
+        SELECT
+            team_id
+             , uage
+             , nick_name
+        FROM
+            Team
+        WHERE
+            team_id IN ${childId}
+    </select>
+
+    <select id="selectIndirectMatches" parameterType="java.util.Map" resultType="kr.co.nextplayer.base.team.model.IndirectMatchesSqlResultSet">
+        <![CDATA[
+        set
+        @inTeamId = #{inTeamId}, @inAnTeamId = #{inAnTeamId}, @inSYear = #{inSYear};
+
+        /*select A.*
+        FROM (*/
+            select hmt.gameId        as hmtGameId,
+                 hmt.gameType      as hmtGameType,
+                 hmt.place         as hmtPlace,
+                 hmt.matchCalcDate as hmtMatchCalcDate,
+                 hmt.matchDate     as hmtMatchDate,
+                 hmt.teamId        as hmtTeamId,
+                 hmt.anotherTeamId as hmtAnotherTeamId,
+                 hmt.team          as hmtTeam,
+                 hmt.anotherTeam   as hmtAnotherTeam,
+                 hmt.emblem        as hmtEmblem,
+                 hmt.anotherEmblem as hmtAnotherEmblem,
+                 hmt.score         as hmtScore,
+                 hmt.anotherScore  as hmtAnotherScore,
+                 hmt.pk            as hmtPk,
+                 hmt.anotherPk     as hmtAnotherPk,
+                 hmt.matchName     as hmtMatchName,
+                 (case
+                      when ((hmt.score > hmt.anotherScore) or
+                            ((hmt.score = hmt.anotherScore) and (hmt.pk > hmt.anotherPk)))
+                          then 1
+                      else 0 end)  AS `hmtWon`,
+                 (case
+                      when (((hmt.score = hmt.anotherScore) and (hmt.pk = hmt.anotherPk)))
+                          then 1
+                      else 0 end)  AS `hmtEq`,
+                 ant.gameId        as antGameId,
+                 ant.gameType      as antGameType,
+                 ant.place         as antPlace,
+                 ant.matchCalcDate as antMatchCalcDate,
+                 ant.matchDate     as antMatchDate,
+                 ant.teamId        as antTeamId,
+                 ant.anotherTeamId as antAnotherTeamId,
+                 ant.team          as antTeam,
+                 ant.anotherTeam   as antAnotherTeam,
+                 ant.emblem        as antEmblem,
+                 ant.anotherEmblem as antAnotherEmblem,
+                 ant.score         as antScore,
+                 ant.anotherScore  as antAnotherScore,
+                 ant.pk            as antPk,
+                 ant.anotherPk     as antAnotherPk,
+                 ant.matchName     as antMatchName,
+                 (case
+                      when ((ant.score > ant.anotherScore) or
+                            ((ant.score = ant.anotherScore) and (ant.pk > ant.anotherPk)))
+                          then 1
+                      else 0 end)  AS `antWon`,
+                 (case
+                      when (((ant.score = ant.anotherScore) and (ant.pk = ant.anotherPk)))
+                          then 1
+                      else 0 end)  AS `antEq`
+          from (select league_match_id                                           AS gameId,
+                       'LEAGUE'                                                  AS gameType,
+                       match_date                                                as matchDate,
+                       place                                                     as place,
+                       concat(left(`match_date`,10),right(`match_date`,6),':00') AS matchCalcDate,
+                       home_id                                                   as teamId,
+                       away_id                                                   as anotherTeamId,
+                       home                                                      as team,
+                       away                                                      as anotherTeam,
+                       c.emblem                                                  as emblem,
+                       d.emblem                                                  as anotherEmblem,
+                       home_score                                                as score,
+                       away_score                                                as anotherScore,
+                       0                                                         as pk,
+                       0                                                         as anotherPk,
+                       b.league_name                                             as matchName
+                from ${uage}_League_Match a
+                         left outer join ${uage}_League_Info b on a.league_id = b.league_id
+                         left outer join Team c on c.team_id = home_id
+                         left outer join Team d on d.team_id = away_id
+                where home_id = @inTeamId
+                union
+                select league_match_id                                           AS gameId,
+                       'LEAGUE'                                                  AS gameType,
+                       match_date                                                as matchDate,
+                       place                                                     as place,
+                       concat(left(`match_date`,10),right(`match_date`,6),':00') AS matchCalcDate,
+                       away_id                                                   as teamId,
+                       home_id                                                   as anotherTeamId,
+                       away                                                      as team,
+                       home                                                      as anotherTeam,
+                       d.emblem                                                  as emblem,
+                       c.emblem                                                  as anotherEmblem,
+                       away_score                                                as score,
+                       home_score                                                as anotherScore,
+                       0                                                         as pk,
+                       0                                                         as anotherPk,
+                       b.league_name                                             as matchName
+                from ${uage}_League_Match a
+                         left outer join ${uage}_League_Info b on a.league_id = b.league_id
+                         left outer join Team c on c.team_id = home_id
+                         left outer join Team d on d.team_id = away_id
+                where away_id = @inTeamId
+                union
+                select cup_main_match_id                                         AS gameId,
+                       'CUP'                                                     AS gameType,
+                       match_date                                                as matchDate,
+                       place                                                     as place,
+                       concat(left(`match_date`,10),right(`match_date`,6),':00') AS matchCalcDate,
+                       home_id                                                   as teamId,
+                       away_id                                                   as anotherTeamId,
+                       home                                                      as team,
+                       away                                                      as anotherTeam,
+                       c.emblem                                                  as emblem,
+                       d.emblem                                                  as anotherEmblem,
+                       home_score                                                as score,
+                       away_score                                                as anotherScore,
+                       home_pk                                                   as pk,
+                       away_pk                                                   as anotherPk,
+                       b.cup_name                                                as matchName
+                from ${uage}_Cup_Main_Match a
+                         left outer join ${uage}_Cup_Info b on a.cup_id = b.cup_id
+                         left outer join Team c on c.team_id = home_id
+                         left outer join Team d on d.team_id = away_id
+                where home_id = @inTeamId
+                union
+                select cup_main_match_id                                         AS gameId,
+                       'CUP'                                                     AS gameType,
+                       match_date                                                as matchDate,
+                       place                                                     as place,
+                       concat(left(`match_date`,10),right(`match_date`,6),':00') AS matchCalcDate,
+                       away_id                                                   as teamId,
+                       home_id                                                   as anotherTeamId,
+                       away                                                      as team,
+                       home                                                      as anotherTeam,
+                       d.emblem                                                  as emblem,
+                       c.emblem                                                  as anotherEmblem,
+                       away_score                                                as score,
+                       home_score                                                as anotherScore,
+                       away_pk                                                   as pk,
+                       home_pk                                                   as anotherPk,
+                       b.cup_name                                                as matchName
+                from ${uage}_Cup_Main_Match a
+                         left outer join ${uage}_Cup_Info b on a.cup_id = b.cup_id
+                         left outer join Team c on c.team_id = home_id
+                         left outer join Team d on d.team_id = away_id
+                where away_id = @inTeamId
+                union
+                select cup_sub_match_id                                          AS gameId,
+                       'CUP'                                                     AS gameType,
+                       match_date                                                as matchDate,
+                       place                                                     as place,
+                       concat(left(`match_date`,10),right(`match_date`,6),':00') AS matchCalcDate,
+                       home_id                                                   as teamId,
+                       away_id                                                   as anotherTeamId,
+                       home                                                      as team,
+                       away                                                      as anotherTeam,
+                       c.emblem                                                  as emblem,
+                       d.emblem                                                  as anotherEmblem,
+                       home_score                                                as score,
+                       away_score                                                as anotherScore,
+                       home_pk                                                   as pk,
+                       away_pk                                                   as anotherPk,
+                       b.cup_name                                                as matchName
+                from ${uage}_Cup_Sub_Match a
+                         left outer join ${uage}_Cup_Info b on a.cup_id = b.cup_id
+                         left outer join Team c on c.team_id = home_id
+                         left outer join Team d on d.team_id = away_id
+                where home_id = @inTeamId
+                union
+                select cup_sub_match_id                                          AS gameId,
+                       'CUP'                                                     AS gameType,
+                       match_date                                                as matchDate,
+                       place                                                     as place,
+                       concat(left(`match_date`,10),right(`match_date`,6),':00') AS matchCalcDate,
+                       away_id                                                   as teamId,
+                       home_id                                                   as anotherTeamId,
+                       away                                                      as team,
+                       home                                                      as anotherTeam,
+                       d.emblem                                                  as emblem,
+                       c.emblem                                                  as anotherEmblem,
+                       away_score                                                as score,
+                       home_score                                                as anotherScore,
+                       away_pk                                                   as pk,
+                       home_pk                                                   as anotherPk,
+                       b.cup_name                                                as matchName
+                from ${uage}_Cup_Sub_Match a
+                         left outer join ${uage}_Cup_Info b on a.cup_id = b.cup_id
+                         left outer join Team c on c.team_id = home_id
+                         left outer join Team d on d.team_id = away_id
+                where away_id = @inTeamId
+                union
+                select cup_tour_match_id                                         AS gameId,
+                       'CUP'                                                     AS gameType,
+                       match_date                                                as matchDate,
+                       place                                                     as place,
+                       concat(left(`match_date`,10),right(`match_date`,6),':00') AS matchCalcDate,
+                       home_id                                                   as teamId,
+                       away_id                                                   as anotherTeamId,
+                       home                                                      as team,
+                       away                                                      as anotherTeam,
+                       c.emblem                                                  as emblem,
+                       d.emblem                                                  as anotherEmblem,
+                       home_score                                                as score,
+                       away_score                                                as anotherScore,
+                       home_pk                                                   as pk,
+                       away_pk                                                   as anotherPk,
+                       b.cup_name                                                as matchName
+                from ${uage}_Cup_Tour_Match a
+                         left outer join ${uage}_Cup_Info b on a.cup_id = b.cup_id
+                         left outer join Team c on c.team_id = home_id
+                         left outer join Team d on d.team_id = away_id
+                where home_id = @inTeamId
+                union
+                select cup_tour_match_id                                         AS gameId,
+                       'CUP'                                                     AS gameType,
+                       match_date                                                as matchDate,
+                       place                                                     as place,
+                       concat(left(`match_date`,10),right(`match_date`,6),':00') AS matchCalcDate,
+                       away_id                                                   as teamId,
+                       home_id                                                   as anotherTeamId,
+                       away                                                      as team,
+                       home                                                      as anotherTeam,
+                       d.emblem                                                  as emblem,
+                       c.emblem                                                  as anotherEmblem,
+                       away_score                                                as score,
+                       home_score                                                as anotherScore,
+                       away_pk                                                   as pk,
+                       home_pk                                                   as anotherPk,
+                       b.cup_name                                                as matchName
+                from ${uage}_Cup_Tour_Match a
+                         left outer join ${uage}_Cup_Info b on a.cup_id = b.cup_id
+                         left outer join Team c on c.team_id = home_id
+                         left outer join Team d on d.team_id = away_id
+                where away_id = @inTeamId
+                order by matchCalcDate desc) hmt,
+               (select league_match_id                                           AS gameId,
+                       'LEAGUE'                                                  AS gameType,
+                       match_date                                                as matchDate,
+                       place                                                     as place,
+                       concat(left(`match_date`,10),right(`match_date`,6),':00') AS matchCalcDate,
+                       home_id                                                   as teamId,
+                       away_id                                                   as anotherTeamId,
+                       home                                                      as team,
+                       away                                                      as anotherTeam,
+                       c.emblem                                                  as emblem,
+                       d.emblem                                                  as anotherEmblem,
+                       home_score                                                as score,
+                       away_score                                                as anotherScore,
+                       0                                                         as pk,
+                       0                                                         as anotherPk,
+                       b.league_name                                             as matchName
+                from ${uage}_League_Match a
+                         left outer join ${uage}_League_Info b on a.league_id = b.league_id
+                         left outer join Team c on c.team_id = home_id
+                         left outer join Team d on d.team_id = away_id
+                where home_id = @inAnTeamId
+                union
+                select league_match_id                                           AS gameId,
+                       'LEAGUE'                                                  AS gameType,
+                       match_date                                                as matchDate,
+                       place                                                     as place,
+                       concat(left(`match_date`,10),right(`match_date`,6),':00') AS matchCalcDate,
+                       away_id                                                   as teamId,
+                       home_id                                                   as anotherTeamId,
+                       away                                                      as team,
+                       home                                                      as anotherTeam,
+                       d.emblem                                                  as emblem,
+                       c.emblem                                                  as anotherEmblem,
+                       away_score                                                as score,
+                       home_score                                                as anotherScore,
+                       0                                                         as pk,
+                       0                                                         as anotherPk,
+                       b.league_name                                             as matchName
+                from ${uage}_League_Match a
+                         left outer join ${uage}_League_Info b on a.league_id = b.league_id
+                         left outer join Team c on c.team_id = home_id
+                         left outer join Team d on d.team_id = away_id
+                where away_id = @inAnTeamId
+                union
+                select cup_main_match_id                                         AS gameId,
+                       'CUP'                                                     AS gameType,
+                       match_date                                                as matchDate,
+                       place                                                     as place,
+                       concat(left(`match_date`,10),right(`match_date`,6),':00') AS matchCalcDate,
+                       home_id                                                   as teamId,
+                       away_id                                                   as anotherTeamId,
+                       home                                                      as team,
+                       away                                                      as anotherTeam,
+                       c.emblem                                                  as emblem,
+                       d.emblem                                                  as anotherEmblem,
+                       home_score                                                as score,
+                       away_score                                                as anotherScore,
+                       home_pk                                                   as pk,
+                       away_pk                                                   as anotherPk,
+                       b.cup_name                                                as matchName
+                from ${uage}_Cup_Main_Match a
+                         left outer join ${uage}_Cup_Info b on a.cup_id = b.cup_id
+                         left outer join Team c on c.team_id = home_id
+                         left outer join Team d on d.team_id = away_id
+                where home_id = @inAnTeamId
+                union
+                select cup_main_match_id                                         AS gameId,
+                       'CUP'                                                     AS gameType,
+                       match_date                                                as matchDate,
+                       place                                                     as place,
+                       concat(left(`match_date`,10),right(`match_date`,6),':00') AS matchCalcDate,
+                       away_id                                                   as teamId,
+                       home_id                                                   as anotherTeamId,
+                       away                                                      as team,
+                       home                                                      as anotherTeam,
+                       d.emblem                                                  as emblem,
+                       c.emblem                                                  as anotherEmblem,
+                       away_score                                                as score,
+                       home_score                                                as anotherScore,
+                       away_pk                                                   as pk,
+                       home_pk                                                   as anotherPk,
+                       b.cup_name                                                as matchName
+                from ${uage}_Cup_Main_Match a
+                         left outer join ${uage}_Cup_Info b on a.cup_id = b.cup_id
+                         left outer join Team c on c.team_id = home_id
+                         left outer join Team d on d.team_id = away_id
+                where away_id = @inAnTeamId
+                union
+                select cup_sub_match_id                                          AS gameId,
+                       'CUP'                                                     AS gameType,
+                       match_date                                                as matchDate,
+                       place                                                     as place,
+                       concat(left(`match_date`,10),right(`match_date`,6),':00') AS matchCalcDate,
+                       home_id                                                   as teamId,
+                       away_id                                                   as anotherTeamId,
+                       home                                                      as team,
+                       away                                                      as anotherTeam,
+                       c.emblem                                                  as emblem,
+                       d.emblem                                                  as anotherEmblem,
+                       home_score                                                as score,
+                       away_score                                                as anotherScore,
+                       home_pk                                                   as pk,
+                       away_pk                                                   as anotherPk,
+                       b.cup_name                                                as matchName
+                from ${uage}_Cup_Sub_Match a
+                         left outer join ${uage}_Cup_Info b on a.cup_id = b.cup_id
+                         left outer join Team c on c.team_id = home_id
+                         left outer join Team d on d.team_id = away_id
+                where home_id = @inAnTeamId
+                union
+                select cup_sub_match_id                                          AS gameId,
+                       'CUP'                                                     AS gameType,
+                       match_date                                                as matchDate,
+                       place                                                     as place,
+                       concat(left(`match_date`,10),right(`match_date`,6),':00') AS matchCalcDate,
+                       away_id                                                   as teamId,
+                       home_id                                                   as anotherTeamId,
+                       away                                                      as team,
+                       home                                                      as anotherTeam,
+                       d.emblem                                                  as emblem,
+                       c.emblem                                                  as anotherEmblem,
+                       away_score                                                as score,
+                       home_score                                                as anotherScore,
+                       away_pk                                                   as pk,
+                       home_pk                                                   as anotherPk,
+                       b.cup_name                                                as matchName
+                from ${uage}_Cup_Sub_Match a
+                         left outer join ${uage}_Cup_Info b on a.cup_id = b.cup_id
+                         left outer join Team c on c.team_id = home_id
+                         left outer join Team d on d.team_id = away_id
+                where away_id = @inAnTeamId
+                union
+                select cup_tour_match_id                                         AS gameId,
+                       'CUP'                                                     AS gameType,
+                       match_date                                                as matchDate,
+                       place                                                     as place,
+                       concat(left(`match_date`,10),right(`match_date`,6),':00') AS matchCalcDate,
+                       home_id                                                   as teamId,
+                       away_id                                                   as anotherTeamId,
+                       home                                                      as team,
+                       away                                                      as anotherTeam,
+                       c.emblem                                                  as emblem,
+                       d.emblem                                                  as anotherEmblem,
+                       home_score                                                as score,
+                       away_score                                                as anotherScore,
+                       home_pk                                                   as pk,
+                       away_pk                                                   as anotherPk,
+                       b.cup_name                                                as matchName
+                from ${uage}_Cup_Tour_Match a
+                         left outer join ${uage}_Cup_Info b on a.cup_id = b.cup_id
+                         left outer join Team c on c.team_id = home_id
+                         left outer join Team d on d.team_id = away_id
+                where home_id = @inAnTeamId
+                union
+                select cup_tour_match_id                                         AS gameId,
+                       'CUP'                                                     AS gameType,
+                       match_date                                                as matchDate,
+                       place                                                     as place,
+                       concat(left(`match_date`,10),right(`match_date`,6),':00') AS matchCalcDate,
+                       away_id                                                   as teamId,
+                       home_id                                                   as anotherTeamId,
+                       away                                                      as team,
+                       home                                                      as anotherTeam,
+                       d.emblem                                                  as emblem,
+                       c.emblem                                                  as anotherEmblem,
+                       away_score                                                as score,
+                       home_score                                                as anotherScore,
+                       away_pk                                                   as pk,
+                       home_pk                                                   as anotherPk,
+                       b.cup_name                                                as matchName
+                from ${uage}_Cup_Tour_Match a
+                         left outer join ${uage}_Cup_Info b on a.cup_id = b.cup_id
+                         left outer join Team c on c.team_id = home_id
+                         left outer join Team d on d.team_id = away_id
+                where away_id = @inAnTeamId
+                order by matchCalcDate desc) ant
+          where hmt.matchCalcDate <= now()
+            and ant.matchCalcDate <= now()
+            and left (hmt.matchDate, 4) = @inSYear
+            and left (ant.matchDate, 4) = @inSYear
+            and (
+              (hmt.anotherTeamId=@inAnTeamId
+             or ant.anotherTeamId=@inTeamId)
+             or (hmt.anotherTeamId=ant.anotherTeamId)
+              )
+            and (!(hmt.teamId=@inTeamId
+            and hmt.anotherTeamId=@inAnTeamId)
+            and !(ant.teamId=@inAnTeamId
+            and ant.anotherTeamId=@inTeamId))
+          order by hmt.anotherTeamId desc, ant.anotherTeamId desc
+              /*) A
+        group by
+            A.hmtGameId
+        order by
+            A.hmtMatchCalcDate DESC*/
+        ]]>
+    </select>
+
+    <select id="selectSearchTeamCnt" parameterType="kr.co.nextplayer.base.team.dto.TeamDto" resultType="_int">
+        SELECT
+            COUNT(1)
+        FROM
+            Team
+        WHERE
+            use_flag = 0
+          AND uage = #{ageGroup}
+          <if test="sKeyword != null and sKeyword != ''">
+              AND (team_name LIKE CONCAT('%', #{sKeyword}, '%') OR nick_name LIKE CONCAT('%', #{sKeyword}, '%'))
+          </if>
+    </select>
+
+    <select id="selectSearchTeam" parameterType="kr.co.nextplayer.base.team.dto.TeamDto" resultType="hashmap">
+        SELECT
+            team_id,
+            emblem,
+            addr,
+            uage,
+            area_name,
+            team_name,
+            nick_name,
+            team_type
+        FROM
+            Team
+        WHERE
+            use_flag = 0
+            AND uage = #{ageGroup}
+            <if test="sKeyword != null and sKeyword != ''">
+                AND (team_name LIKE CONCAT('%', #{sKeyword}, '%') OR nick_name LIKE CONCAT('%', #{sKeyword}, '%'))
+            </if>
+        LIMIT
+            #{offset}, #{pageSize}
+    </select>
+
+    <select id="selectTeamGroup" parameterType="kr.co.nextplayer.base.team.dto.TeamDto" resultType="hashmap">
+        SELECT
+            A.team_group_id,
+            B.team_id,
+            B.team_name,
+            B.nick_name,
+            B.uage
+        FROM
+            Team_Group A
+                INNER JOIN Team B ON A.team_group_id = B.team_group_id
+        WHERE
+            A.team_group_id = #{teamGroupId}
+    </select>
+
+</mapper>

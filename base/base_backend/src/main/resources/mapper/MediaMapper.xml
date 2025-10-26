@@ -1,0 +1,459 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.co.nextplayer.base.backend.mapper.MediaMapper">
+
+    <select id="selectMediaListCnt" parameterType="hashmap" resultType="_int">
+        SELECT
+            COUNT(1)
+        FROM
+            Media
+        WHERE
+            media_type = #{mediaType}
+            AND delete_flag = 0
+            <choose>
+                <when test="subType != null and subType != ''">
+                    <choose>
+                        <when test="mediaType == 'Video'">
+                            <choose>
+                                <when test="subType == 'All'">
+                                    AND sub_type != '0'
+                                </when>
+                                <otherwise>
+                                    AND sub_type = #{subType}
+                                </otherwise>
+                            </choose>
+                        </when>
+                        <otherwise>
+                            <choose>
+                                <when test="subType != 'All'">
+                                    AND sub_type = #{subType}
+                                </when>
+                            </choose>
+                        </otherwise>
+                    </choose>
+                </when>
+                <otherwise>
+                    AND sub_type = '0'
+                </otherwise>
+            </choose>
+            <if test="sTitle != null and sTitle != ''">
+            AND title LIKE CONCAT('%', #{sTitle}, '%')
+            </if>
+            <if test='sDate != null and sDate != "" and eDate != null and eDate != "" '>
+            AND reg_date BETWEEN DATE_FORMAT(#{sDate}, '%Y-%m-%d 00:00:00') AND DATE_FORMAT(#{eDate}, '%Y-%m-%d 23:59:59')
+            </if>
+            <if test="creatorId != null and creatorId != ''">
+                AND creator_id = #{creatorId}
+            </if>
+    </select>
+
+    <!-- 미디어 리스트 -->
+    <select id="selectMediaList" parameterType="hashmap" resultType="hashmap">
+        SELECT
+            A.media_id,
+            A.title,
+            A.source,
+            A.media_type,
+            A.sub_type,
+            A.type,
+            A.use_flag,
+            A.uage,
+            DATE_FORMAT(A.reg_date, '%Y-%m-%d %H:%i:%s') AS reg_date,
+            DATE_FORMAT(A.submit_date, '%Y-%m-%d %H:%i:%s') AS submit_date,
+            A.view_cnt,
+            B.creator_name
+        FROM
+            Media A
+            LEFT OUTER JOIN Creator B ON A.creator_id = B.creator_id
+        WHERE
+            A.media_type = #{mediaType}
+            AND A.delete_flag = 0
+            <choose>
+                <when test="subType != null and subType != ''">
+                    <choose>
+                        <when test="mediaType == 'Video'">
+                            <choose>
+                                <when test="subType == 'All'">
+                                    AND A.sub_type != '0'
+                                </when>
+                                <otherwise>
+                                    AND A.sub_type = #{subType}
+                                </otherwise>
+                            </choose>
+                        </when>
+                        <otherwise>
+                            <choose>
+                                <when test="subType != 'All'">
+                                    AND A.sub_type = #{subType}
+                                </when>
+                            </choose>
+                        </otherwise>
+                    </choose>
+                </when>
+                <!--<otherwise>
+                    AND A.sub_type = '0'
+                </otherwise>-->
+            </choose>
+            <if test="sTitle != null and sTitle != ''">
+                AND A.title LIKE CONCAT('%', #{sTitle}, '%')
+            </if>
+            <if test='sDate != null and sDate != "" and eDate != null and eDate != "" '>
+                AND A.reg_date BETWEEN DATE_FORMAT(#{sDate}, '%Y-%m-%d 00:00:00') AND DATE_FORMAT(#{eDate}, '%Y-%m-%d 23:59:59')
+            </if>
+            <if test="creatorId != null and creatorId != ''">
+                AND A.creator_id = #{creatorId}
+            </if>
+        ORDER BY
+            A.media_id DESC
+        <if test="eCount != null and eCount != ''">
+        LIMIT ${sRow}, ${eCount}
+        </if>
+    </select>
+
+    <select id="selectMediaInfo" parameterType="hashmap" resultType="hashmap">
+        SELECT
+            A.media_id
+            , A.title
+            , A.content
+            , A.source
+            , A.summary
+            , A.url_link
+            , A.media_type
+            , A.sub_type
+            , A.type
+            , A.use_flag
+            , A.reg_date
+            , A.img_url
+            , A.ref_url
+            , A.uage
+            , A.submit_date
+            , B.creator_id
+            , B.creator_name
+            , A.show_flag
+            , A.main_flag
+            , C.media_order
+        FROM
+            Media A
+            LEFT JOIN Creator B ON A.creator_id = B.creator_id
+            LEFT JOIN main_media C ON A.media_id = C.media_id AND C.media_type = #{mediaType} AND C.use_flag = 0 AND C.show_flag = 0
+        WHERE
+            A.media_id = #{mediaId}
+    </select>
+
+    <select id="selectMediaChildList" parameterType="hashmap" resultType="hashmap">
+        SELECT
+            B.foreign_parent_type AS parentTable
+             , B.foreign_parent_id AS parentId
+             , B.foreign_type AS childTable
+             , GROUP_CONCAT(B.foreign_id) AS childId
+        FROM
+            Media A
+                INNER JOIN Media_Cross B ON A.media_id = B.media_id
+        WHERE
+            A.media_id = #{mediaId}
+        GROUP BY
+            foreign_parent_id, foreign_type
+    </select>
+
+    <insert id="insertMedia" parameterType="hashmap">
+        INSERT INTO Media (
+                           <if test="creatorId != null and creatorId != ''">
+                           creator_id,
+                           </if>
+                           title,
+                           <if test="content != null and content != ''">
+                           content,
+                           </if>
+                           <if test="source != null and source != ''">
+                           source,
+                           </if>
+                           <if test="summary != null and summary != ''">
+                           summary,
+                           </if>
+                           url_link,
+                           <if test="imgUrl != null and imgUrl != ''">
+                           img_url,
+                           </if>
+                           <if test="refUrl != null and refUrl != ''">
+                           ref_url,
+                           </if>
+                           media_type,
+                           <if test="type != null and type != ''">
+                           type,
+                           </if>
+                           <if test="subType != null and subType != ''">
+                           sub_type,
+                           </if>
+                           <if test="uage != null and uage != ''">
+                           uage,
+                           </if>
+                           <if test="submitDate != null and submitDate != ''">
+                           submit_date,
+                           </if>
+                           <if test="showFlag != null and showFlag != ''">
+                           show_flag,
+                           </if>
+                           <if test="mainFlag != null and mainFlag != ''">
+                           main_flag,
+                           </if>
+                           use_flag
+                           )
+                    VALUES(
+                            <if test="creatorId != null and creatorId != ''">
+                            #{creatorId},
+                            </if>
+                            #{title},
+                            <if test="content != null and content != ''">
+                            #{content},
+                            </if>
+                            <if test="source != null and source != ''">
+                            #{source},
+                            </if>
+                            <if test="summary != null and summary != ''">
+                            #{summary},
+                            </if>
+                            #{urlLink},
+                            <if test="imgUrl != null and imgUrl != ''">
+                            #{imgUrl},
+                            </if>
+                            <if test="refUrl != null and refUrl != ''">
+                            #{refUrl},
+                            </if>
+                            #{mediaType},
+                            <if test="type != null and type != ''">
+                            #{type},
+                            </if>
+                            <if test="subType != null and subType != ''">
+                            #{subType},
+                            </if>
+                            <if test="uage != null and uage != ''">
+                            #{uage},
+                            </if>
+                            <if test="submitDate != null and submitDate != ''">
+                            DATE_FORMAT(REPLACE(#{submitDate}, ' ', ''), '%Y-%m-%d'),
+                            </if>
+                            <if test="showFlag != null and showFlag != ''">
+                            #{showFlag},
+                            </if>
+                            <if test="mainFlag != null and mainFlag != ''">
+                            #{mainFlag},
+                            </if>
+                            #{useFlag}
+                          )
+        <selectKey keyProperty="mediaId" order="AFTER" resultType="String">
+            SELECT LAST_INSERT_ID()
+        </selectKey>
+    </insert>
+
+    <insert id="insertMediaCross" parameterType="hashmap">
+        INSERT INTO Media_Cross (
+            media_id,
+            foreign_parent_id,
+            foreign_parent_type,
+            foreign_id,
+            foreign_type,
+            use_flag
+        ) VALUES
+        <foreach collection="list" item="item" separator=",">
+        (
+            #{item.mediaId},
+            #{item.parentId},
+            #{item.parentType},
+            #{item.childId},
+            #{item.childType},
+            #{item.useFlag}
+        )
+        </foreach>
+    </insert>
+
+    <update id="updateMedia" parameterType="hashmap">
+        UPDATE
+            Media
+        SET
+            <choose>
+                <when test="creatorId != null">
+                    <choose>
+                        <when test="creatorId != ''">
+                            creator_id = #{creatorId},
+                        </when>
+                        <otherwise>
+                            creator_id = NULL,
+                        </otherwise>
+                    </choose>
+                </when>
+            </choose>
+            <if test="title != null">
+                title = #{title},
+            </if>
+            <if test="source != null">
+                source = #{source},
+            </if>
+            <if test="content != null">
+                content = #{content},
+            </if>
+            <if test="summary != null">
+                summary = #{summary},
+            </if>
+            <if test="urlLink != null">
+                url_link = #{urlLink},
+            </if>
+            <if test="imgUrl != null">
+                img_url = #{imgUrl},
+            </if>
+            <if test="refUrl != null">
+                ref_url = #{refUrl},
+            </if>
+            <choose>
+                <when test="submitDate != null">
+                    <choose>
+                        <when test="submitDate == ''">
+                            submit_date = NULL,
+                        </when>
+                        <otherwise>
+                            submit_date = #{submitDate},
+                        </otherwise>
+                    </choose>
+                </when>
+            </choose>
+            <if test="type != null">
+                type = #{type},
+            </if>
+            <if test="subType != null and subType != ''">
+                sub_type = #{subType},
+            </if>
+            <if test="uage != null">
+                uage = #{uage},
+            </if>
+            <if test="showFlag != null and showFlag != ''">
+                show_flag = #{showFlag},
+            </if>
+            <if test="mainFlag != null">
+                main_flag = #{mainFlag},
+            </if>
+            <if test="useFlag != null">
+                use_flag = #{useFlag}
+            </if>
+        WHERE
+            media_id = #{mediaId}
+    </update>
+
+    <update id="updateMediaDelete" parameterType="hashmap">
+        UPDATE
+            Media
+        SET
+            delete_flag = 1
+        WHERE
+            media_id = #{mediaId}
+    </update>
+
+    <delete id="deleteMediaCross" parameterType="hashmap">
+        DELETE
+        FROM
+            Media_Cross
+        WHERE
+            media_id = #{mediaId}
+    </delete>
+
+    <insert id="insertMainMediaData" parameterType="hashmap">
+        INSERT INTO main_media (
+            media_id, media_type, media_order
+        ) VALUES (
+            #{mediaId}, #{mediaType}, #{mediaOrder}
+        )
+    </insert>
+
+    <delete id="deleteMainMediaMainFlag" parameterType="java.util.HashMap">
+        UPDATE
+            media
+        SET
+            main_flag = '0'
+        WHERE
+            media_type = #{mediaType}
+            AND main_flag = '1'
+    </delete>
+
+    <update id="updateMediaMainFlag" parameterType="java.util.HashMap">
+        UPDATE
+            media
+        SET
+            main_flag = #{mainFlag}
+        WHERE
+            media_type = #{mediaType}
+            AND media_id = #{mediaId}
+    </update>
+
+    <delete id="deleteMainMediaData" parameterType="hashmap">
+        DELETE
+        FROM main_media
+        WHERE media_type = #{mediaType}
+    </delete>
+
+    <update id="updateMainMediaOrderPlusAll">
+        UPDATE
+            main_media
+        SET
+            media_order = media_order + 1
+        WHERE
+            use_flag = 0
+            AND show_flag = 0
+            AND media_type = #{mediaType}
+    </update>
+
+    <delete id="deleteMainMediaOne" parameterType="hashmap">
+        DELETE
+        FROM main_media
+        WHERE media_type = #{mediaType} AND media_id = #{mediaId}
+    </delete>
+
+    <update id="updateMainMediaOrderMinusAll">
+        UPDATE
+            main_media
+        SET
+            media_order = media_order - 1
+        WHERE
+            use_flag = 0
+            AND show_flag = 0
+            AND media_type = #{mediaType}
+            AND media_order > #{bfMediaOrder}
+    </update>
+
+    <select id="selectMainMediaList" parameterType="hashmap" resultType="hashmap">
+        SELECT
+        A.media_id,
+        A.title,
+        A.source,
+        A.media_type,
+        A.sub_type,
+        A.type,
+        A.use_flag,
+        A.uage,
+        A.reg_date,
+        A.submit_date,
+        A.view_cnt,
+        B.creator_name,
+        C.media_order
+        FROM
+            Media A
+            LEFT OUTER JOIN Creator B ON A.creator_id = B.creator_id
+            INNER JOIN main_media C ON A.media_id = C.media_id
+        WHERE
+            C.media_type = #{mediaType}
+            AND A.delete_flag = 0
+            AND C.use_flag = 0
+        ORDER BY
+        C.media_order
+
+    </select>
+
+    <select id="selectCreatorList" parameterType="hashmap" resultType="hashmap">
+        SELECT
+            creator_id,
+            creator_name
+        FROM
+            creator
+        WHERE
+            media_type = #{mediaType}
+            AND use_flag = 0
+    </select>
+
+</mapper>

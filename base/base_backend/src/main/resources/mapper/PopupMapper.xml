@@ -1,0 +1,146 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.co.nextplayer.base.backend.mapper.PopupMapper">
+
+    <select id="selectPopupListCnt" parameterType="hashmap" resultType="_int">
+        SELECT
+            COUNT(1)
+        FROM
+            popup
+        WHERE
+            use_flag = 0
+            <if test="sKeyword != null and sKeyword != ''">
+                AND title LIKE CONCAT('%', #{sKeyword}, '%')
+            </if>
+    </select>
+
+    <select id="selectPopupList" parameterType="hashmap" resultType="hashmap">
+        SELECT
+            popup_id,
+            title,
+            view_cnt,
+            popup_type,
+            popup_app_type,
+            DATE_FORMAT(show_sdate, '%Y-%m-%d') AS show_sdate,
+            DATE_FORMAT(show_edate, '%Y-%m-%d') AS show_edate
+        FROM
+            popup
+        WHERE
+            use_flag = 0
+            <if test="sKeyword != null and sKeyword != ''">
+            AND title LIKE CONCAT('%', #{sKeyword}, '%')
+            </if>
+        LIMIT ${sRow}, ${eCount}
+    </select>
+
+    <insert id="insertPopup" parameterType="hashmap">
+        INSERT INTO popup (
+            title,
+            show_sdate,
+            show_edate,
+            show_flag,
+            url_link,
+            url_app_link,
+            popup_type,
+            popup_app_type,
+            auth_flag
+        ) VALUES (
+            #{title},
+            CONCAT(#{showSDate}, ' 00:00:00'),
+            CONCAT(#{showEDate}, ' 23:59:59'),
+            #{showFlag},
+            #{urlLink},
+            #{urlAppLink},
+            CONCAT('[', #{android} ', ', #{ios}, ', ', #{ipad}, ', ', #{pc}, ']'),
+            CONCAT('[', #{androidApp} ', ', #{iosApp}, ', ', #{ipadApp}, ', ', #{pcApp}, ']'),
+            #{authFlag}
+        )
+        <selectKey resultType="String" keyProperty="popupId" order="AFTER">
+            SELECT LAST_INSERT_ID()
+        </selectKey>
+    </insert>
+
+    <update id="updatePopup" parameterType="hashmap">
+        UPDATE
+            popup
+        SET
+            <if test="title != null">
+                title = #{title},
+            </if>
+            <if test="showSDate != null and showSDate != ''">
+                show_sdate = CONCAT(#{showSDate}, ' 00:00:00'),
+            </if>
+            <if test="showEDate != null and showEDate != ''">
+                show_edate = CONCAT(#{showEDate}, ' 23:59:59'),
+            </if>
+            <if test="urlLink != null and urlLink != ''">
+                url_link = #{urlLink},
+            </if>
+            <if test="urlAppLink != null and urlAppLink != ''">
+                url_app_link = #{urlAppLink},
+            </if>
+            popup_type = CONCAT('[', #{android} ', ', #{ios}, ', ', #{ipad}, ', ', #{pc}, ']'),
+            popup_app_type = CONCAT('[', #{androidApp} ', ', #{iosApp}, ', ', #{ipadApp}, ', ', #{pcApp}, ']'),
+            <if test="authFlag != null and authFlag != ''">
+                auth_flag = #{authFlag},
+            </if>
+            <if test="showFlag != null and showFlag != ''">
+                show_flag = #{showFlag}
+            </if>
+        WHERE
+            popup_id = #{popupId}
+    </update>
+
+    <delete id="deletePopup" parameterType="hashmap">
+        UPDATE
+            popup
+        SET
+            use_flag = '1'
+        WHERE
+            popup_id = #{popupId}
+    </delete>
+
+
+    <resultMap id="popupDetailResultMap" type="java.util.HashMap">
+        <id property="popup_id" column="popup_id"/>
+        <result property="title" column="title"/>
+        <result property="show_sdate" column="show_sdate"/>
+        <result property="show_edate" column="show_edate"/>
+        <result property="url_link" column="url_link"/>
+        <result property="url_app_link" column="url_app_link"/>
+        <result property="popup_type" column="popup_type"/>
+        <result property="popup_app_type" column="popup_app_type"/>
+        <result property="auth_flag" column="auth_flag"/>
+        <result property="show_flag" column="show_flag"/>
+        <result property="reg_date" column="reg_date"/>
+        <association property="imgFiles" javaType="java.util.HashMap">
+            <result column="file_save_name" property="fileSaveName" />
+            <result column="file_save_path" property="fileSavePath" />
+            <result column="file_name" property="fileName" />
+            <result column="file_ext" property="fileExt" />
+        </association>
+    </resultMap>
+    <select id="selectPopupDetail" parameterType="hashmap" resultMap="popupDetailResultMap">
+        SELECT
+            A.popup_id,
+            A.title,
+            DATE_FORMAT(show_sdate, '%Y-%m-%d') AS show_sdate,
+            DATE_FORMAT(show_edate, '%Y-%m-%d') AS show_edate,
+            A.url_link,
+            A.url_app_link,
+            A.popup_type,
+            A.popup_app_type,
+            A.auth_flag,
+            A.show_flag,
+            A.reg_date,
+            B.file_name,
+            CONCAT('/', SUBSTRING(B.file_save_path, LENGTH('/content_nextplayer/') + 1)) AS file_save_path
+        FROM
+            popup A
+            LEFT OUTER JOIN Public_File B ON B.foreign_type = 'Popup' AND A.popup_id = B.foreign_id AND B.use_flag = 0
+        WHERE
+            A.use_flag = 0
+          AND A.popup_id = #{popupId}
+    </select>
+
+</mapper>

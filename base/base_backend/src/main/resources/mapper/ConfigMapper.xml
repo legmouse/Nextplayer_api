@@ -1,0 +1,230 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.co.nextplayer.base.backend.mapper.ConfigMapper">
+
+    <select id="selectManagerList" resultType="hashmap">
+        SELECT
+            user_id,
+            user_name,
+            id,
+            grade,
+            use_flag,
+            DATE_FORMAT(reg_date, '%Y-%m-%d') AS reg_date
+        FROM
+            User
+        WHERE
+            use_flag = 0
+            AND grade <![CDATA[<]]> 127
+    </select>
+
+    <insert id="insertManager" parameterType="hashmap">
+        INSERT INTO User
+        (user_name, id, pw, grade, use_flag, reg_date)
+        VALUES
+        (#{userName}, #{id}, #{pw}, #{grade}, '0', NOW())
+        <selectKey resultType="String" keyProperty="userId" order="AFTER">
+            SELECT LAST_INSERT_ID();
+        </selectKey>
+    </insert>
+
+    <update id="updateManagerPw" parameterType="hashmap">
+        UPDATE
+            User
+        SET
+            pw = #{pw}
+        WHERE
+            user_id = #{userId}
+    </update>
+
+    <update id="deleteManager" parameterType="hashmap">
+        UPDATE
+            User
+        SET
+            use_flag = '1'
+        WHERE
+            user_id = #{userId}
+    </update>
+
+    <select id="selectMenuInfoList" resultType="hashmap">
+        select
+            menu_id,
+            menu_name,
+            upper_menu_id,
+            url
+        from
+            menu_info
+        WHERE
+            use_flag = 0
+            AND upper_menu_id != 0
+    </select>
+
+    <insert id="insertRoleInfo" parameterType="hashmap">
+        INSERT INTO role_info
+        (role_name, role_dc, use_flag)
+        VALUES
+        (#{roleName}, #{roleDc}, '0')
+        <selectKey resultType="String" keyProperty="roleId" order="AFTER">
+            SELECT LAST_INSERT_ID()
+        </selectKey>
+    </insert>
+
+    <insert id="insertTrgetRoleRelate" parameterType="hashmap">
+        INSERT INTO role_target_relate
+        (role_id, trget, se)
+        VALUES
+        (#{roleId}, #{trget}, #{se})
+    </insert>
+
+    <insert id="insertAuthorRoleRelate" parameterType="hashmap">
+        INSERT INTO role_author_relate
+            (role_id, author_cd)
+        VALUES
+            (#{roleId}, #{authorCd})
+    </insert>
+
+    <insert id="insertMenuAuthorRelate" parameterType="hashmap" >
+        INSERT INTO menu_author_relate (
+        menu_id,
+        author_cd
+        )VALUES
+        <foreach collection="list" item="item" separator=",">
+            (
+            #{item.menuId},
+            #{item.authorCd}
+            )
+        </foreach>
+    </insert>
+
+    <select id="selectUserMenuList" parameterType="hashmap" resultType="hashmap">
+        SELECT
+            DISTINCT
+            A.menu_id,
+            A.upper_menu_id,
+            A.menu_name,
+            A.menu_order,
+            A.url,
+            A.depth
+        FROM
+            menu_info A
+                LEFT JOIN menu_author_relate B ON A.menu_id = B.menu_id
+                LEFT JOIN role_author_relate C ON B.author_cd = C.author_cd
+        WHERE
+            A.use_flag = 0
+          AND A.display_flag = 0
+          AND (
+                C.role_id IN (
+                SELECT role_id
+                FROM role_target_relate a
+                WHERE (
+                                  a.se = 'TRSE0001' -- 아이디
+                              AND a.trget = #{id}
+                          )
+--                                  OR (
+--                                      a.se = 'TRSE0002' -- 부서
+--                                      AND a.trget = 'ADPT0002'
+--                                  )
+                order by a.role_id desc
+            )
+            )
+        ORDER BY A.menu_order
+    </select>
+
+    <select id="selectUserUpperMenuList" parameterType="hashmap" resultType="hashmap">
+        SELECT
+            A.upper_menu_id
+        FROM
+            menu_info A
+                LEFT JOIN menu_author_relate B ON A.menu_id = B.menu_id
+                LEFT JOIN role_author_relate C ON B.author_cd = C.author_cd
+        WHERE
+            A.use_flag = 0
+          AND A.display_flag = 0
+          AND (
+                C.role_id IN (
+                SELECT role_id
+                FROM role_target_relate a
+                WHERE (
+                                  a.se = 'TRSE0001' -- 아이디
+                              AND a.trget = #{id}
+                          )
+--                                  OR (
+--                                      a.se = 'TRSE0002' -- 부서
+--                                      AND a.trget = 'ADPT0002'
+--                                  )
+                order by a.role_id desc
+            )
+            )
+        GROUP BY A.upper_menu_id
+    </select>
+
+    <select id="selectUserInfo" parameterType="hashmap" resultType="hashmap">
+        SELECT
+            user_id,
+            id,
+            pw,
+            grade,
+            user_name
+        FROM
+            User
+        WHERE
+            user_id = #{userId}
+    </select>
+
+    <update id="updateUserInfo" parameterType="hashmap">
+        UPDATE
+            User
+        <set>
+            <if test="id != null and id != ''">
+                id = #{id},
+            </if>
+            <if test="userName != null and userName != ''">
+                user_name = #{userName},
+            </if>
+            <if test="grade != null and grade != ''" >
+                grade = #{grade},
+            </if>
+        </set>
+        WHERE
+            user_id = #{userId}
+    </update>
+
+    <delete id="deleteMenuAuthorRelateData" parameterType="hashmap">
+        DELETE
+        FROM menu_author_relate
+        WHERE author_cd = #{authorCd}
+    </delete>
+
+    <select id="selectUpperMenuList" resultType="hashmap">
+        SELECT
+            menu_id,
+            menu_name,
+            upper_menu_id,
+            url
+        FROM
+            menu_info
+        WHERE
+            use_flag = 0
+            AND (upper_menu_id = 0 OR upper_menu_id = menu_id)
+    </select>
+
+    <select id="selectMainMenuList" resultType="hashmap">
+        SELECT
+            main_menu_id,
+            menu_key,
+            menu_name,
+            menu_order,
+            use_flag
+        FROM
+            main_menu
+        ORDER BY
+            menu_order
+    </select>
+
+    <update id="updateMainMenu" parameterType="hashmap">
+        UPDATE main_menu
+        SET
+            menu_order = #{menuOrder},
+            use_flag = #{useFlag}
+        WHERE main_menu_id = #{mainMenuId}
+    </update>
+</mapper>

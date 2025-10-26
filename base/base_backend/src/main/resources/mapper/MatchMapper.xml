@@ -1,0 +1,414 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.co.nextplayer.base.backend.mapper.MatchMapper">
+
+    <!-- 학원클럽 - 요약정보 - 전체, 대회, 리그 승무패  -->
+    <select id="selectTeamMatchResult" parameterType="hashmap" resultType="hashmap">
+        SELECT a.*, b.l_won, b.l_draw,b.l_lost,
+        c_won + l_won AS t_won,
+        c_draw + l_draw AS t_draw,
+        c_lost + l_lost AS t_lost
+        FROM
+        (
+        SELECT IFNULL(team_id, #{teamId}) AS team_id, SUM(a.won) AS c_won, SUM(a.draw) AS c_draw, SUM(a.lost) AS c_lost
+        FROM
+        (
+        SELECT cup_id, team_id,
+        SUM(won1 + won2 + won3) AS won,
+        SUM(draw1 + draw2 + draw3) AS draw,
+        SUM(lost1 + lost2 + lost3) AS lost
+        FROM ${cupResultTB}
+        WHERE use_flag = 0
+        AND team_id = #{teamId}
+        GROUP BY cup_id
+        ) a INNER JOIN
+        (
+        SELECT cup_id
+        FROM ${cupInfoTB}
+        WHERE use_flag = 0
+        <choose>
+            <when test="sYear != null and sYear != '' ">
+                AND play_sdate <![CDATA[>=]]> CONCAT(#{sYear},"-01-01 00:00:00")
+                AND play_sdate <![CDATA[<=]]> CONCAT(#{sYear},"-12-31 23:59:59")
+                AND play_edate <![CDATA[>=]]> CONCAT(#{sYear},"-01-01 00:00:00")
+                AND play_edate <![CDATA[<=]]> CONCAT(#{sYear},"-12-31 23:59:59")
+            </when>
+            <otherwise>
+                AND play_sdate <![CDATA[>=]]> CONCAT(YEAR(CURDATE()),"-01-01 00:00:00")
+                AND play_sdate <![CDATA[<=]]> CONCAT(YEAR(CURDATE()),"-12-31 23:59:59")
+                AND play_edate <![CDATA[>=]]> CONCAT(YEAR(CURDATE()),"-01-01 00:00:00")
+                AND play_edate <![CDATA[<=]]> CONCAT(YEAR(CURDATE()),"-12-31 23:59:59")
+            </otherwise>
+        </choose>
+        ) b
+        ON a.cup_id = b.cup_id
+        ) a INNER JOIN
+        (
+        SELECT IFNULL(team_id, #{teamId}) AS team_id, SUM(a.won) AS l_won, SUM(a.draw) AS l_draw, SUM(a.lost) AS l_lost
+        FROM
+        (
+        SELECT league_id, team_id, won, draw, lost
+        FROM ${leagueResultTB}
+        WHERE use_flag = 0
+        AND team_id = #{teamId}
+        GROUP BY league_id
+        ) a INNER JOIN
+        (
+        SELECT league_id
+        FROM ${leagueInfoTB}
+        WHERE use_flag = 0
+        <choose>
+            <when test="sYear != null and sYear != '' ">
+                AND play_sdate <![CDATA[>=]]> CONCAT(#{sYear},"-01-01 00:00:00")
+                AND play_sdate <![CDATA[<=]]> CONCAT(#{sYear},"-12-31 23:59:59")
+                AND play_edate <![CDATA[>=]]> CONCAT(#{sYear},"-01-01 00:00:00")
+                AND play_edate <![CDATA[<=]]> CONCAT(#{sYear},"-12-31 23:59:59")
+            </when>
+            <otherwise>
+                AND play_sdate <![CDATA[>=]]> CONCAT(YEAR(CURDATE()),"-01-01 00:00:00")
+                AND play_sdate <![CDATA[<=]]> CONCAT(YEAR(CURDATE()),"-12-31 23:59:59")
+                AND play_edate <![CDATA[>=]]> CONCAT(YEAR(CURDATE()),"-01-01 00:00:00")
+                AND play_edate <![CDATA[<=]]> CONCAT(YEAR(CURDATE()),"-12-31 23:59:59")
+            </otherwise>
+        </choose>
+        ) b
+        ON a.league_id = b.league_id
+        ) b
+        ON a.team_id = b.team_id
+    </select>
+
+    <!-- 학원클럽 - 요약정보 -  리그+대회 경기결과 리스트 -->
+    <select id="selectTeamTotalMatch" parameterType="hashmap" resultType="hashmap">
+        SELECT 1 AS total_type,
+        DATE_FORMAT(SUBSTRING_INDEX(match_date,' ',1 ), '%Y%m%d') AS pdate,
+        DATE_FORMAT(SUBSTRING_INDEX(match_date,' ',1 ), '%Y-%m-%d %h:%i') AS pdate2,
+        a.match_date, a.place,
+
+        a.home_id, a.home,  a.home_score, 0 AS home_pk,
+        b.emblem AS home_emblem, b.team_type AS home_type,
+        a.away_id, a.away, a.away_score, 0 AS away_pk,
+        c.emblem AS away_emblem, c.team_type AS away_type,
+        a.match_type, a.reason, a.league_id
+
+        FROM ${leagueMatchTB} a
+        INNER JOIN Team b
+        ON a.home_id = b.team_id
+        INNER JOIN Team c
+        ON a.away_id  = c.team_id
+        WHERE a.use_flag = 0
+        AND a.home_id = #{teamId}
+
+        <choose>
+            <when test="sYear != null and sYear != '' ">
+                AND SUBSTRING_INDEX(a.match_date , ' ', 1) <![CDATA[>=]]> CONCAT(#{sYear},"-01-01 00:00:00")
+                AND SUBSTRING_INDEX(a.match_date , ' ', 1) <![CDATA[<=]]> CONCAT(#{sYear},"-12-31 23:59:59")
+            </when>
+            <otherwise>
+                AND SUBSTRING_INDEX(a.match_date , ' ', 1) <![CDATA[>=]]> CONCAT(YEAR(CURDATE()),"-01-01 00:00:00")
+                AND SUBSTRING_INDEX(a.match_date , ' ', 1) <![CDATA[<=]]> CONCAT(YEAR(CURDATE()),"-12-31 23:59:59")
+            </otherwise>
+        </choose>
+
+        UNION
+
+        SELECT 1 AS total_type,
+        DATE_FORMAT(SUBSTRING_INDEX(match_date,' ',1 ), '%Y%m%d') AS pdate,
+        DATE_FORMAT(SUBSTRING_INDEX(match_date,' ',1 ), '%Y-%m-%d %h:%i') AS pdate2,
+        a.match_date, a.place,
+
+        a.home_id, a.home,  a.home_score, 0 AS home_pk,
+        b.emblem AS home_emblem, b.team_type AS home_type,
+        a.away_id, a.away, a.away_score, 0 AS away_pk,
+        c.emblem AS away_emblem, c.team_type AS away_type,
+        a.match_type, a.reason, a.league_id
+
+        FROM ${leagueMatchTB} a
+        INNER JOIN Team b
+        ON a.home_id = b.team_id
+        INNER JOIN Team c
+        ON a.away_id  = c.team_id
+        WHERE a.use_flag = 0
+        AND a.away_id = #{teamId}
+
+        <choose>
+            <when test="sYear != null and sYear != '' ">
+                AND SUBSTRING_INDEX(a.match_date , ' ', 1) <![CDATA[>=]]> CONCAT(#{sYear},"-01-01 00:00:00")
+                AND SUBSTRING_INDEX(a.match_date , ' ', 1) <![CDATA[<=]]> CONCAT(#{sYear},"-12-31 23:59:59")
+            </when>
+            <otherwise>
+                AND SUBSTRING_INDEX(a.match_date , ' ', 1) <![CDATA[>=]]> CONCAT(YEAR(CURDATE()),"-01-01 00:00:00")
+                AND SUBSTRING_INDEX(a.match_date , ' ', 1) <![CDATA[<=]]> CONCAT(YEAR(CURDATE()),"-12-31 23:59:59")
+            </otherwise>
+        </choose>
+
+        UNION
+
+        SELECT 2 AS total_type,
+        DATE_FORMAT(SUBSTRING_INDEX(match_date,' ',1 ), '%Y%m%d') AS pdate,
+        DATE_FORMAT(SUBSTRING_INDEX(match_date,' ',1 ), '%Y-%m-%d %h:%i') AS pdate2,
+        a.match_date, a.place,
+
+        a.home_id, a.home,  a.home_score, a.home_pk,
+        b.emblem AS home_emblem, b.team_type AS home_type,
+        a.away_id, a.away, a.away_score, a.away_pk,
+        c.emblem AS away_emblem, c.team_type AS away_type,
+        a.match_type, a.reason, a.cup_id
+
+        FROM ${cupSubMatchTB} a
+        INNER JOIN Team b
+        ON a.home_id = b.team_id
+        INNER JOIN Team c
+        ON a.away_id  = c.team_id
+        WHERE a.use_flag = 0
+        AND a.home_id = #{teamId}
+        <choose>
+            <when test="sYear != null and sYear != '' ">
+                AND SUBSTRING_INDEX(a.match_date , ' ', 1) <![CDATA[>=]]> CONCAT(#{sYear},"-01-01 00:00:00")
+                AND SUBSTRING_INDEX(a.match_date , ' ', 1) <![CDATA[<=]]> CONCAT(#{sYear},"-12-31 23:59:59")
+            </when>
+            <otherwise>
+                AND SUBSTRING_INDEX(a.match_date , ' ', 1) <![CDATA[>=]]> CONCAT(YEAR(CURDATE()),"-01-01 00:00:00")
+                AND SUBSTRING_INDEX(a.match_date , ' ', 1) <![CDATA[<=]]> CONCAT(YEAR(CURDATE()),"-12-31 23:59:59")
+            </otherwise>
+        </choose>
+
+        UNION
+
+        SELECT 2 AS total_type,
+        DATE_FORMAT(SUBSTRING_INDEX(match_date,' ',1 ), '%Y%m%d') AS pdate,
+        DATE_FORMAT(SUBSTRING_INDEX(match_date,' ',1 ), '%Y-%m-%d %h:%i') AS pdate2,
+        a.match_date, a.place,
+
+        a.home_id, a.home,  a.home_score, a.home_pk,
+        b.emblem AS home_emblem, b.team_type AS home_type,
+        a.away_id, a.away, a.away_score, a.away_pk,
+        c.emblem AS away_emblem, c.team_type AS away_type,
+        a.match_type, a.reason, a.cup_id
+
+        FROM ${cupSubMatchTB} a
+        INNER JOIN Team b
+        ON a.home_id = b.team_id
+        INNER JOIN Team c
+        ON a.away_id  = c.team_id
+        WHERE a.use_flag = 0
+        AND a.away_id = #{teamId}
+        <choose>
+            <when test="sYear != null and sYear != '' ">
+                AND SUBSTRING_INDEX(a.match_date , ' ', 1) <![CDATA[>=]]> CONCAT(#{sYear},"-01-01 00:00:00")
+                AND SUBSTRING_INDEX(a.match_date , ' ', 1) <![CDATA[<=]]> CONCAT(#{sYear},"-12-31 23:59:59")
+            </when>
+            <otherwise>
+                AND SUBSTRING_INDEX(a.match_date , ' ', 1) <![CDATA[>=]]> CONCAT(YEAR(CURDATE()),"-01-01 00:00:00")
+                AND SUBSTRING_INDEX(a.match_date , ' ', 1) <![CDATA[<=]]> CONCAT(YEAR(CURDATE()),"-12-31 23:59:59")
+            </otherwise>
+        </choose>
+
+        UNION
+
+        SELECT 2 AS total_type,
+        DATE_FORMAT(SUBSTRING_INDEX(match_date,' ',1 ), '%Y%m%d') AS pdate,
+        DATE_FORMAT(SUBSTRING_INDEX(match_date,' ',1 ), '%Y-%m-%d %h:%i') AS pdate2,
+        a.match_date, a.place,
+
+        a.home_id, a.home,  a.home_score, a.home_pk,
+        b.emblem AS home_emblem, b.team_type AS home_type,
+        a.away_id, a.away, a.away_score, a.away_pk,
+        c.emblem AS away_emblem, c.team_type AS away_type,
+        a.match_type, a.reason, a.cup_id
+
+        FROM ${cupMainMatchTB} a
+        INNER JOIN Team b
+        ON a.home_id = b.team_id
+        INNER JOIN Team c
+        ON a.away_id  = c.team_id
+        WHERE a.use_flag = 0
+        AND a.home_id = #{teamId}
+        <choose>
+            <when test="sYear != null and sYear != '' ">
+                AND SUBSTRING_INDEX(a.match_date , ' ', 1) <![CDATA[>=]]> CONCAT(#{sYear},"-01-01 00:00:00")
+                AND SUBSTRING_INDEX(a.match_date , ' ', 1) <![CDATA[<=]]> CONCAT(#{sYear},"-12-31 23:59:59")
+            </when>
+            <otherwise>
+                AND SUBSTRING_INDEX(a.match_date , ' ', 1) <![CDATA[>=]]> CONCAT(YEAR(CURDATE()),"-01-01 00:00:00")
+                AND SUBSTRING_INDEX(a.match_date , ' ', 1) <![CDATA[<=]]> CONCAT(YEAR(CURDATE()),"-12-31 23:59:59")
+            </otherwise>
+        </choose>
+
+        UNION
+
+        SELECT 2 AS total_type,
+        DATE_FORMAT(SUBSTRING_INDEX(match_date,' ',1 ), '%Y%m%d') AS pdate,
+        DATE_FORMAT(SUBSTRING_INDEX(match_date,' ',1 ), '%Y-%m-%d %h:%i') AS pdate2,
+        a.match_date, a.place,
+
+        a.home_id, a.home,  a.home_score, a.home_pk,
+        b.emblem AS home_emblem, b.team_type AS home_type,
+        a.away_id, a.away, a.away_score, a.away_pk,
+        c.emblem AS away_emblem, c.team_type AS away_type,
+        a.match_type, a.reason, a.cup_id
+
+        FROM ${cupMainMatchTB} a
+        INNER JOIN Team b
+        ON a.home_id = b.team_id
+        INNER JOIN Team c
+        ON a.away_id  = c.team_id
+        WHERE a.use_flag = 0
+        AND a.away_id = #{teamId}
+        <choose>
+            <when test="sYear != null and sYear != '' ">
+                AND SUBSTRING_INDEX(a.match_date , ' ', 1) <![CDATA[>=]]> CONCAT(#{sYear},"-01-01 00:00:00")
+                AND SUBSTRING_INDEX(a.match_date , ' ', 1) <![CDATA[<=]]> CONCAT(#{sYear},"-12-31 23:59:59")
+            </when>
+            <otherwise>
+                AND SUBSTRING_INDEX(a.match_date , ' ', 1) <![CDATA[>=]]> CONCAT(YEAR(CURDATE()),"-01-01 00:00:00")
+                AND SUBSTRING_INDEX(a.match_date , ' ', 1) <![CDATA[<=]]> CONCAT(YEAR(CURDATE()),"-12-31 23:59:59")
+            </otherwise>
+        </choose>
+
+        UNION
+
+        SELECT 2 AS total_type,
+        DATE_FORMAT(SUBSTRING_INDEX(match_date,' ',1 ), '%Y%m%d') AS pdate,
+        DATE_FORMAT(SUBSTRING_INDEX(match_date,' ',1 ), '%Y-%m-%d %h:%i') AS pdate2,
+        a.match_date, a.place,
+
+        a.home_id, a.home,  a.home_score, a.home_pk,
+        b.emblem AS home_emblem, b.team_type AS home_type,
+        a.away_id, a.away, a.away_score, a.away_pk,
+        c.emblem AS away_emblem, c.team_type AS away_type,
+        a.match_type, a.reason, a.cup_id
+
+        FROM ${cupTourMatchTB} a
+        INNER JOIN Team b
+        ON a.home_id = b.team_id
+        INNER JOIN Team c
+        ON a.away_id  = c.team_id
+        WHERE a.use_flag = 0
+        AND a.home_id = #{teamId}
+        <choose>
+            <when test="sYear != null and sYear != '' ">
+                AND SUBSTRING_INDEX(a.match_date , ' ', 1) <![CDATA[>=]]> CONCAT(#{sYear},"-01-01 00:00:00")
+                AND SUBSTRING_INDEX(a.match_date , ' ', 1) <![CDATA[<=]]> CONCAT(#{sYear},"-12-31 23:59:59")
+            </when>
+            <otherwise>
+                AND SUBSTRING_INDEX(a.match_date , ' ', 1) <![CDATA[>=]]> CONCAT(YEAR(CURDATE()),"-01-01 00:00:00")
+                AND SUBSTRING_INDEX(a.match_date , ' ', 1) <![CDATA[<=]]> CONCAT(YEAR(CURDATE()),"-12-31 23:59:59")
+            </otherwise>
+        </choose>
+
+        UNION
+
+        SELECT 2 AS total_type,
+        DATE_FORMAT(SUBSTRING_INDEX(match_date,' ',1 ), '%Y%m%d') AS pdate,
+        DATE_FORMAT(SUBSTRING_INDEX(match_date,' ',1 ), '%Y-%m-%d %h:%i') AS pdate2,
+        a.match_date, a.place,
+
+        a.home_id, a.home,  a.home_score, a.home_pk,
+        b.emblem AS home_emblem, b.team_type AS home_type,
+        a.away_id, a.away, a.away_score, a.away_pk,
+        c.emblem AS away_emblem, c.team_type AS away_type,
+        a.match_type, a.reason, a.cup_id
+
+        FROM ${cupTourMatchTB} a
+        INNER JOIN Team b
+        ON a.home_id = b.team_id
+        INNER JOIN Team c
+        ON a.away_id  = c.team_id
+        WHERE a.use_flag = 0
+        AND a.away_id = #{teamId}
+        <choose>
+            <when test="sYear != null and sYear != '' ">
+                AND SUBSTRING_INDEX(a.match_date , ' ', 1) <![CDATA[>=]]> CONCAT(#{sYear},"-01-01 00:00:00")
+                AND SUBSTRING_INDEX(a.match_date , ' ', 1) <![CDATA[<=]]> CONCAT(#{sYear},"-12-31 23:59:59")
+            </when>
+            <otherwise>
+                AND SUBSTRING_INDEX(a.match_date , ' ', 1) <![CDATA[>=]]> CONCAT(YEAR(CURDATE()),"-01-01 00:00:00")
+                AND SUBSTRING_INDEX(a.match_date , ' ', 1) <![CDATA[<=]]> CONCAT(YEAR(CURDATE()),"-12-31 23:59:59")
+            </otherwise>
+        </choose>
+
+        ORDER BY pdate DESC
+    </select>
+
+    <!-- 학원클럽 - 대회정보 - 대회/리그 평균득/실점 -->
+    <select id="selectTeamCupAvgGoal" parameterType="hashmap" resultType="hashmap">
+        SELECT a.team_id,
+        IFNULL(a.c_gf, 0) AS c_gf, IFNULL(a.c_ga, 0) AS c_ga, IFNULL(a.c_avg_gf, 0) AS c_avg_gf, IFNULL(a.c_avg_ga, 0) AS c_avg_ga,
+        IFNULL(b.l_gf, 0) AS l_gf, IFNULL(b.l_ga, 0) AS l_ga, IFNULL(b.l_avg_gf, 0) AS l_avg_gf, IFNULL(b.l_avg_ga, 0) AS l_avg_ga
+        FROM
+        (
+        SELECT
+        b.team_id,
+        SUM(gf1 + gf2 + gf3) AS c_gf,
+        SUM(ga1 + ga2 + ga3) AS c_ga,
+        TRUNCATE( SUM(gf1 + gf2 + gf3) / SUM(played1 + played2 + played3), 1) AS c_avg_gf,
+        TRUNCATE( SUM(ga1 + ga2 + ga3) / SUM(played1 + played2 + played3), 1) AS c_avg_ga
+        FROM
+        (
+        SELECT cup_id, cup_name, cup_team, play_sdate, play_edate
+        FROM ${cupInfoTB}
+        WHERE use_flag = 0
+        <choose>
+            <when test="sYear != null and sYear != '' ">
+                AND play_sdate <![CDATA[>=]]> CONCAT(#{sYear},"-01-01 00:00:00")
+                AND play_sdate <![CDATA[<=]]> CONCAT(#{sYear},"-12-31 23:59:59")
+                AND play_edate <![CDATA[>=]]> CONCAT(#{sYear},"-01-01 00:00:00")
+                AND play_edate <![CDATA[<=]]> CONCAT(#{sYear},"-12-31 23:59:59")
+            </when>
+            <otherwise>
+                AND play_sdate <![CDATA[>=]]> CONCAT(YEAR(CURDATE()),"-01-01 00:00:00")
+                AND play_sdate <![CDATA[<=]]> CONCAT(YEAR(CURDATE()),"-12-31 23:59:59")
+                AND play_edate <![CDATA[>=]]> CONCAT(YEAR(CURDATE()),"-01-01 00:00:00")
+                AND play_edate <![CDATA[<=]]> CONCAT(YEAR(CURDATE()),"-12-31 23:59:59")
+            </otherwise>
+        </choose>
+        ) a INNER JOIN
+        (
+        SELECT team_id, cup_id, played1, played2, played3, gf1, gf2, gf3, ga1, ga2, ga3
+        FROM ${cupResultTB}
+        WHERE use_flag = 0
+        AND team_id = ${teamId}
+        ) b
+        ON a.cup_id = b.cup_id
+        ) a LEFT JOIN
+        (
+        SELECT
+        b.team_id,
+        SUM(gf) AS l_gf,
+        SUM(ga) AS l_ga,
+        TRUNCATE( SUM(gf) / SUM(played), 1) AS l_avg_gf,
+        TRUNCATE( SUM(ga) / SUM(played), 1) AS l_avg_ga
+
+        FROM
+        (
+        SELECT league_id, league_name, play_sdate
+        FROM ${leagueInfoTB}
+        WHERE use_flag = 0
+        <choose>
+            <when test="sYear != null and sYear != '' ">
+                AND play_sdate <![CDATA[>=]]> CONCAT(#{sYear},"-01-01 00:00:00")
+                AND play_sdate <![CDATA[<=]]> CONCAT(#{sYear},"-12-31 23:59:59")
+                AND play_edate <![CDATA[>=]]> CONCAT(#{sYear},"-01-01 00:00:00")
+                AND play_edate <![CDATA[<=]]> CONCAT(#{sYear},"-12-31 23:59:59")
+            </when>
+            <otherwise>
+                AND play_sdate <![CDATA[>=]]> CONCAT(YEAR(CURDATE()),"-01-01 00:00:00")
+                AND play_sdate <![CDATA[<=]]> CONCAT(YEAR(CURDATE()),"-12-31 23:59:59")
+                AND play_edate <![CDATA[>=]]> CONCAT(YEAR(CURDATE()),"-01-01 00:00:00")
+                AND play_edate <![CDATA[<=]]> CONCAT(YEAR(CURDATE()),"-12-31 23:59:59")
+            </otherwise>
+        </choose>
+        ) a INNER JOIN
+        (
+        SELECT team_id, league_id, played, gf, ga
+        FROM ${leagueResultTB}
+        WHERE use_flag = 0
+        AND team_id = ${teamId}
+        ) b
+        ON a.league_id = b.league_id
+        ) b
+        ON a.team_id = b.team_id
+
+    </select>
+
+</mapper>

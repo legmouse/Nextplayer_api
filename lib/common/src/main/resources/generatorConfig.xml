@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE generatorConfiguration
+        PUBLIC "-//mybatis.org//DTD MyBatis Generator Configuration 1.0//EN"
+        "http://mybatis.org/dtd/mybatis-generator-config_1_0.dtd">
+
+<generatorConfiguration>
+    <properties resource="generator.properties"/>
+    <context id="MySqlContext" targetRuntime="MyBatis3" defaultModelType="flat">
+        <property name="beginningDelimiter" value="`"/>
+        <property name="endingDelimiter" value="`"/>
+        <property name="javaFileEncoding" value="UTF-8"/>
+        <!-- 모델을 위한 시퀀스 생성 방법-->
+        <plugin type="org.mybatis.generator.plugins.SerializablePlugin"/>
+        <!-- 생성된 자바 모델을 위한 toString 방법 만들기 -->
+        <plugin type="org.mybatis.generator.plugins.ToStringPlugin"/>
+        <!--model 생성 코드 주석을 사용자 정의할 수 있습니다-->
+        <commentGenerator type="kr.co.nextplayer.next.lib.common.mybatis.CommentGenerator">
+            <!-- 자동으로 생성된 주석을 제거할 지 여부 true: 예: false: 아니오 -->
+            <property name="suppressAllComments" value="true"/>
+            <property name="suppressDate" value="true"/>
+            <property name="addRemarkComments" value="true"/>
+        </commentGenerator>
+        <!--데이터베이스 연결 설정-->
+        <jdbcConnection driverClass="${jdbc.driverClass}"
+                        connectionURL="${jdbc.connectionURL}"
+                        userId="${jdbc.userId}"
+                        password="${jdbc.password}">
+            <!--mysql 드라이브를 8.0으로 업그레이드한 후 지정된 데이터베이스 코드를 생성하지 않는 문제 해결-->
+            <property name="nullCatalogMeansCurrent" value="true"/>
+        </jdbcConnection>
+        <!--model 생성 경로 지정-->
+        <javaModelGenerator targetPackage="model"
+                            targetProject="lib/common/src/main/java/kr/co/nextplayer/next/lib/common/mybatis/generFile"/>
+        <!--mapper.xml 생성 경로 지정-->
+        <sqlMapGenerator targetPackage="mapper"
+                         targetProject="lib/common/src/main/java/kr/co/nextplayer/next/lib/common/mybatis/generFile"/>
+        <!--mapper 인터페이스를 생성하는 경로 지정-->
+        <javaClientGenerator type="XMLMAPPER" targetPackage="dao"
+                             targetProject="lib/common/src/main/java/kr/co/nextplayer/next/lib/common/mybatis/generFile"/>
+        <!--모든 테이블 생성시 tableName 을 % 로 설정-->
+        <table tableName="member_address" schema="nextplayer" enableCountByExample="false" enableUpdateByExample="false"
+               enableDeleteByExample="false" enableSelectByExample="false" selectByExampleQueryId="false"/>
+    </context>
+</generatorConfiguration>

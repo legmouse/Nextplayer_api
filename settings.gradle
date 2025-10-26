@@ -1,0 +1,44 @@
+rootProject.name = 'nextplayer'
+
+// Servers
+include ":back:back_login"
+include ":back:back_front"
+include ":back:back_backend"
+include ":back:back_media"
+// Base - Servers
+include ":base:base_login"
+include ":base:base_front"
+include ":base:base_cup"
+include ":base:base_league"
+include ":base:base_team"
+include ":base:base_board"
+include ":base:base_backend"
+include ":base:base_media"
+include 'base:base_player'
+// Base - Domain
+include ":base:base"
+include ":base:base_member"
+
+
+// Protocol Buffer
+include ":proto:proto_login"
+include ":proto:proto_message"
+
+
+include ":lib:util"
+include ":lib:common"
+include 'base:base_file'
+findProject(':base:base_file')?.name = 'base_file'
+include 'base:base_community'
+findProject(':base:base_community')?.name = 'base_community'
+include 'base:base_reply'
+findProject(':base:base_reply')?.name = 'base_reply'
+include 'base:base_likes'
+findProject(':base:base_likes')?.name = 'base_likes'
+include 'base:base_store'
+findProject(':base:base_store')?.name = 'base_store'
+include 'back:back_batch'
+findProject(':back:back_batch')?.name = 'back_batch'
+include 'base:base_batch'
+findProject(':base:base_batch')?.name = 'base_batch'
+

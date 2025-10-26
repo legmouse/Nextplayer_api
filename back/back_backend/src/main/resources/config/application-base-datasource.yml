@@ -1,0 +1,60 @@
+spring:
+  np:
+    datasource:
+      driver-class-name: com.mysql.cj.jdbc.Driver
+      type: com.zaxxer.hikari.HikariDataSource
+      jdbc-url: jdbc:mysql://192.168.1.69:53306/Next_Player?useUnicode=true&characterEncoding=utf-8&allowMultiQueries=true
+      username: nextPlayer_sc
+      password: Next123!@#
+      hikari:
+        minimum-idle: 5
+        maximum-pool-size: 10
+        idle-timeout: 600000
+        max-lifetime: 1800000
+        connection-test-query: SELECT 1
+  store:
+    datasource:
+      driver-class-name: com.mysql.cj.jdbc.Driver
+      type: com.zaxxer.hikari.HikariDataSource
+      jdbc-url: jdbc:mysql://192.168.1.69:53306/nextplayer_shop?noAccessToProcedureBodies=true
+      username: nextPlayer_sc
+      password: Next123!@#
+      hikari:
+        minimum-idle: 5
+        maximum-pool-size: 10
+        idle-timeout: 600000
+        max-lifetime: 1800000
+        connection-test-query: SELECT 1
+---
+# LOCAL
+spring.config.activate.on-profile: local
+
+---
+# DEV
+spring.config.activate.on-profile: dev
+
+---
+# PROD
+spring.config.activate.on-profile: prod
+
+  # spring:
+  # datasource:
+  #추후 실제 운영오픈시 불필요 로그를 제거할려면 아래 옵션으로 변경해야함.
+  #driver: org.mariadb.jdbc.Driver
+  #url: jdbc:mariadb://10.10.80.11:30306/nextplayer?useUnicode=true&characterEncoding=utf-8
+  # url: jdbc:log4jdbc:mysql://58.180.27.47:53307/nextplayer?useUnicode=true&characterEncoding=utf-8&allowMultiQueries=true
+  # username: np_sc
+#password: Sprvmf1002!
+
+spring:
+  np:
+    datasource:
+      jdbc-url: jdbc:mysql://58.180.27.47:53307/nextplayer?useUnicode=true&characterEncoding=utf-8&allowMultiQueries=true
+      username: np_sc
+      password: Sprvmf1002!
+
+  store:
+    datasource:
+      jdbc-url: jdbc:mysql://58.180.27.47:53307/nextplayer_shop?noAccessToProcedureBodies=true
+      username: npshop_sc
+      password: Sprvmf1197!!

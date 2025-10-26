@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.co.nextplayer.base.backend.mapper.CategoryMapper">
+
+    <!-- 카테고리 그룹 리스트 -->
+    <select id="selectCategoryGroup" parameterType="hashmap" resultType="hashmap">
+        SELECT
+            category_cd,
+            category_name,
+            category_type,
+            category_order
+        FROM
+            Category
+        WHERE
+            use_flag = '0'
+            AND parent_cd = 'GROUP'
+        ORDER BY
+            category_order
+    </select>
+
+    <select id="selectCategoryDetailList" parameterType="hashmap" resultType="hashmap">
+        SELECT
+            A.category_id,
+            A.category_cd,
+            A.category_name,
+            A.parent_cd,
+            A.code_value,
+            A.category_order
+        FROM
+            Category AS A
+            INNER JOIN Category AS B ON B.category_cd = #{categoryCd} AND B.category_cd = A.parent_cd
+        WHERE
+            A.use_flag = '0'
+        ORDER BY
+            A.category_order
+    </select>
+
+    <select id="selectCategoryCdMax" resultType="String">
+        SELECT MAX(category_cd)
+        FROM Category
+        WHERE category_type = #{category}
+    </select>
+
+    <select id="selectCategoryValMax" resultType="String">
+        SELECT MAX(code_value)
+        FROM Category
+        WHERE parent_cd = #{categoryCd}
+    </select>
+
+    <insert id="insertCategory" parameterType="hashmap">
+        INSERT INTO Category (
+        category_type,
+        category_cd,
+        category_name,
+        <if test='parentCd != null and parentCd != ""'>
+            parent_cd,
+        </if>
+        <if test='codeValue != null and codeValue != ""'>
+            code_value,
+        </if>
+        category_order
+        ) VALUES (
+        #{categoryType},
+        #{categoryCd},
+        #{categoryName},
+        <if test='parentCd != null and parentCd != ""'>
+            #{parentCd},
+        </if>
+        <if test='codeValue != null and codeValue != ""'>
+            #{codeValue},
+        </if>
+        #{categoryOrder}
+        )
+    </insert>
+
+    <update id="updateCategory" parameterType="hashmap">
+        UPDATE Category SET
+                               category_name = #{categoryName},
+                               category_order = #{categoryOrder},
+                               upd_date = NOW()
+        WHERE category_id = #{categoryId}
+    </update>
+
+    <update id="deleteCategory" parameterType="hashmap">
+        UPDATE Category SET
+                               use_flag = '1',
+                               upd_date = NOW()
+        WHERE category_id = #{categoryId}
+    </update>
+
+</mapper>

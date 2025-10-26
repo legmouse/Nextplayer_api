@@ -1,0 +1,236 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.co.nextplayer.base.member.mapper.MemberConfirmMapper">
+
+    <resultMap id="BaseResultMap" type="kr.co.nextplayer.base.member.dto.MemberConfirmDto">
+        <id column="confirm_no" jdbcType="INTEGER" property="confirmNo" />
+        <result column="member_cd" jdbcType="VARCHAR" property="memberCd" />
+        <result column="member_name" jdbcType="VARCHAR" property="memberName" />
+        <result column="birth_date" jdbcType="VARCHAR" property="birthDate" />
+        <result column="sex" jdbcType="CHAR" property="sex" />
+        <result column="phone_no" jdbcType="VARCHAR" property="phoneNo" />
+        <result column="nation" jdbcType="VARCHAR" property="nation" />
+        <result column="email" jdbcType="VARCHAR" property="email" />
+        <result column="cert_type" jdbcType="VARCHAR" property="certType" />
+        <result column="cert_date" jdbcType="TIMESTAMP" property="certDate" />
+
+        <association property="member" javaType="kr.co.nextplayer.base.member.model.Member">
+            <result column="member_cd" jdbcType="CHAR" property="memberCd"/>
+            <result column="member_nickname" jdbcType="VARCHAR" property="memberNickname"/>
+            <result column="children_age" jdbcType="VARCHAR" property="childrenAge"/>
+            <result column="member_id" jdbcType="VARCHAR" property="memberId"/>
+            <result column="member_pwd" jdbcType="VARCHAR" property="memberPwd"/>
+            <result column="member_state" jdbcType="CHAR" property="memberState"/>
+            <result column="last_connect_ip" jdbcType="VARCHAR" property="lastConnectIp"/>
+            <result column="last_connect_date" jdbcType="TIMESTAMP" property="lastConnectDate"/>
+            <result column="pwd_upd_date" jdbcType="TIMESTAMP" property="pwdUpdDate"/>
+            <result column="reg_date" jdbcType="TIMESTAMP" property="regDate"/>
+            <result column="upd_admin_id" jdbcType="VARCHAR" property="updAdminId"/>
+            <result column="upd_admin_date" jdbcType="TIMESTAMP" property="updAdminDate"/>
+            <result column="upd_date" jdbcType="TIMESTAMP" property="updDate"/>
+        </association>
+    </resultMap>
+
+    <sql id="Page_Where_List">
+        FROM member_confirm a LEFT JOIN member mem ON a.member_cd = mem.member_cd
+        <trim prefix="WHERE" prefixOverrides="AND |OR">
+            <if test="startRegDate != null and startRegDate != '' ">
+                AND a.cert_date &gt;= #{startRegDate}
+            </if>
+            <if test="endRegDate != null and endRegDate != '' ">
+                AND a.cert_date &lt;= #{endRegDate}
+            </if>
+            <if test="memberId != null and memberId != '' ">
+                AND mem.member_id = #{memberId}
+            </if>
+            <if test="memberCd != null and memberCd != '' ">
+                AND a.member_cd = #{memberCd}
+            </if>
+            <if test="name != null and name != '' ">
+                AND a.member_name LIKE concat('%', #{name}, '%')
+            </if>
+            <if test="nickName != null and nickName != '' ">
+                AND mem.member_nickanme LIKE concat('%', #{nickName}, '%')
+            </if>
+        </trim>
+    </sql>
+
+    <select id="totalSizeBySearch" parameterType="map" resultType="Integer">
+        SELECT count(a.member_cd)
+        <include refid="Page_Where_List"/>
+    </select>
+    <select id="selectListBySearch" parameterType="HashMap" resultMap="BaseResultMap">
+        SELECT
+              a.*,
+              mem.*
+        <include refid="Page_Where_List"/>
+        ORDER BY a.cert_date DESC
+        LIMIT #{offset}, #{pageSize}
+    </select>
+
+    <select id="selectBySearch" parameterType="HashMap" resultMap="memberConfirmResultMap">
+        SELECT a.*
+          FROM member_confirm a
+         WHERE 1=1
+        <if test="phoneNo != null and phoneNo != '' ">
+            AND REPLACE(a.phone_no, '-' , '') = REPLACE(#{phoneNo}, '-' , '')
+        </if>
+        <if test="ciNo != null and ciNo != '' ">
+            AND REPLACE(a.ci_no, '-' , '') = REPLACE(#{ciNo}, '-' , '')
+        </if>
+        <if test="email != null and email != '' ">
+            AND a.email = #{email}
+        </if>
+        <if test="memberName != null and memberName != '' ">
+            AND a.member_name = #{memberName}
+        </if>
+        <if test="birthDate != null and birthDate != '' ">
+            AND a.birth_date = #{birthDate}
+        </if>
+        <if test="sex != null and sex != '' ">
+            AND a.sex = #{sex}
+        </if>
+    </select>
+
+    <insert id="insertSelective" parameterType="kr.co.nextplayer.base.member.model.MemberConfirm">
+        insert into member_confirm
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="confirmNo != null">
+                confirm_no,
+            </if>
+            <if test="memberCd != null">
+                member_cd,
+            </if>
+            <if test="memberName != null">
+                member_name,
+            </if>
+            <if test="age != null">
+                age,
+            </if>
+            <if test="birthDate != null">
+                birth_date,
+            </if>
+            <if test="sex != null">
+                sex,
+            </if>
+            <if test="phoneNo != null">
+                phone_no,
+            </if>
+            <if test="ciNo != null">
+                ci_no,
+            </if>
+            <if test="email != null">
+                email,
+            </if>
+            <if test="ageGroup != null">
+                age_group,
+            </if>
+            <if test="certType != null">
+                cert_type,
+            </if>
+            <if test="certDate != null">
+                cert_date,
+            </if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="confirmNo != null">
+                #{confirmNo,jdbcType=INTEGER},
+            </if>
+            <if test="memberCd != null">
+                #{memberCd,jdbcType=VARCHAR},
+            </if>
+            <if test="memberName != null">
+                #{memberName,jdbcType=VARCHAR},
+            </if>
+            <if test="age != null">
+                #{age, jdbcType=INTEGER},
+            </if>
+            <if test="birthDate != null">
+                #{birthDate,jdbcType=VARCHAR},
+            </if>
+            <if test="sex != null">
+                #{sex,jdbcType=CHAR},
+            </if>
+            <if test="phoneNo != null">
+                #{phoneNo,jdbcType=VARCHAR},
+            </if>
+            <if test="ciNo != null">
+                #{ciNo,jdbcType=VARCHAR},
+            </if>
+            <if test="email != null">
+                #{email,jdbcType=VARCHAR},
+            </if>
+            <if test="ageGroup != null">
+                #{ageGroup,jdbcType=VARCHAR},
+            </if>
+            <if test="certType != null">
+                #{certType,jdbcType=VARCHAR},
+            </if>
+            <if test="certDate != null">
+                #{certDate,jdbcType=TIMESTAMP},
+            </if>
+        </trim>
+    </insert>
+    <update id="updateByPrimaryKeySelective" parameterType="kr.co.nextplayer.base.member.model.MemberConfirm">
+        update member_confirm
+        <set>
+            <if test="memberCd != null">
+                member_cd = #{memberCd,jdbcType=VARCHAR},
+            </if>
+            <if test="memberName != null">
+                member_name = #{memberName,jdbcType=VARCHAR},
+            </if>
+            <if test="birthDate != null">
+                birth_date = #{birthDate,jdbcType=VARCHAR},
+            </if>
+            <if test="sex != null">
+                sex = #{sex,jdbcType=CHAR},
+            </if>
+            <if test="phoneNo != null">
+                phone_no = #{phoneNo,jdbcType=VARCHAR},
+            </if>
+            <if test="ciNo != null">
+                ci_no = #{ciNo,jdbcType=VARCHAR},
+            </if>
+            <if test="email != null">
+                email = #{email,jdbcType=VARCHAR},
+            </if>
+            <if test="certType != null">
+                cert_type = #{certType,jdbcType=VARCHAR},
+            </if>
+            <if test="certDate != null">
+                cert_date = #{certDate,jdbcType=TIMESTAMP},
+            </if>
+        </set>
+        where confirm_no = #{confirmNo,jdbcType=INTEGER}
+    </update>
+
+    <update id="updateSelective" parameterType="kr.co.nextplayer.base.member.model.MemberConfirm">
+        update member_confirm
+        <set>
+            <if test="memberName != null">
+                member_name = #{memberName,jdbcType=VARCHAR},
+            </if>
+            <if test="birthDate != null">
+                birth_date = #{birthDate,jdbcType=VARCHAR},
+            </if>
+            <if test="sex != null">
+                sex = #{sex,jdbcType=CHAR},
+            </if>
+            <if test="age != null">
+                age = #{age, jdbcType=INTEGER},
+            </if>
+            <if test="phoneNo != null">
+                phone_no = #{phoneNo,jdbcType=VARCHAR},
+            </if>
+            <if test="email != null">
+                email = #{email,jdbcType=VARCHAR},
+            </if>
+            <if test="ageGroup != null and ageGroup != ''">
+                age_group = #{ageGroup,jdbcType=VARCHAR},
+            </if>
+        </set>
+        where member_cd = #{memberCd}
+    </update>
+
+</mapper>

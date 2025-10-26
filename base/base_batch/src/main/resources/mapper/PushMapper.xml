@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.co.nextplayer.base.batch.mapper.PushMapper">
+
+    <select id="selectNonSendPushContent" resultType="kr.co.nextplayer.base.batch.firebase.PushContent">
+        select push_content_id,
+               type_id,
+               title,
+               body,
+               param,
+               path,
+               description,
+               auto_flag,
+               send_flag,
+               total_cnt,
+               suc_cnt,
+               fail_cnt,
+               reg_dt,
+               send_dt,
+               req_dt
+        from member_push_contents
+        where send_flag = 0
+        and req_dt <![CDATA[<]]> now()
+        order by push_content_id asc
+        limit 1
+    </select>
+
+    <select id="selectNonSendMemberPushList" parameterType="java.lang.Integer" resultType="kr.co.nextplayer.base.batch.firebase.PushMember">
+        select push_id,
+               push_content_id,
+               member_cd,
+               fcm_token,
+               reg_dt,
+               send_dt
+        from member_push
+        where push_content_id = #{pushContentId}
+          and fcm_token is not null
+          and fcm_token != ''
+        order by push_id asc
+    </select>
+
+    <update id="updateMemberPushSending" parameterType="java.lang.Integer">
+        update member_push
+            set send_flag = 0
+                , send_dt = now()
+        where push_id = #{pushId}
+    </update>
+
+    <update id="updateMemberPushSendError" parameterType="java.util.Map">
+        update member_push
+        set error = #{error}
+          , error_dt = now()
+          , error_flag = 1
+        where push_id = #{pushId}
+    </update>
+
+    <update id="updatePushContentSend" parameterType="java.util.Map">
+        update member_push_contents
+        set send_flag = 1
+          , send_dt = now()
+          , suc_cnt = #{successCount}
+          , fail_cnt = #{failureCount}
+        where push_content_id = #{pushContentId}
+    </update>
+
+</mapper>

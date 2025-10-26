@@ -1,0 +1,161 @@
+buildscript {
+	dependencies {
+		classpath group: 'org.yaml', name: 'snakeyaml', version: '1.19'
+	}
+}
+
+plugins {
+	id 'org.springframework.boot'  version '2.7.1'
+	id 'io.spring.dependency-management'  version '1.0.11.RELEASE'
+	id 'com.google.protobuf'  version '0.8.19'
+	id "co.uzzu.dotenv.gradle" version "2.0.0"
+	id "com.github.node-gradle.node" version "3.4.0"
+	id 'java'
+	id 'application'
+}
+
+apply plugin: "co.uzzu.dotenv.gradle"
+
+bootJar {
+	enabled = false
+}
+
+repositories {
+	mavenCentral()
+	gradlePluginPortal()
+}
+
+subprojects {
+	apply {
+		plugin 'java'
+		plugin 'org.springframework.boot'
+		plugin 'io.spring.dependency-management'
+	}
+
+	group = 'kr.co.nextplayer'
+	version = '0.0.1-SNAPSHOT'
+	sourceCompatibility = "11"
+
+	repositories {
+		mavenCentral()
+	}
+
+	dependencyManagement {
+		imports {
+			mavenBom('com.linecorp.armeria:armeria-bom:1.17.2')
+			mavenBom('io.netty:netty-bom:4.1.76.Final')
+		}
+
+		dependencies {
+			dependency 'io.springfox:springfox-boot-starter:3.0.0'
+			dependency 'io.springfox:springfox-schema:3.0.0'
+
+			dependency 'com.linecorp.armeria:armeria-spring-boot2-webflux-starter:1.17.2'
+
+			dependency 'org.mybatis:mybatis-spring:2.0.7'
+
+			dependency 'org.mybatis.spring.boot:mybatis-spring-boot:2.2.2'
+			dependency 'org.mybatis.spring.boot:mybatis-spring-boot-starter:2.2.2'
+			dependency 'org.mybatis.spring.boot:mybatis-spring-boot-autoconfigure:2.2.2'
+
+			dependency 'io.methvin:directory-watcher:0.15.1'
+
+			dependency 'com.linecorp.armeria:armeria-spring-boot2-webflux-autoconfigure:1.17.2'
+
+			dependency 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.13.4'
+		}
+	}
+
+	dependencies {
+		compileOnly 'org.projectlombok:lombok'
+		annotationProcessor 'org.projectlombok:lombok'
+
+		implementation 'me.paulschwarz:spring-dotenv:2.5.4'
+
+		implementation 'com.google.protobuf:protobuf-java:3.21.2'
+		implementation 'com.google.protobuf:protobuf-java-util:3.21.2'
+		implementation 'io.grpc:grpc-protobuf:1.47.0'
+
+		implementation 'com.hubspot.jackson:jackson-datatype-protobuf:0.9.12'
+		implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310'
+		implementation 'com.alibaba.fastjson2:fastjson2:2.0.26'
+
+		implementation 'org.springframework.boot:spring-boot-starter-web'
+
+		//implementation 'org.springframework.boot:spring-boot-starter-tomcat'
+
+		// Preprocessor that enables you to use JavaDoc to add description to REST API parameters.
+		// If you don't want to use it, you can use the annotation
+		// com.linecorp.armeria.server.annotation.Description otherwise.
+		annotationProcessor 'org.springframework.boot:spring-boot-configuration-processor:2.6.5'
+
+		[
+			'armeria',
+			//'armeria-brave',
+			'armeria-grpc',
+			//'armeria-jetty9',
+			//'armeria-kafka',
+			'armeria-logback',
+			'armeria-retrofit2',
+			//'armeria-rxjava3',
+			//'armeria-saml',
+			//'armeria-thrift0.13',
+			'armeria-tomcat9',
+			//'armeria-zookeeper3'
+		].each {
+			implementation "com.linecorp.armeria:${it}:1.17.2"
+		}
+
+		implementation 'mysql:mysql-connector-java:8.0.28'
+		implementation 'org.mariadb.jdbc:mariadb-java-client:3.1.2'
+
+		implementation 'com.squareup.retrofit2:converter-jackson:2.9.0'
+		implementation 'com.jakewharton.retrofit:retrofit2-reactor-adapter:2.1.0'
+
+		implementation 'org.mybatis:mybatis:3.5.10'
+		implementation 'io.lettuce:lettuce-core:6.2.0.RELEASE'
+
+		implementation 'io.swagger.core.v3:swagger-models:2.2.1'
+		implementation 'io.swagger.core.v3:swagger-annotations:2.2.1'
+
+		implementation 'org.bgee.log4jdbc-log4j2:log4jdbc-log4j2-jdbc4.1:1.16'
+
+		implementation 'com.zaxxer:HikariCP:5.0.1'
+
+		// backend-admin
+		implementation 'javax.annotation:javax.annotation-api'
+		implementation 'org.springframework.boot:spring-boot-starter-validation'
+		implementation 'org.apache.commons:commons-lang3:3.12.0'
+		implementation 'io.swagger:swagger-models:1.6.6'
+		implementation 'io.github.classgraph:classgraph:4.8.149'
+
+		implementation 'com.github.ulisesbocchio:spring-boot-jar-resources:1.3'
+
+		implementation 'org.apache.poi:poi:5.0.0'
+		implementation 'org.apache.poi:poi-ooxml:5.0.0'
+
+    	// Removed old jackson library(use com.fasterxml.jackson now)
+		// implementation 'org.codehaus.jackson:jackson-mapper-asl:1.9.13'
+	}
+}
+
+task bootDistTarAll(type: Copy) {
+    subprojects.each {
+		it.afterEvaluate {
+            def bootDistTarTask = it.tasks.findByName('bootDistTar')
+
+            if (bootDistTarTask) {
+                dependsOn(bootDistTarTask)
+				from "${it.buildDir}/distributions/"
+				include "*-boot-*.tar"
+				into "dist"
+            }
+		}
+    }
+}
+
+task bootDistTarAllClean(type: Delete) {
+	delete "dist"
+}
+
+clean.dependsOn bootDistTarAllClean

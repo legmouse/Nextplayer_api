@@ -1,0 +1,52 @@
+server.port: 8113
+
+spring:
+  profiles:
+    active: dev
+    group:
+      local: base-datasource, local-override
+      dev: base-datasource, local-override
+      prod: base-datasource
+  main:
+    #web-application-type: REACTIVE
+    web-application-type: SERVLET
+  redis:
+    host: 192.168.1.12
+    port: 6379
+  mvc:
+    view:
+      prefix: /WEB-INF/views/
+      suffix: .jsp
+    converters:
+      preferred-json-mapper: gson
+  thymeleaf:
+    enabled: false
+  batch:
+    job:
+      enabled: false
+  servlet:
+    multipart:
+      max-file-size: 50MB
+      max-request-size: 50MB
+
+mybatis:
+  mapper-locations: classpath*:mapper/**/*.xml
+  config-location: classpath:config/mybatis-config.xml
+
+nextplayer:
+  client-id: 546f189b39f0be980b43a5d16c006c09
+  language-cookie-name: alpha_languageinfo #다국어 구분 쿠키
+  root-file-path: home/nas_data/ypbook #파일 업로드 위치
+  domainPath: http://127.0.0.1:8113
+  jwt:
+    secretKey: renS0Mz6ESEItE6OiI9ALw==KToaP17AikIAWoals8fgJg==
+
+logging:
+    config: classpath:config/logback-spring.xml
+    file:
+        path: logs/app/backend
+
+base_backend:
+  grpc:
+    login: gproto+http://127.0.0.1:8112/
+

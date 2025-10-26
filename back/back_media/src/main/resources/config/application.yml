@@ -1,0 +1,47 @@
+server.port: 8085
+
+spring:
+  profiles:
+    active: dev
+    group:
+      local: base-datasource, local-override
+      dev: base-datasource
+      prod: base-datasource
+  main:
+    web-application-type: REACTIVE
+  main.allow-bean-definition-overriding: true
+  redis:
+    host: 210.216.122.200
+    port: 7617
+  kafka:
+    bootstrap-servers:
+    - "127.0.0.1:9092"
+    consumer:
+      auto-offset-reset: earliest
+      group-id: admin-consumer
+  mvc:
+    pathmatch:
+      matching-strategy: ANT_PATH_MATCHER
+  messages:
+    basename: i18n/messages, i18n/messages_ko
+    encoding: UTF-8
+
+swagger:
+  enabled: true
+  title: Media API
+
+springfox:
+  documentation:
+    swagger-ui:
+      base-url: /back_media/api/docs
+    open-api:
+      v3:
+        path: /back_media/api/docs/v3/api-docs
+
+logging:
+  level:
+    root: INFO
+
+mybatis:
+  mapper-locations: classpath*:mapper/**/*.xml
+  config-location: classpath:config/mybatis-config.xml

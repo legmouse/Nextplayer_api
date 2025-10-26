@@ -1,0 +1,21 @@
+mainClassName = 'kr.co.nextplayer.back.media.BackMediaApplication'
+
+dependencies {
+    implementation 'com.linecorp.armeria:armeria-spring-boot2-starter'
+    implementation 'com.linecorp.armeria:armeria-spring-boot2-webflux-starter'
+    implementation 'org.springframework.boot:spring-boot-starter-data-redis'
+    implementation 'org.mybatis.spring.boot:mybatis-spring-boot-starter'
+    implementation 'io.springfox:springfox-boot-starter'
+
+    implementation ('io.springfox:springfox-boot-starter:3.0.0') {
+        exclude(group: 'io.swagger', module: 'swagger-models')
+    }
+    implementation 'io.swagger:swagger-models:1.6.6'
+
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+
+    compileOnly "org.springframework.boot:spring-boot-devtools"
+
+    implementation project(":lib:util")
+    implementation project(":base:base_media")
+}

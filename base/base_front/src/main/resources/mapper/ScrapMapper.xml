@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.co.nextplayer.base.front.mapper.ScrapMapper">
+
+    <resultMap id="ScrapMap" type="kr.co.nextplayer.base.front.model.Scrap">
+        <id column="member_cd" jdbcType="VARCHAR" property="memberCd"/>
+        <result column="scrap_no" jdbcType="VARCHAR" property="scrapNo"/>
+        <result column="age_group" jdbcType="VARCHAR" property="ageGroup"/>
+        <result column="foreign_id" jdbcType="VARCHAR" property="foreignId"/>
+        <result column="foreign_type" jdbcType="VARCHAR" property="foreignType"/>
+        <result column="reg_date" jdbcType="VARCHAR" property="regDate"/>
+        <result column="subject" jdbcType="VARCHAR" property="subject"/>
+    </resultMap>
+
+    <insert id="insertScrap" parameterType="kr.co.nextplayer.base.front.dto.ScrapReqDto">
+        INSERT INTO scrap
+        (foreign_id, subject, age_group, foreign_type, member_cd, reg_Date)
+        VALUES
+        (#{foreignId}, #{subject}, #{ageGroup}, #{foreignType}, #{memberCd}, NOW())
+    </insert>
+
+    <delete id="deleteScrapOverlap" parameterType="kr.co.nextplayer.base.front.dto.ScrapReqDto">
+        DELETE s
+        FROM scrap s
+        JOIN (
+          SELECT MIN(scrap_no) AS scrap_no
+          FROM scrap
+          WHERE foreign_type = #{foreignType}
+            AND member_cd = #{memberCd}
+          GROUP BY foreign_type
+          HAVING COUNT(scrap_no) >= 10
+        ) t ON s.scrap_no = t.scrap_no;
+
+    </delete>
+
+    <delete id="deleteScrap" parameterType="kr.co.nextplayer.base.front.dto.ScrapReqDto">
+        DELETE FROM
+            scrap
+        WHERE
+            scrap_no = #{scrapNo}
+            AND member_cd = #{memberCd}
+    </delete>
+    
+    <select id="selectScrap" parameterType="kr.co.nextplayer.base.front.dto.ScrapReqDto" resultMap="ScrapMap">
+        select
+            a.scrap_no
+            , a.age_group
+            , a.foreign_type
+            , a.foreign_id
+            , a.reg_date
+            , a.subject
+          from scrap a
+         where foreign_type = #{foreignType}
+           and member_cd = #{memberCd}
+         order by a.reg_date desc;
+
+    </select>
+
+</mapper>

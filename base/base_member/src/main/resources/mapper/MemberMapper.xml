@@ -1,0 +1,402 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.co.nextplayer.base.member.mapper.MemberMapper">
+    <resultMap id="BaseResultMap" type="kr.co.nextplayer.base.member.dto.MemberSearchResultDto">
+        <id column="member_cd" jdbcType="INTEGER" property="memberCd"/>
+        <result column="member_nickname" jdbcType="VARCHAR" property="certType"/>
+        <result column="children_age" jdbcType="VARCHAR" property="certType"/>
+        <result column="member_state" jdbcType="CHAR" property="memberState"/>
+        <result column="reg_date" jdbcType="TIMESTAMP" property="regDate"/>
+        <result column="upd_admin_id" jdbcType="VARCHAR" property="updAdminId"/>
+        <result column="upd_admin_date" jdbcType="TIMESTAMP" property="updDate"/>
+        <result column="upd_date" jdbcType="TIMESTAMP" property="updDate"/>
+    </resultMap>
+
+    <sql id="Page_Where_List">
+        <trim prefix="WHERE" prefixOverrides="AND |OR">
+            <if test="startRegDate != null and startRegDate != '' ">
+                AND mem.reg_date &gt;= #{startRegDate}
+            </if>
+            <if test="endRegDate != null and endRegDate != '' ">
+                AND mem.reg_date &lt;= #{endRegDate}
+            </if>
+            <if test="memberState != null and emberState != '' ">
+                AND mem.member_state = #{memberState}
+            </if>
+            <if test="memberCd != null and memberCd != '' ">
+                AND mem.member_cd = #{memberCd}
+            </if>
+            <if test="memberNickname != null and memberNickname != '' ">
+                AND (
+                    mem.member_nickname LIKE concat('%', #{memberNickname}, '%')
+                )
+            </if>
+            <if test="childrenAge != null and childrenAge != '' ">
+                AND mem.children_age = #{memberCd}
+            </if>
+        </trim>
+    </sql>
+
+    <select id="totalSizeBySearch" parameterType="map" resultType="Integer">
+        SELECT count(1)
+        FROM member mem
+        <include refid="Page_Where_List"/>
+    </select>
+    <select id="selectMemberListBySearch" parameterType="map" resultMap="BaseResultMap">
+        SELECT
+                mem.*,
+        FROM member mem
+        <include refid="Page_Where_List"/>
+        ORDER BY mem.reg_date DESC
+        LIMIT #{offset}, #{pageSize}
+    </select>
+
+    <insert id="insertSelective" parameterType="kr.co.nextplayer.base.member.model.Member">
+        insert into member
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="memberCd != null">
+                member_cd,
+            </if>
+            <if test="memberId != null">
+                member_id,
+            </if>
+            <if test="memberPwd != null">
+                member_pwd,
+            </if>
+            <if test="memberState != null">
+                member_state,
+            </if>
+            <if test="memberNickname != null">
+                member_nickname,
+            </if>
+            <if test="childrenAge != null">
+                children_age,
+            </if>
+            <if test="lastConnectIp != null">
+                last_connect_ip,
+            </if>
+            <if test="lastConnectDate != null">
+                last_connect_date,
+            </if>
+            <if test="pwdUpdDate != null">
+                pwd_upd_date,
+            </if>
+            <if test="profileImg != null">
+                profile_img_url,
+            </if>
+            <if test="regDate != null">
+                reg_date,
+            </if>
+            <if test="updDate != null">
+                upd_date,
+            </if>
+            <if test="memberType != null">
+                member_type,
+            </if>
+            <if test="memo != null">
+                memo,
+            </if>
+            <if test="position != null">
+                position,
+            </if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="memberCd != null">
+                #{memberCd,jdbcType=CHAR},
+            </if>
+            <if test="memberId != null">
+                #{memberId,jdbcType=VARCHAR},
+            </if>
+            <if test="memberPwd != null">
+                #{memberPwd,jdbcType=VARCHAR},
+            </if>
+            <if test="memberState != null">
+                #{memberState,jdbcType=CHAR},
+            </if>
+            <if test="memberNickname != null">
+                #{memberNickname,jdbcType=VARCHAR},
+            </if>
+            <if test="childrenAge != null">
+                #{childrenAge,jdbcType=VARCHAR},
+            </if>
+            <if test="lastConnectIp != null">
+                #{lastConnectIp, jdbcType=VARCHAR},
+            </if>
+            <if test="lastConnectDate != null">
+                #{lastConnectDate,jdbcType=TIMESTAMP},
+            </if>
+            <if test="pwdUpdDate != null">
+                #{pwdUpdDate,jdbcType=TIMESTAMP},
+            </if>
+            <if test="profileImg != null">
+                #{profileImg, jdbcType=VARCHAR},
+            </if>
+            <if test="regDate != null">
+                #{regDate,jdbcType=TIMESTAMP},
+            </if>
+            <if test="updDate != null">
+                #{updDate,jdbcType=TIMESTAMP},
+            </if>
+            <if test="memberType != null">
+                #{memberType, jdbcType=CHAR},
+            </if>
+            <if test="memo != null">
+                #{memo, jdbcType=LONGVARCHAR}
+            </if>
+            <if test="position != null">
+                #{position, jdbcType=VARCHAR}
+            </if>
+        </trim>
+    </insert>
+    <update id="updateByPrimaryKeySelective" parameterType="kr.co.nextplayer.base.member.model.Member">
+        update member
+        <set>
+            <if test="memberId != null">
+                member_id = #{memberId,jdbcType=VARCHAR},
+            </if>
+            <if test="memberPwd != null">
+                member_pwd = #{memberPwd,jdbcType=VARCHAR},
+                pwd_upd_date = NOW(),
+            </if>
+            <if test="memberState != null">
+                member_state = #{memberState,jdbcType=CHAR},
+            </if>
+            <if test="regDate != null">
+                reg_date = #{regDate,jdbcType=TIMESTAMP},
+            </if>
+            <if test="updDate != null">
+                upd_date = #{updDate,jdbcType=TIMESTAMP},
+            </if>
+            <if test="memo != null">
+                memo = #{memo,jdbcType=LONGVARCHAR},
+            </if>
+        </set>
+        where member_cd = #{memberCd,jdbcType=CHAR}
+    </update>
+
+    <insert id="insertMemberCertNumber" parameterType="kr.co.nextplayer.base.member.model.SmsCertSend">
+        insert into member_cert_number
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="fromPhoneNo != null">
+                from_phone_no,
+            </if>
+            <if test="certNumber != null">
+                cert_number,
+            </if>
+            <if test="certGbn != null">
+                cert_gbn,
+            </if>
+            reg_date
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="fromPhoneNo != null">
+                #{fromPhoneNo,jdbcType=VARCHAR},
+            </if>
+            <if test="certNumber != null">
+                #{certNumber,jdbcType=VARCHAR},
+            </if>
+            <if test="certGbn != null">
+                #{certGbn,jdbcType=VARCHAR},
+            </if>
+            NOW()
+        </trim>
+    </insert>
+
+    <update id="updateSelective" parameterType="kr.co.nextplayer.base.member.model.Member">
+        update member
+        <set>
+            <if test="memberType != null">
+                member_type = #{memberType,jdbcType=CHAR},
+            </if>
+            <if test="childrenAge != null">
+                children_age = #{childrenAge,jdbcType=VARCHAR},
+            </if>
+            <if test="memberNickname != null">
+                member_nickname = #{memberNickname,jdbcType=VARCHAR},
+            </if>
+            <if test="memo != null">
+                memo = #{memo,jdbcType=LONGVARCHAR},
+            </if>
+            <if test="updDate != null">
+                upd_date = #{updDate,jdbcType=TIMESTAMP},
+            </if>
+        </set>
+        where member_cd = #{memberCd,jdbcType=CHAR}
+    </update>
+
+    <update id="updateMemberInterest" parameterType="kr.co.nextplayer.base.member.dto.MemberModifyDto">
+        update member
+            <set>
+                <choose>
+                    <when test="interestType == 'Age'">
+                        <choose>
+                            <when test="interestValue != null and interestValue != ''">
+                                interest_age = #{interestValue}
+                            </when>
+                            <otherwise>
+                                interest_age = NULL
+                            </otherwise>
+                        </choose>
+                    </when>
+                    <otherwise>
+                        <choose>
+                            <when test="interestValue != null and interestValue != ''">
+                                interest_team = #{interestValue}
+                            </when>
+                            <otherwise>
+                                interest_team = NULL
+                            </otherwise>
+                        </choose>
+                    </otherwise>
+                </choose>
+            </set>
+        where member_cd = #{memberCd,jdbcType=CHAR}
+    </update>
+
+    <resultMap id="MemberInfoMap" type="kr.co.nextplayer.base.member.model.MemberInfo">
+        <id column="member_cd" jdbcType="VARCHAR" property="memberCd"/>
+        <result column="member_id" jdbcType="VARCHAR" property="memberId"/>
+        <result column="member_nickname" jdbcType="VARCHAR" property="memberNickname"/>
+        <result column="member_name" jdbcType="VARCHAR" property="memberName"/>
+        <result column="email" jdbcType="VARCHAR" property="email"/>
+        <result column="phone_no" jdbcType="VARCHAR" property="phoneNo"/>
+        <result column="sex" jdbcType="VARCHAR" property="sex"/>
+        <result column="age" jdbcType="VARCHAR" property="age"/>
+        <result column="age_group" jdbcType="VARCHAR" property="ageGroup"/>
+        <result column="birth_date" jdbcType="VARCHAR" property="birthDate"/>
+        <result column="children_age" jdbcType="VARCHAR" property="childrenAge"/>
+        <result column="cert_type" jdbcType="CHAR" property="certType"/>
+        <result column="member_type" jdbcType="CHAR" property="memberType"/>
+        <result column="interest_age" jdbcType="VARCHAR" property="interestAge"/>
+        <result column="interest_team" jdbcType="VARCHAR" property="interestTeam"/>
+        <association property="teamInfo" javaType="kr.co.nextplayer.base.member.model.Team">
+            <result column="team_id" property="teamId" />
+            <result column="uage" property="uage" />
+            <result column="nick_name" property="nickName" />
+            <result column="addr" property="addr"/>
+            <result column="emblem" property="emblem"/>
+        </association>
+    </resultMap>
+
+    <select id="selectMemberInfo" parameterType="string" resultMap="MemberInfoMap">
+        SELECT
+            a.member_cd,
+            a.member_id,
+            a.member_nickname,
+            b.email,
+            b.phone_no,
+            b.sex,
+            b.age,
+            b.member_name,
+            b.age_group,
+            b.birth_date,
+            a.children_age,
+            b.cert_type,
+            a.member_type,
+            a.interest_age,
+            a.interest_team,
+            c.team_id,
+            c.uage,
+            c.nick_name,
+            c.addr,
+            c.emblem
+        FROM
+            member a
+            LEFT JOIN member_confirm b ON a.member_cd = b.member_cd
+            LEFT JOIN Team c ON a.interest_team = c.team_id
+        WHERE
+            a.member_cd = #{memberCd}
+    </select>
+
+
+    <resultMap id="pushSettingMap" type="kr.co.nextplayer.base.member.dto.MemberPushSettingDto">
+        <id column="member_cd" jdbcType="INTEGER" property="memberCd"/>
+        <result column="game_time_push_agree" jdbcType="VARCHAR" property="gameTimePushAgree"/>
+        <result column="game_end_push_agree" jdbcType="VARCHAR" property="gameEndPushAgree"/>
+        <result column="lineup_push_agree" jdbcType="VARCHAR" property="lineupPushAgree"/>
+        <result column="contest_reg_push_agree" jdbcType="VARCHAR" property="contestRegPushAgree"/>
+        <result column="marketing_push_agree" jdbcType="VARCHAR" property="marketingPushAgree"/>
+        <result column="event_push_agree" jdbcType="VARCHAR" property="eventPushAgree"/>
+        <result column="new_goods_push_agree" jdbcType="VARCHAR" property="newGoodsPushAgree"/>
+    </resultMap>
+
+    <select id="selectMemberPush" parameterType="java.lang.String" resultMap="pushSettingMap">
+        select game_time_push_agree, game_end_push_agree, lineup_push_agree, contest_reg_push_agree, marketing_push_agree, event_push_agree, new_goods_push_agree
+        from member
+        where member_cd = #{memberCd}
+    </select>
+
+    <update id="updateMemberPushSetting" parameterType="kr.co.nextplayer.base.member.dto.MemberPushSettingDto">
+        update member
+        <set>
+            <if test="gameTimePushAgree != null and gameTimePushAgree != ''">
+                , game_time_push_agree = #{gameTimePushAgree}
+            </if>
+            <if test="gameEndPushAgree != null and gameEndPushAgree != ''">
+                , game_end_push_agree = #{gameEndPushAgree}
+            </if>
+            <if test="lineupPushAgree != null and lineupPushAgree != ''">
+                , lineup_push_agree = #{lineupPushAgree}
+            </if>
+            <if test="contestRegPushAgree != null and contestRegPushAgree != ''">
+                , contest_reg_push_agree = #{contestRegPushAgree}
+            </if>
+            <if test="marketingPushAgree != null and marketingPushAgree != ''">
+                , marketing_push_agree = #{marketingPushAgree}
+            </if>
+            <if test="eventPushAgree != null and eventPushAgree != ''">
+                , event_push_agree = #{eventPushAgree}
+            </if>
+            <if test="newGoodsPushAgree != null and newGoodsPushAgree != ''">
+                , new_goods_push_agree = #{newGoodsPushAgree}
+            </if>
+        </set>
+        where member_cd = #{memberCd}
+    </update>
+
+    <resultMap id="pushHistoryMap" type="kr.co.nextplayer.base.member.dto.MemberPushHistoryDto">
+        <result column="push_id" jdbcType="INTEGER" property="pushId"/>
+        <result column="title" jdbcType="VARCHAR" property="title"/>
+        <result column="body" jdbcType="VARCHAR" property="body"/>
+        <result column="path" jdbcType="VARCHAR" property="path"/>
+        <result column="param" jdbcType="VARCHAR" property="param"/>
+        <result column="read_flag" jdbcType="BOOLEAN" property="readFlag"/>
+        <result column="read_dt" jdbcType="TIMESTAMP" property="readDt"/>
+        <result column="send_dt" jdbcType="TIMESTAMP" property="sendDt"/>
+        <result column="case_name" jdbcType="VARCHAR" property="caseName"/>
+    </resultMap>
+
+    <select id="selectPushHistory" parameterType="java.lang.String" resultMap="pushHistoryMap">
+        select mpc.title, mpc.body, mpc.path, mpc.param, mp.read_flag, mp.read_dt, mp.push_id, mpc.send_dt, pt.case_name
+        from member_push mp
+         left join member_push_contents mpc on mp.push_content_id = mpc.push_content_id
+         left join push_type pt on mpc.type_id = pt.type_id
+        where mp.member_cd = #{memberCd}
+        and mpc.send_flag = 1
+        and date_add(mpc.send_dt, INTERVAL 30 DAY) <![CDATA[ >= ]]> now()
+        order by mp.read_flag asc, mp.push_id desc
+    </select>
+
+    <select id="selectPushBellCheck" parameterType="java.lang.String" resultType="java.lang.Boolean">
+        select if(count(1) > 0, true,false)
+        from member_push
+        where member_cd = #{memberCd}
+          and read_flag = 0
+    </select>
+
+    <update id="updatePushRead" parameterType="java.lang.Integer">
+        update member_push
+        set read_flag = 1
+            , read_dt = now()
+        where push_id = #{pushId}
+    </update>
+
+    <update id="updatePushReadAll" parameterType="java.lang.String">
+        update member_push
+        set read_flag = 1
+          , read_dt = now()
+        where member_cd = #{memberCd}
+    </update>
+
+
+</mapper>

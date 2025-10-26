@@ -1,0 +1,4421 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.co.nextplayer.base.backend.mapper.CupMapper">
+
+    <!-- 대회 정보  -->
+    <select id="selectCupInfoListCount" parameterType="hashmap" resultType="hashmap">
+        SELECT COUNT(*) AS totalCount
+        FROM ${cupInfoTB}
+        WHERE use_flag = 0
+
+        <if test="sCupName != null and !sCupName.equals('')  ">
+            AND cup_name LIKE CONCAT('%',#{sCupName},'%')
+        </if>
+        <if test="sYear != null and !sYear.equals('')">
+            AND (play_sdate BETWEEN CONCAT(#{sYear}, '-01-01 00:00:00') AND CONCAT(#{sYear}, '-12-31 23:59:59') OR
+            play_edate BETWEEN CONCAT(#{sYear}, '-01-01 00:00:00') AND CONCAT(#{sYear}, '-12-31 23:59:59'))
+        </if>
+        <if test="regionType != null and !regionType.equals('')">
+            AND region_type = #{regionType}
+        </if>
+    </select>
+
+    <select id="selectCupInfoList" parameterType="hashmap" resultType="hashmap">
+
+        SELECT
+            a.*, IFNULL(b.ctmCnt, 0) AS ctmCnt
+        FROM
+            (
+                SELECT
+                    a.*,
+                    IFNULL(b.cmmCnt, 0) AS cmmCnt
+                FROM
+                    (
+                        SELECT
+                            a.*,
+                            IFNULL(b.csmCnt, 0) AS csmCnt
+                            <if test="ageGroup == 'U12' or ageGroup == 'U11'">
+                                ,IFNULL(c.csmCnt, 0) AS csmCnt1
+                                ,IFNULL(d.csmCnt, 0) AS csmCnt2
+                            </if>
+                        FROM
+                            (
+                                SELECT
+                                    a.cup_id,
+                                    a.cup_name,
+                                    a.cup_team,
+                                    <if test="ageGroup == 'U12' or ageGroup == 'U11'">
+                                    a.cup_team2,
+                                    </if>
+                                    DATE_FORMAT(a.play_sdate, '%Y.%m.%d') AS play_sdate,
+                                    DATE_FORMAT(a.play_edate, '%Y.%m.%d') AS play_edate,
+                                    a.play_flag, a.cup_type, a.rank_type, a.sub_team_count, a.main_team_count, a.tour_type, a.tour_team, a.cup_info,
+                                    CASE
+                                        WHEN now() <![CDATA[>]]> a.play_edate THEN '종료'
+                                        WHEN now() BETWEEN a.play_sdate AND a.play_edate THEN '진행중'
+                                        WHEN now() <![CDATA[<]]> a.play_sdate THEN '예정'
+                                    END AS progress,
+                                    IFNULL(b.ctCnt, 0) AS ctCnt
+                                    <if test="ageGroup == 'U12' or ageGroup == 'U11'">
+                                    ,IFNULL(c.ctCnt, 0) AS ctCnt1
+                                    ,IFNULL(d.ctCnt, 0) AS ctCnt2
+                                    </if>,
+                                    a.region_type
+                                FROM ${cupInfoTB} a
+                                <choose>
+                                    <when test="ageGroup == 'U12' or ageGroup == 'U11'">
+                                        LEFT JOIN
+                                                (
+                                                    SELECT
+                                                        COUNT(*) AS ctCnt,
+                                                        cup_id
+                                                    FROM
+                                                        ${cupTeamTB}
+                                                    WHERE
+                                                        use_flag = 0
+                                                        AND team_type IS NULL
+                                                    GROUP BY cup_id
+                                                )b ON a.cup_id = b.cup_id
+                                        LEFT JOIN
+
+                                                (
+                                                    SELECT
+                                                        COUNT(*) AS ctCnt,
+                                                        cup_id
+                                                    FROM
+                                                        ${cupTeamTB}
+                                                    WHERE
+                                                        use_flag = 0
+                                                        AND team_type = '1'
+                                                    GROUP BY cup_id
+                                                )c ON a.cup_id = c.cup_id
+                                        LEFT JOIN
+                                                (
+                                                    SELECT
+                                                        COUNT(*) AS ctCnt,
+                                                        cup_id
+                                                    FROM
+                                                        ${cupTeamTB}
+                                                    WHERE
+                                                        use_flag = 0
+                                                        AND team_type = '2'
+                                                    GROUP BY cup_id
+                                                )d ON a.cup_id = d.cup_id
+                                    </when>
+                                    <otherwise>
+                                        LEFT JOIN
+                                                (
+                                                SELECT
+                                                    COUNT(*) AS ctCnt,
+                                                    cup_id
+                                                FROM
+                                                    ${cupTeamTB} WHERE use_flag = 0 GROUP BY cup_id
+                                        )b ON a.cup_id = b.cup_id
+                                    </otherwise>
+                                </choose>
+                                WHERE
+                                    a.use_flag = 0
+                                    <if test="sCupName != null and !sCupName.equals('')  ">
+                                    AND a.cup_name LIKE CONCAT('%',#{sCupName},'%')
+                                    </if>
+                                    <if test="sYear != null and !sYear.equals('')">
+                                        AND (a.play_sdate BETWEEN CONCAT(#{sYear}, '-01-01 00:00:00') AND CONCAT(#{sYear}, '-12-31 23:59:59') OR
+                                        a.play_edate BETWEEN CONCAT(#{sYear}, '-01-01 00:00:00') AND CONCAT(#{sYear}, '-12-31 23:59:59'))
+                                    </if>
+                                    <if test="regionType != null and !regionType.equals('')">
+                                        AND a.region_type = #{regionType}
+                                    </if>
+                            ) a
+                                <choose>
+                                    <when test="ageGroup == 'U12' or ageGroup == 'U11'">
+                                        LEFT JOIN(
+                                                    SELECT
+                                                        COUNT(*) AS csmCnt,
+                                                        cup_id
+                                                    FROM
+                                                        ${cupSubMatchTB}
+                                                    WHERE
+                                                        use_flag = 0
+                                                        AND team_type IS NULL
+                                                    GROUP BY cup_id
+                                                )b ON a.cup_id = b.cup_id
+                                        LEFT JOIN(
+                                                    SELECT
+                                                        COUNT(*) AS csmCnt,
+                                                        cup_id
+                                                    FROM
+                                                        ${cupSubMatchTB}
+                                                    WHERE
+                                                        use_flag = 0
+                                                        AND team_type = '1'
+                                                        GROUP BY cup_id
+                                                )c ON a.cup_id = c.cup_id
+                                        LEFT JOIN(
+                                                    SELECT
+                                                        COUNT(*) AS csmCnt,
+                                                        cup_id
+                                                    FROM
+                                                        ${cupSubMatchTB}
+                                                    WHERE
+                                                        use_flag = 0
+                                                        AND team_type = '2'
+                                                        GROUP BY cup_id
+                                                )d ON a.cup_id = d.cup_id
+                                    </when>
+                                    <otherwise>
+                                        LEFT JOIN(
+                                                    SELECT
+                                                        COUNT(*) AS csmCnt,
+                                                        cup_id
+                                                    FROM
+                                                        ${cupSubMatchTB}
+                                                    WHERE
+                                                        use_flag = 0
+                                                    GROUP BY cup_id
+                                                )b ON a.cup_id = b.cup_id
+                                    </otherwise>
+                                </choose>
+
+        ) a LEFT JOIN
+        (
+        SELECT COUNT(*) AS cmmCnt, cup_id FROM ${cupMainMatchTB} WHERE use_flag = 0 GROUP BY cup_id
+        )b
+        ON a.cup_id = b.cup_id
+        ) a LEFT JOIN
+        (
+        SELECT COUNT(*) AS ctmCnt, cup_id FROM ${cupTourMatchTB} WHERE use_flag = 0 GROUP BY cup_id
+        )b
+        ON a.cup_id = b.cup_id
+
+        ORDER BY
+
+        <if test="orderName != null and order != null ">
+            <choose>
+                <when test="orderName == 'key' ">
+                    a.id
+                    <choose>
+                        <when test="order == 'ASC'"> ASC, </when>
+                        <otherwise> DESC, </otherwise>
+                    </choose>
+                </when>
+                <when test="orderName == 'name' ">
+                    a.name
+                    <choose>
+                        <when test="order == 'ASC'"> ASC, </when>
+                        <otherwise> DESC, </otherwise>
+                    </choose>
+                </when>
+                <when test="orderName == 'address' ">
+                    a.address
+                    <choose>
+                        <when test="order == 'ASC'"> ASC, </when>
+                        <otherwise> DESC, </otherwise>
+                    </choose>
+                </when>
+
+                <otherwise>
+                    ,id ASC ,name ASC
+                </otherwise>
+            </choose>
+        </if>
+
+        <!-- 		a.cup_id DESC -->
+        a.play_sDate DESC , a.cup_id DESC
+
+		<if test="sRow != null and eCount != null and sRow != '' and eCount != ''">
+        LIMIT ${sRow}, ${eCount}
+        </if>
+    </select>
+
+    <select id="selectGetCupInfo" parameterType="hashmap" resultType="hashmap">
+        SELECT
+        cup_id,
+        cup_name,
+        cup_name_origin,
+        cup_team,
+        <if test="ageGroup == 'U12' || ageGroup == 'U11'">
+        cup_team2,
+        </if>
+        cup_type, cup_info, cup_prize, tour_type, tour_team, rank_type,
+        DATE_FORMAT(play_sdate, '%Y%m%d') AS play_sdate, DATE_FORMAT(play_edate, '%Y%m%d') AS play_edate,
+        DATE_FORMAT(play_sdate, '%Y.%m.%d') AS sdate, DATE_FORMAT(play_edate, '%Y.%m.%d') AS edate,
+        DATE_FORMAT(play_sdate, '%Y-%m-%d') AS sdate1, DATE_FORMAT(play_edate, '%Y-%m-%d') AS edate1,
+        DATE_FORMAT(SUBSTRING_INDEX(play_edate,' ',1 ), '%Y') AS lyears,
+        play_flag, sub_team_count, main_team_count,
+
+        SUBSTRING_INDEX(sub_team_count,'/',1 ) AS group_count,
+        SUBSTRING_INDEX(sub_team_count,'/',-1 ) AS team_count,
+        SUBSTRING_INDEX(main_team_count,'/',1 ) AS m_group_count,
+        SUBSTRING_INDEX(main_team_count,'/',-1 ) AS m_team_count
+        ,LEFT(#{cupInfoTB}, 3) AS ageGroup
+        ,send_flag
+        ,region_type
+        FROM ${cupInfoTB}
+        WHERE use_flag = 0 AND cup_id = #{cupId}
+
+    </select>
+
+    <select id="selectGetCupChampions" parameterType="hashmap" resultType="hashmap">
+        SELECT
+            A.champion_id,
+            A.foreign_id,
+            A.year,
+            A.uage,
+            B.cup_name,
+            A.win,
+            A.lose,
+            A.draw,
+            A.gf,
+            A.ga,
+            C.emblem,
+            C.team_id,
+            C.team_name,
+            C.nick_name
+        FROM
+            Champion A
+            INNER JOIN ${cupInfoTB} B ON A.foreign_type = 'cup' AND A.foreign_id = B.cup_id
+            INNER JOIN Team C ON A.team_id = C.team_id
+        WHERE
+            A.info_id = #{cupId}
+            AND A.use_flag = 0
+        ORDER BY
+            A.year DESC
+    </select>
+
+    <!-- 학원클럽 - 요약정보 - 대회성적 -->
+    <select id="selectTeamCupResult" parameterType="hashmap" resultType="hashmap">
+        SELECT *
+        FROM
+        (
+        SELECT cup_id, `result`
+        FROM ${cupResultTB}
+        WHERE use_flag = 0
+        AND team_id = #{teamId}
+        ) a INNER JOIN
+        (
+        SELECT cup_id, cup_name, play_sdate, play_edate, cup_type,
+        CASE
+        WHEN now() <![CDATA[>]]> play_edate THEN '종료'
+        WHEN now() BETWEEN play_sdate AND play_edate THEN '진행중'
+        WHEN now() <![CDATA[<]]> play_sdate THEN '예정'
+        END AS progress
+
+        FROM ${cupInfoTB}
+        WHERE use_flag = 0
+
+        <choose>
+            <when test="sYear != null and sYear != '' ">
+                AND play_sdate <![CDATA[>=]]> CONCAT(#{sYear},"-01-01 00:00:00")
+                AND play_sdate <![CDATA[<=]]> CONCAT(#{sYear},"-12-31 23:59:59")
+                AND play_edate <![CDATA[>=]]> CONCAT(#{sYear},"-01-01 00:00:00")
+                AND play_edate <![CDATA[<=]]> CONCAT(#{sYear},"-12-31 23:59:59")
+            </when>
+            <otherwise>
+                AND play_sdate <![CDATA[>=]]> CONCAT(YEAR(CURDATE()),"-01-01 00:00:00")
+                AND play_sdate <![CDATA[<=]]> CONCAT(YEAR(CURDATE()),"-12-31 23:59:59")
+                AND play_edate <![CDATA[>=]]> CONCAT(YEAR(CURDATE()),"-01-01 00:00:00")
+                AND play_edate <![CDATA[<=]]> CONCAT(YEAR(CURDATE()),"-12-31 23:59:59")
+            </otherwise>
+        </choose>
+
+        ) b
+        ON a.cup_id = b.cup_id
+        ORDER BY b.play_sdate DESC
+    </select>
+
+    <!-- 학원클럽 - 요약정보 -  대회 경기결과 리스트 -->
+    <select id="selectTeamCupMatch" parameterType="hashmap" resultType="hashmap">
+        SELECT a.cup_sub_match_id,
+        DATE_FORMAT(SUBSTRING_INDEX(match_date,' ',1 ), '%Y%m%d') AS pdate,
+        a.match_date, a.place,
+
+        a.home_id, a.home,  a.home_score, a.home_pk,
+        b.emblem AS home_emblem, b.team_type AS home_type,
+        a.away_id, a.away, a.away_score, a.away_pk,
+        c.emblem AS away_emblem, c.team_type AS away_type,
+        a.match_type, a.reason, a.cup_id
+
+        FROM ${cupSubMatchTB} a
+        INNER JOIN Team b
+        ON a.home_id = b.team_id
+        INNER JOIN Team c
+        ON a.away_id  = c.team_id
+        WHERE a.use_flag = 0
+        AND a.home_id = #{teamId}
+        <choose>
+            <when test="sYear != null and sYear != '' ">
+                AND SUBSTRING_INDEX(a.match_date , ' ', 1) <![CDATA[>=]]> CONCAT(#{sYear},"-01-01 00:00:00")
+                AND SUBSTRING_INDEX(a.match_date , ' ', 1) <![CDATA[<=]]> CONCAT(#{sYear},"-12-31 23:59:59")
+            </when>
+            <otherwise>
+                AND SUBSTRING_INDEX(a.match_date , ' ', 1) <![CDATA[>=]]> CONCAT(YEAR(CURDATE()),"-01-01 00:00:00")
+                AND SUBSTRING_INDEX(a.match_date , ' ', 1) <![CDATA[<=]]> CONCAT(YEAR(CURDATE()),"-12-31 23:59:59")
+            </otherwise>
+        </choose>
+
+        UNION
+
+        SELECT a.cup_sub_match_id,
+        DATE_FORMAT(SUBSTRING_INDEX(match_date,' ',1 ), '%Y%m%d') AS pdate,
+        a.match_date, a.place,
+
+        a.home_id, a.home,  a.home_score, a.home_pk,
+        b.emblem AS home_emblem, b.team_type AS home_type,
+        a.away_id, a.away, a.away_score, a.away_pk,
+        c.emblem AS away_emblem, c.team_type AS away_type,
+        a.match_type, a.reason, a.cup_id
+
+        FROM ${cupSubMatchTB} a
+        INNER JOIN Team b
+        ON a.home_id = b.team_id
+        INNER JOIN Team c
+        ON a.away_id  = c.team_id
+        WHERE a.use_flag = 0
+        AND a.away_id = #{teamId}
+        <choose>
+            <when test="sYear != null and sYear != '' ">
+                AND SUBSTRING_INDEX(a.match_date , ' ', 1) <![CDATA[>=]]> CONCAT(#{sYear},"-01-01 00:00:00")
+                AND SUBSTRING_INDEX(a.match_date , ' ', 1) <![CDATA[<=]]> CONCAT(#{sYear},"-12-31 23:59:59")
+            </when>
+            <otherwise>
+                AND SUBSTRING_INDEX(a.match_date , ' ', 1) <![CDATA[>=]]> CONCAT(YEAR(CURDATE()),"-01-01 00:00:00")
+                AND SUBSTRING_INDEX(a.match_date , ' ', 1) <![CDATA[<=]]> CONCAT(YEAR(CURDATE()),"-12-31 23:59:59")
+            </otherwise>
+        </choose>
+
+        UNION
+
+        SELECT a.cup_main_match_id,
+        DATE_FORMAT(SUBSTRING_INDEX(match_date,' ',1 ), '%Y%m%d') AS pdate,
+        a.match_date, a.place,
+
+        a.home_id, a.home,  a.home_score, a.home_pk,
+        b.emblem AS home_emblem, b.team_type AS home_type,
+        a.away_id, a.away, a.away_score, a.away_pk,
+        c.emblem AS away_emblem, c.team_type AS away_type,
+        a.match_type, a.reason, a.cup_id
+
+        FROM ${cupMainMatchTB} a
+        INNER JOIN Team b
+        ON a.home_id = b.team_id
+        INNER JOIN Team c
+        ON a.away_id  = c.team_id
+        WHERE a.use_flag = 0
+        AND a.home_id = #{teamId}
+        <choose>
+            <when test="sYear != null and sYear != '' ">
+                AND SUBSTRING_INDEX(a.match_date , ' ', 1) <![CDATA[>=]]> CONCAT(#{sYear},"-01-01 00:00:00")
+                AND SUBSTRING_INDEX(a.match_date , ' ', 1) <![CDATA[<=]]> CONCAT(#{sYear},"-12-31 23:59:59")
+            </when>
+            <otherwise>
+                AND SUBSTRING_INDEX(a.match_date , ' ', 1) <![CDATA[>=]]> CONCAT(YEAR(CURDATE()),"-01-01 00:00:00")
+                AND SUBSTRING_INDEX(a.match_date , ' ', 1) <![CDATA[<=]]> CONCAT(YEAR(CURDATE()),"-12-31 23:59:59")
+            </otherwise>
+        </choose>
+
+        UNION
+
+        SELECT a.cup_main_match_id,
+        DATE_FORMAT(SUBSTRING_INDEX(match_date,' ',1 ), '%Y%m%d') AS pdate,
+        a.match_date, a.place,
+
+        a.home_id, a.home,  a.home_score, a.home_pk,
+        b.emblem AS home_emblem, b.team_type AS home_type,
+        a.away_id, a.away, a.away_score, a.away_pk,
+        c.emblem AS away_emblem, c.team_type AS away_type,
+        a.match_type, a.reason, a.cup_id
+
+        FROM ${cupMainMatchTB} a
+        INNER JOIN Team b
+        ON a.home_id = b.team_id
+        INNER JOIN Team c
+        ON a.away_id  = c.team_id
+        WHERE a.use_flag = 0
+        AND a.away_id = #{teamId}
+        <choose>
+            <when test="sYear != null and sYear != '' ">
+                AND SUBSTRING_INDEX(a.match_date , ' ', 1) <![CDATA[>=]]> CONCAT(#{sYear},"-01-01 00:00:00")
+                AND SUBSTRING_INDEX(a.match_date , ' ', 1) <![CDATA[<=]]> CONCAT(#{sYear},"-12-31 23:59:59")
+            </when>
+            <otherwise>
+                AND SUBSTRING_INDEX(a.match_date , ' ', 1) <![CDATA[>=]]> CONCAT(YEAR(CURDATE()),"-01-01 00:00:00")
+                AND SUBSTRING_INDEX(a.match_date , ' ', 1) <![CDATA[<=]]> CONCAT(YEAR(CURDATE()),"-12-31 23:59:59")
+            </otherwise>
+        </choose>
+
+        UNION
+
+        SELECT a.cup_tour_match_id,
+        DATE_FORMAT(SUBSTRING_INDEX(match_date,' ',1 ), '%Y%m%d') AS pdate,
+        a.match_date, a.place,
+
+        a.home_id, a.home,  a.home_score, a.home_pk,
+        b.emblem AS home_emblem, b.team_type AS home_type,
+        a.away_id, a.away, a.away_score, a.away_pk,
+        c.emblem AS away_emblem, c.team_type AS away_type,
+        a.match_type, a.reason, a.cup_id
+
+        FROM ${cupTourMatchTB} a
+        INNER JOIN Team b
+        ON a.home_id = b.team_id
+        INNER JOIN Team c
+        ON a.away_id  = c.team_id
+        WHERE a.use_flag = 0
+        AND a.home_id = #{teamId}
+        <choose>
+            <when test="sYear != null and sYear != '' ">
+                AND SUBSTRING_INDEX(a.match_date , ' ', 1) <![CDATA[>=]]> CONCAT(#{sYear},"-01-01 00:00:00")
+                AND SUBSTRING_INDEX(a.match_date , ' ', 1) <![CDATA[<=]]> CONCAT(#{sYear},"-12-31 23:59:59")
+            </when>
+            <otherwise>
+                AND SUBSTRING_INDEX(a.match_date , ' ', 1) <![CDATA[>=]]> CONCAT(YEAR(CURDATE()),"-01-01 00:00:00")
+                AND SUBSTRING_INDEX(a.match_date , ' ', 1) <![CDATA[<=]]> CONCAT(YEAR(CURDATE()),"-12-31 23:59:59")
+            </otherwise>
+        </choose>
+
+        UNION
+
+        SELECT a.cup_tour_match_id,
+        DATE_FORMAT(SUBSTRING_INDEX(match_date,' ',1 ), '%Y%m%d') AS pdate,
+        a.match_date, a.place,
+
+        a.home_id, a.home,  a.home_score, a.home_pk,
+        b.emblem AS home_emblem, b.team_type AS home_type,
+        a.away_id, a.away, a.away_score, a.away_pk,
+        c.emblem AS away_emblem, c.team_type AS away_type,
+        a.match_type, a.reason, a.cup_id
+
+        FROM ${cupTourMatchTB} a
+        INNER JOIN Team b
+        ON a.home_id = b.team_id
+        INNER JOIN Team c
+        ON a.away_id  = c.team_id
+        WHERE a.use_flag = 0
+        AND a.away_id = #{teamId}
+        <choose>
+            <when test="sYear != null and sYear != '' ">
+                AND SUBSTRING_INDEX(a.match_date , ' ', 1) <![CDATA[>=]]> CONCAT(#{sYear},"-01-01 00:00:00")
+                AND SUBSTRING_INDEX(a.match_date , ' ', 1) <![CDATA[<=]]> CONCAT(#{sYear},"-12-31 23:59:59")
+            </when>
+            <otherwise>
+                AND SUBSTRING_INDEX(a.match_date , ' ', 1) <![CDATA[>=]]> CONCAT(YEAR(CURDATE()),"-01-01 00:00:00")
+                AND SUBSTRING_INDEX(a.match_date , ' ', 1) <![CDATA[<=]]> CONCAT(YEAR(CURDATE()),"-12-31 23:59:59")
+            </otherwise>
+        </choose>
+
+        ORDER BY pdate DESC
+    </select>
+
+    <!-- 학원클럽 - 대회정보 - 대회 경기 수 추이 -->
+    <select id="selectTeamCupPlayedByYear" parameterType="hashmap" resultType="hashmap">
+        SELECT b.team_id,  play_year,
+               SUM(b.played1 + b.played2 + b.played3) AS played
+        FROM
+            (
+                SELECT cup_id, cup_name, cup_team, DATE_FORMAT( play_sdate, '%Y') AS play_year
+                FROM ${cupInfoTB}
+                WHERE use_flag = 0
+            ) a INNER JOIN
+            (
+                SELECT team_id, cup_id, played1, played2, played3
+                FROM ${cupResultTB}
+                WHERE use_flag = 0
+                  AND team_id = #{teamId}
+            ) b
+            ON a.cup_id = b.cup_id
+        GROUP BY play_year ASC
+    </select>
+
+    <!-- 학원클럽 - 대회정보 - 대회별 경기결과 리스트 -->
+    <select id="selectTeamCupMatchByDetCup" parameterType="hashmap" resultType="hashmap">
+        SELECT *
+        FROM
+        (
+        SELECT a.cup_id, a.cup_name, a.play_sdate, a.cup_team, b.team_id, b.`result`
+        FROM
+        (
+        SELECT cup_id, cup_name, cup_team, play_sdate, play_edate
+        FROM ${cupInfoTB}
+        WHERE use_flag = 0
+        <choose>
+            <when test="sYear != null and sYear != '' ">
+                AND play_sdate <![CDATA[>=]]> CONCAT(#{sYear},"-01-01 00:00:00")
+                AND play_sdate <![CDATA[<=]]> CONCAT(#{sYear},"-12-31 23:59:59")
+                AND play_edate <![CDATA[>=]]> CONCAT(#{sYear},"-01-01 00:00:00")
+                AND play_edate <![CDATA[<=]]> CONCAT(#{sYear},"-12-31 23:59:59")
+            </when>
+            <otherwise>
+                AND play_sdate <![CDATA[>=]]> CONCAT(YEAR(CURDATE()),"-01-01 00:00:00")
+                AND play_sdate <![CDATA[<=]]> CONCAT(YEAR(CURDATE()),"-12-31 23:59:59")
+                AND play_edate <![CDATA[>=]]> CONCAT(YEAR(CURDATE()),"-01-01 00:00:00")
+                AND play_edate <![CDATA[<=]]> CONCAT(YEAR(CURDATE()),"-12-31 23:59:59")
+            </otherwise>
+        </choose>
+        ) a INNER JOIN
+        (
+        SELECT team_id, cup_id, `result`
+        FROM ${cupResultTB}
+        WHERE use_flag = 0
+        AND team_id = #{teamId}
+        ) b
+        ON a.cup_id = b.cup_id
+
+        ) a LEFT JOIN
+        (
+        SELECT
+        SUBSTRING_INDEX(a.match_date,' ',2 ) AS playdate,
+        DATE_FORMAT(SUBSTRING_INDEX(match_date,' ',1 ), '%Y%m%d') AS pdate,
+        SUBSTRING_INDEX(a.match_date,' ',-1 ) AS ptime,
+        a.place,
+        IF(home_score <![CDATA[>]]> away_score , '승', IF(home_score <![CDATA[<]]> away_score, '패', IF(home_pk <![CDATA[>]]> away_pk, '승', IF(home_pk <![CDATA[<]]> away_pk, '패', '무')))) AS win_type,
+        a.home_id, a.home,  a.home_score, a.home_pk,
+        b.emblem AS home_emblem, b.team_type AS home_type,
+        a.away_id, a.away, a.away_score, a.away_pk,
+        c.emblem AS away_emblem, c.team_type AS away_type,
+        a.match_type, a.reason, a.cup_id
+        FROM ${cupSubMatchTB} a
+        INNER JOIN Team b
+        ON a.home_id = b.team_id
+        INNER JOIN Team c
+        ON a.away_id  = c.team_id
+        WHERE a.use_flag = 0
+        AND home_id = #{teamId}
+        <choose>
+            <when test="sYear != null and sYear != '' ">
+                AND DATE_FORMAT( SUBSTRING_INDEX(match_date, " ", 1) , "%Y" ) = #{sYear}
+            </when>
+            <otherwise>
+                AND DATE_FORMAT( SUBSTRING_INDEX(match_date, " ", 1) , "%Y" ) = YEAR(CURDATE())
+            </otherwise>
+        </choose>
+
+        UNION
+
+        SELECT
+        SUBSTRING_INDEX(a.match_date,' ',2 ) AS playdate,
+        DATE_FORMAT(SUBSTRING_INDEX(match_date,' ',1 ), '%Y%m%d') AS pdate,
+        SUBSTRING_INDEX(a.match_date,' ',-1 ) AS ptime,
+        a.place,
+        IF(home_score <![CDATA[>]]> away_score , '패', IF(home_score <![CDATA[<]]> away_score, '승', IF(home_pk <![CDATA[>]]> away_pk, '패', IF(home_pk <![CDATA[<]]> away_pk, '승', '무')))) AS win_type,
+        a.home_id, a.home,  a.home_score, a.home_pk,
+        b.emblem AS home_emblem, b.team_type AS home_type,
+        a.away_id, a.away, a.away_score, a.away_pk,
+        c.emblem AS away_emblem, c.team_type AS away_type,
+        a.match_type, a.reason, a.cup_id
+        FROM ${cupSubMatchTB} a
+        INNER JOIN Team b
+        ON a.home_id = b.team_id
+        INNER JOIN Team c
+        ON a.away_id  = c.team_id
+        WHERE a.use_flag = 0
+        AND away_id = #{teamId}
+        <choose>
+            <when test="sYear != null and sYear != '' ">
+                AND DATE_FORMAT( SUBSTRING_INDEX(match_date, " ", 1) , "%Y" ) = #{sYear}
+            </when>
+            <otherwise>
+                AND DATE_FORMAT( SUBSTRING_INDEX(match_date, " ", 1) , "%Y" ) = YEAR(CURDATE())
+            </otherwise>
+        </choose>
+
+
+        UNION
+
+        SELECT
+        SUBSTRING_INDEX(a.match_date,' ',2 ) AS playdate,
+        DATE_FORMAT(SUBSTRING_INDEX(match_date,' ',1 ), '%Y%m%d') AS pdate,
+        SUBSTRING_INDEX(a.match_date,' ',-1 ) AS ptime,
+        a.place,
+        IF(home_score <![CDATA[>]]> away_score , '승', IF(home_score <![CDATA[<]]> away_score, '패', IF(home_pk <![CDATA[>]]> away_pk, '승', IF(home_pk <![CDATA[<]]> away_pk, '패', '무')))) AS win_type,
+        a.home_id, a.home,  a.home_score, a.home_pk,
+        b.emblem AS home_emblem, b.team_type AS home_type,
+        a.away_id, a.away, a.away_score, a.away_pk,
+        c.emblem AS away_emblem, c.team_type AS away_type,
+        a.match_type, a.reason, a.cup_id
+        FROM ${cupMainMatchTB} a
+        INNER JOIN Team b
+        ON a.home_id = b.team_id
+        INNER JOIN Team c
+        ON a.away_id  = c.team_id
+        WHERE a.use_flag = 0
+        AND home_id = #{teamId}
+        <choose>
+            <when test="sYear != null and sYear != '' ">
+                AND DATE_FORMAT( SUBSTRING_INDEX(match_date, " ", 1) , "%Y" ) = #{sYear}
+            </when>
+            <otherwise>
+                AND DATE_FORMAT( SUBSTRING_INDEX(match_date, " ", 1) , "%Y" ) = YEAR(CURDATE())
+            </otherwise>
+        </choose>
+
+        UNION
+
+        SELECT
+        SUBSTRING_INDEX(a.match_date,' ',2 ) AS playdate,
+        DATE_FORMAT(SUBSTRING_INDEX(match_date,' ',1 ), '%Y%m%d') AS pdate,
+        SUBSTRING_INDEX(a.match_date,' ',-1 ) AS ptime,
+        a.place,
+        IF(home_score <![CDATA[>]]> away_score , '패', IF(home_score <![CDATA[<]]> away_score, '승', IF(home_pk <![CDATA[>]]> away_pk, '패', IF(home_pk <![CDATA[<]]> away_pk, '승', '무')))) AS win_type,
+        a.home_id, a.home,  a.home_score, a.home_pk,
+        b.emblem AS home_emblem, b.team_type AS home_type,
+        a.away_id, a.away, a.away_score, a.away_pk,
+        c.emblem AS away_emblem, c.team_type AS away_type,
+        a.match_type, a.reason, a.cup_id
+        FROM ${cupMainMatchTB} a
+        INNER JOIN Team b
+        ON a.home_id = b.team_id
+        INNER JOIN Team c
+        ON a.away_id  = c.team_id
+        WHERE a.use_flag = 0
+        AND away_id = #{teamId}
+        <choose>
+            <when test="sYear != null and sYear != '' ">
+                AND DATE_FORMAT( SUBSTRING_INDEX(match_date, " ", 1) , "%Y" ) = #{sYear}
+            </when>
+            <otherwise>
+                AND DATE_FORMAT( SUBSTRING_INDEX(match_date, " ", 1) , "%Y" ) = YEAR(CURDATE())
+            </otherwise>
+        </choose>
+
+        UNION
+
+        SELECT
+        SUBSTRING_INDEX(a.match_date,' ',2 ) AS playdate,
+        DATE_FORMAT(SUBSTRING_INDEX(match_date,' ',1 ), '%Y%m%d') AS pdate,
+        SUBSTRING_INDEX(a.match_date,' ',-1 ) AS ptime,
+        a.place,
+        IF(home_score <![CDATA[>]]> away_score , '승', IF(home_score <![CDATA[<]]> away_score, '패', IF(home_pk <![CDATA[>]]> away_pk, '승', IF(home_pk <![CDATA[<]]> away_pk, '패', '무')))) AS win_type,
+        a.home_id, a.home,  a.home_score, a.home_pk,
+        b.emblem AS home_emblem, b.team_type AS home_type,
+        a.away_id, a.away, a.away_score, a.away_pk,
+        c.emblem AS away_emblem, c.team_type AS away_type,
+        a.match_type, a.reason, a.cup_id
+        FROM ${cupTourMatchTB} a
+        INNER JOIN Team b
+        ON a.home_id = b.team_id
+        INNER JOIN Team c
+        ON a.away_id  = c.team_id
+        WHERE a.use_flag = 0
+        AND home_id = #{teamId}
+        <choose>
+            <when test="sYear != null and sYear != '' ">
+                AND DATE_FORMAT( SUBSTRING_INDEX(match_date, " ", 1) , "%Y" ) = #{sYear}
+            </when>
+            <otherwise>
+                AND DATE_FORMAT( SUBSTRING_INDEX(match_date, " ", 1) , "%Y" ) = YEAR(CURDATE())
+            </otherwise>
+        </choose>
+
+        UNION
+
+        SELECT
+        SUBSTRING_INDEX(a.match_date,' ',2 ) AS playdate,
+        DATE_FORMAT(SUBSTRING_INDEX(match_date,' ',1 ), '%Y%m%d') AS pdate,
+        SUBSTRING_INDEX(a.match_date,' ',-1 ) AS ptime,
+        a.place,
+        IF(home_score <![CDATA[>]]> away_score , '패', IF(home_score <![CDATA[<]]> away_score, '승', IF(home_pk <![CDATA[>]]> away_pk, '패', IF(home_pk <![CDATA[<]]> away_pk, '승', '무')))) AS win_type,
+        a.home_id, a.home,  a.home_score, a.home_pk,
+        b.emblem AS home_emblem, b.team_type AS home_type,
+        a.away_id, a.away, a.away_score, a.away_pk,
+        c.emblem AS away_emblem, c.team_type AS away_type,
+        a.match_type, a.reason, a.cup_id
+        FROM ${cupTourMatchTB} a
+        INNER JOIN Team b
+        ON a.home_id = b.team_id
+        INNER JOIN Team c
+        ON a.away_id  = c.team_id
+        WHERE a.use_flag = 0
+        AND away_id = #{teamId}
+        <choose>
+            <when test="sYear != null and sYear != '' ">
+                AND DATE_FORMAT( SUBSTRING_INDEX(match_date, " ", 1) , "%Y" ) = #{sYear}
+            </when>
+            <otherwise>
+                AND DATE_FORMAT( SUBSTRING_INDEX(match_date, " ", 1) , "%Y" ) = YEAR(CURDATE())
+            </otherwise>
+        </choose>
+
+        ) b
+        ON a.cup_id = b.cup_id
+
+        ORDER BY a.play_sdate DESC, b.pdate DESC
+    </select>
+
+    <!-- 학원클럽 - 대회정보 - 대회 평균 득/실점 추이 -->
+    <select id="selectTeamCupAvgGoalByYear" parameterType="hashmap" resultType="hashmap">
+        SELECT team_id, DATE_FORMAT( play_sdate, '%Y') AS play_year,
+               SUM(played1 + played2 + played3) AS played,
+               SUM(gf1 + gf2 + gf3) AS gf,
+               SUM(ga1 + ga2 + ga3) AS ga,
+               TRUNCATE(IFNULL(SUM(gf1 + gf2 + gf3), 0) / IFNULL(SUM(played1 + played2 + played3), 0), 1) AS avg_gf,
+               TRUNCATE(IFNULL(SUM(ga1 + ga2 + ga3), 0) / IFNULL(SUM(played1 + played2 + played3), 0), 1) AS avg_ga
+        FROM
+            (
+                SELECT cup_id, play_sdate
+                FROM ${cupInfoTB}
+                WHERE use_flag = 0
+            ) a INNER JOIN
+            (
+                SELECT team_id,cup_id,played1,gf1,ga1,played2,gf2,ga2,played3,gf3,ga3
+                FROM ${cupResultTB}
+                WHERE use_flag = 0
+                  AND team_id = #{teamId}
+            ) b
+            ON a.cup_id = b.cup_id
+        GROUP BY DATE_FORMAT( play_sdate, '%Y')
+    </select>
+
+    <!-- 대회 기본정보 - 개별등록-->
+    <insert id="insertCupInfo" parameterType="hashmap" >
+        INSERT INTO ${cupInfoTB}
+        (
+            cup_name,
+            cup_name_origin,
+            cup_team,
+            <if test="cupTeam2 != null and cupTeam2 != ''">
+            cup_team2,
+            </if>
+            play_sdate,
+            play_edate,
+            play_flag,
+            cup_type,
+            rank_type,
+            sub_team_count,
+            main_team_count,
+            tour_type,
+            tour_team,
+            region_type,
+            reg_date
+        ) VALUE
+        (
+            #{cupName},
+            #{cupNameOrigin},
+            #{cupTeam},
+            <if test="cupTeam2 != null and cupTeam2 != ''">
+            #{cupTeam2},
+            </if>
+            #{sdate},
+            DATE_FORMAT(#{edate},"%Y-%m-%d 23:59:59"),
+            #{pFlag},
+            #{cType},
+            #{rType},
+            #{sTeamCnt},
+            #{mTeamCnt},
+            #{tType},
+            #{tourTeam},
+            #{regionType},
+            now()
+        )
+	 </insert>
+
+    <!-- 대회 기본정보 - 개별수정-->
+    <update id="updateCupInfo" parameterType="hashmap" >
+        UPDATE ${cupInfoTB}
+        SET
+            cup_name = #{cupName},
+            cup_name_origin = #{cupNameOrigin},
+            cup_team = #{cupTeam},
+            <if test="cupTeam2 != null">
+            cup_team2 = #{cupTeam2},
+            </if>
+            play_sdate = #{sdate},
+            play_edate = DATE_FORMAT(#{edate},"%Y-%m-%d 23:59:59"),
+            play_flag = #{pFlag},
+            cup_type = #{cType},
+            rank_type = #{rType},
+            sub_team_count =  #{sTeamCnt},
+            main_team_count = #{mTeamCnt},
+            tour_type =  #{tType},
+            tour_team = #{tourTeam},
+            region_type = #{regionType}
+        WHERE cup_id = #{cupId}
+	</update>
+
+    <!-- 대회 기본정보 삭제  -->
+    <delete id="deleteCupInfo" parameterType="hashmap" >
+        DELETE FROM ${cupInfoTB}
+        WHERE cup_id = #{cupId}
+    </delete>
+
+    <!-- 대회 개요, 수상 -->
+    <update id="updateCupPrize" parameterType="hashmap" >
+		<![CDATA[
+        UPDATE ${cupInfoTB}
+        SET
+            cup_info = #{cInfo},
+            cup_prize = #{cPrize}
+        WHERE cup_id = #{cupId}
+        ]]>
+	</update>
+
+    <!-- 대회 - 참가팀 정보 -->
+    <select id="selectCupTeamListByGroups" parameterType="hashmap" resultType="hashmap">
+        SELECT
+            a.*,
+            b.team_type AS team_type2,
+            b.team_name,
+            b.addr,
+            b.emblem,
+            CASE
+                WHEN b.team_type = -1 THEN '매칭오류'
+                WHEN b.team_type = 0 THEN '학원'
+                WHEN b.team_type = 1 THEN '클럽'
+                WHEN b.team_type = 2 THEN '유스'
+            END AS team_type
+        FROM
+            (
+                SELECT
+                    cup_team_id, nick_name, team_id, groups, teams, cup_id
+                FROM
+                    ${cupTeamTB}
+                WHERE
+                    use_flag = 0
+                    AND cup_id = #{cupId}
+                    <if test="teamType != null and teamType != ''">
+                    AND team_type = #{teamType}
+                    </if>
+                    <!-- <if test="groups != 0 and groups != null and groups != ''">
+                    AND groups = #{}
+                    </if> -->
+                ORDER BY teams ASC, groups ASC
+            ) a
+                LEFT JOIN
+            (
+                SELECT team_id, nick_name, team_name, team_type, uage, addr, emblem FROM Team WHERE uage = #{ageGroup}
+            ) b
+            ON a.team_id = b.team_id
+    </select>
+
+    <insert id="insertCupTeam" parameterType="hashmap" >
+        INSERT INTO ${cupTeamTB}(
+        nick_name,
+        team_id,
+        groups,
+        teams,
+        cup_id,
+        <if test="teamType != null and teamType != ''">
+        team_type,
+        </if>
+        reg_date
+        ) VALUES
+        (
+        #{nick_name},
+        #{team_id},
+        #{groups},
+        #{teams},
+        #{cupId},
+        <if test="teamType != null and teamType != ''">
+        #{teamType},
+        </if>
+        now()
+        )
+    </insert>
+
+    <insert id="insertTourCupTeam" parameterType="hashmap">
+        INSERT INTO ${cupTeamTB} (
+          nick_name, team_id, cup_id, reg_date
+        ) VALUES (
+          #{nickName}, #{teamId}, #{cupId}, NOW()
+        )
+    </insert>
+
+    <update id="updateTourCupTeam" parameterType="hashmap">
+        UPDATE ${cupTeamTB}
+        SET
+            team_id = #{teamId},
+            nick_name = #{nickName}
+        WHERE
+            cup_id = #{cupId} AND cup_team_id = #{cupTeamId}
+    </update>
+
+    <!-- 대회  참가팀 삭제  -->
+    <delete id="deleteCupTeam" parameterType="hashmap" >
+        DELETE FROM ${cupTeamTB}
+        WHERE
+            cup_id = #{cupId}
+            <if test="teamType != null and teamType != ''">
+            AND team_type = #{teamType}
+            </if>
+    </delete>
+
+    <delete id="deleteCupTeamOne" parameterType="hashmap" >
+        DELETE FROM ${cupTeamTB}
+        WHERE
+            cup_id = #{cupId}
+            AND cup_team_id = #{cupTeamId}
+            <if test="teamType != null and teamType != ''">
+            AND team_type = #{teamType}
+            </if>
+    </delete>
+
+    <update id="updateCupTeamOne" parameterType="hashmap">
+        UPDATE
+            ${cupTeamTB}
+        SET
+            team_id = #{teamId},
+            nick_name = #{nickName}
+        WHERE
+            cup_team_id = #{cupTeamId}
+    </update>
+
+    <!-- 대회 예선 경기일정 리스트 -->
+    <select id="selectCupSubMatchList" parameterType="hashmap" resultType="hashmap">
+        <![CDATA[
+		SELECT cup_sub_match_id, groups,
+			DATE_FORMAT(SUBSTRING_INDEX(match_date,' ',1 ), '%Y%m%d') AS pdate,
+			SUBSTRING_INDEX(match_date,' ',-1 ) AS ptime,
+			match_date,
+			place, home, away, home_score, away_score, home_pk, away_pk, match_type, reason, cup_id, home_id, away_id
+		FROM ${cupSubMatchTB}
+		WHERE use_flag = 0
+		AND cup_id = #{cupId}
+		]]>
+
+        <choose>
+            <when test="groups != null and groups != '' ">
+                AND groups = #{groups}
+            </when>
+            <otherwise>
+                AND groups = 1
+            </otherwise>
+        </choose>
+        <if test="teamType != null and teamType != ''">
+            AND team_type = #{teamType}
+        </if>
+
+        ORDER BY pdate ASC, ptime ASC
+
+        <!-- LIMIT ${msRow}, ${meCount} -->
+    </select>
+
+    <update id="updateAllCupSubMatch" parameterType="hashmap" >
+            UPDATE ${cupSubMatchTB}
+            SET
+            match_date = #{pDate},
+            place = #{place},
+            <if test="homeId != '-1' and homeId != null">
+                home_id = #{homeId},
+            </if>
+            <if test="awayId != '-1' and awayId != null">
+                away_id = #{awayId},
+            </if>
+            <if test="home != '미정' and home != null">
+                home = #{home},
+            </if>
+            <if test="away != '미정' and away != null">
+                away = #{away},
+            </if>
+            groups = #{groups}
+            WHERE cup_sub_match_id = #{cupSubMatchId}
+            AND cup_id = #{cupId}
+    </update>
+
+    <!-- 대회 예선 경기일정 삭제  -->
+    <delete id="deleteCupSubMatch" parameterType="hashmap" >
+        DELETE FROM ${cupSubMatchTB}
+        WHERE cup_id = #{cupId}
+        <if test="teamType != null and teamType != ''">
+            AND team_type = #{teamType}
+        </if>
+
+    </delete>
+
+    <delete id="deleteCupSubMatchGroups" parameterType="hashmap" >
+        DELETE FROM ${cupSubMatchTB}
+        WHERE cup_id = #{cupId} AND groups = #{groups}
+    </delete>
+
+    <delete id="deleteCupSubMatchOne" parameterType="hashmap" >
+        DELETE FROM ${cupSubMatchTB}
+        WHERE cup_id = #{cupId} AND cup_sub_match_id = #{cupSubMatchId}
+    </delete>
+
+    <!-- 대회 예선 모든조 경기일정 리스트 -->
+    <select id="selectCupSubMatchAllList" parameterType="hashmap" resultType="hashmap">
+        <![CDATA[
+		SELECT cup_sub_match_id, groups,
+			DATE_FORMAT(SUBSTRING_INDEX(match_date,' ',1 ), '%Y%m%d') AS pdate,
+			SUBSTRING_INDEX(match_date,' ',-1 ) AS ptime,
+			match_date,
+			place, home, away, home_score, away_score, home_pk, away_pk, match_type, reason, cup_id, home_id, away_id
+		FROM ${cupSubMatchTB}
+		WHERE use_flag = 0
+		AND cup_id = #{cupId}
+		]]>
+
+        ORDER BY pdate DESC, ptime DESC
+
+        <!-- LIMIT ${msRow}, ${meCount} -->
+    </select>
+
+    <!-- 대회 - 본선 참가팀 정보 -->
+    <select id="selectCupMainTeamListByGroups" parameterType="hashmap" resultType="hashmap">
+        SELECT a.*, b.team_type AS team_type2, b.team_name, b.addr, b.emblem,
+               CASE
+                   WHEN b.team_type = -1 THEN '매칭오류'
+                   WHEN b.team_type = 0 THEN '학원'
+                   WHEN b.team_type = 1 THEN '클럽'
+                   WHEN b.team_type = 2 THEN '유스'
+                   END AS team_type
+
+        FROM
+            (
+                SELECT cup_team_id, nick_name, team_id, main_groups, main_teams, cup_id
+                FROM ${cupTeamTB}
+                WHERE use_flag = 0 AND cup_id = #{cupId} AND main_groups != -1
+                ORDER BY main_teams ASC, main_groups ASC
+            ) a
+                LEFT JOIN
+            (
+                SELECT team_id, nick_name, team_name, team_type, uage, addr, emblem FROM Team WHERE uage = #{ageGroup}
+            ) b
+            ON a.team_id = b.team_id
+    </select>
+
+    <!-- 대회 본선 모든조 경기일정 리스트 -->
+    <select id="selectCupMainMatchAllList" parameterType="hashmap" resultType="hashmap">
+        <![CDATA[
+		SELECT cup_main_match_id, groups,
+			DATE_FORMAT(SUBSTRING_INDEX(match_date,' ',1 ), '%Y%m%d') AS pdate,
+			SUBSTRING_INDEX(match_date,' ',-1 ) AS ptime,
+			match_date,
+			place, home, away, home_score, away_score, home_pk, away_pk, match_type, reason, cup_id, home_id, away_id
+		FROM ${cupMainMatchTB}
+		WHERE use_flag = 0
+		AND cup_id = #{cupId}
+		]]>
+
+        ORDER BY pdate DESC, ptime DESC
+
+        <!-- LIMIT ${msRow}, ${meCount} -->
+    </select>
+
+    <!-- 대회 본선 경기일정 리스트 -->
+    <select id="selectCupMainMatchList" parameterType="hashmap" resultType="hashmap">
+        <![CDATA[
+		SELECT cup_main_match_id, groups,
+			DATE_FORMAT(SUBSTRING_INDEX(match_date,' ',1 ), '%Y%m%d') AS pdate,
+			SUBSTRING_INDEX(match_date,' ',2 ) AS playdate,
+			SUBSTRING_INDEX(match_date,' ',-1 ) AS ptime,
+			match_date,
+			place, home, away, home_score, away_score, home_pk, away_pk, match_type, reason, cup_id, home_id, away_id
+		FROM ${cupMainMatchTB}
+		WHERE use_flag = 0
+		AND cup_id = #{cupId}
+		]]>
+
+        <choose>
+            <when test="groups != null and groups != '' ">
+                AND groups = #{groups}
+            </when>
+            <otherwise>
+                AND groups = 1
+            </otherwise>
+        </choose>
+
+        ORDER BY pdate DESC, ptime DESC
+
+        <!-- LIMIT ${msRow}, ${meCount} -->
+    </select>
+
+    <update id="updateAllCupMainMatch" parameterType="hashmap" >
+        UPDATE ${cupMainMatchTB}
+        SET
+        match_date = #{pDate},
+        place = #{place},
+        <if test="homeId != '-1' and homeId != null">
+            home_id = #{homeId},
+        </if>
+        <if test="awayId != '-1' and awayId != null">
+            away_id = #{awayId},
+        </if>
+        <if test="home != '미정' and home != null">
+            home = #{home},
+        </if>
+        <if test="away != '미정' and away != null">
+            away = #{away},
+        </if>
+        groups = #{groups}
+        WHERE cup_main_match_id = #{cupMainMatchId}
+        AND cup_id = #{cupId}
+    </update>
+
+    <!-- 대회 본선 경기일정 삭제  -->
+    <delete id="deleteCupMainMatch" parameterType="hashmap" >
+        DELETE FROM ${cupMainMatchTB}
+        WHERE cup_id = #{cupId}
+    </delete>
+
+
+    <insert id="insertCupSubMatch" parameterType="hashmap" >
+        INSERT INTO ${cupSubMatchTB}(
+        cup_id,
+        groups,
+        match_date,
+        place,
+        home,
+        away,
+        home_id,
+        away_id,
+        match_type,
+        reg_date
+        )VALUES
+        <foreach collection="excelContent" item="item" separator=",">
+            (
+            #{item.cupId},
+            #{item.groups},
+            CONCAT(
+            DATE_FORMAT(#{item.match_date}, '%Y-%m-%d'),
+            CASE
+            WHEN
+            DATE_FORMAT(#{item.match_date}, '%w') = 0 THEN ' (일) '
+            WHEN
+            DATE_FORMAT(#{item.match_date}, '%w') = 1 THEN ' (월) '
+            WHEN
+            DATE_FORMAT(#{item.match_date}, '%w') = 2 THEN ' (화) '
+            WHEN
+            DATE_FORMAT(#{item.match_date}, '%w') = 3 THEN ' (수) '
+            WHEN
+            DATE_FORMAT(#{item.match_date}, '%w') = 4 THEN ' (목) '
+            WHEN
+            DATE_FORMAT(#{item.match_date}, '%w') = 5 THEN ' (금) '
+            WHEN
+            DATE_FORMAT(#{item.match_date}, '%w') = 6 THEN ' (토) '
+            END,
+            #{item.time}
+            ),
+            #{item.place},
+            #{item.home},
+            #{item.away},
+            #{item.home_id},
+            #{item.away_id},
+            #{item.matchType},
+            now()
+            )
+        </foreach>
+    </insert>
+
+    <!-- 대회  참가팀 삭제  -->
+    <update id="updateCupMainTeamReset" parameterType="hashmap" >
+		<![CDATA[
+        UPDATE ${cupTeamTB}
+        SET
+            main_groups = -1,
+            main_teams = -1
+        WHERE cup_id = #{cupId}
+        ]]>
+	</update>
+
+    <!-- 대회 토너먼트 경기일정 -->
+    <select id="selectCupTourMatchListCount" parameterType="hashmap" resultType="hashmap">
+        SELECT COUNT(*) AS totalCount
+        FROM ${cupTourMatchTB}
+        WHERE use_flag = 0
+          AND cup_id = #{cupId}
+
+    </select>
+
+    <!-- 대회 토너먼트 경기일정 리스트 -->
+    <select id="selectCupTourMatchList" parameterType="hashmap" resultType="hashmap">
+        <![CDATA[
+		SELECT cup_tour_match_id, round, tour_no, next_tour_no, next_tour_port,
+			DATE_FORMAT(SUBSTRING_INDEX(match_date,' ',1 ), '%Y%m%d') AS pdate,
+			SUBSTRING_INDEX(match_date,' ',2 ) AS playdate,
+			SUBSTRING_INDEX(match_date,' ',-1 ) AS ptime,
+			match_date,
+			place, home, away, home_score, away_score, home_pk, away_pk, match_type, reason, cup_id, home_id, away_id
+		FROM ${cupTourMatchTB}
+		WHERE use_flag = 0
+		AND cup_id = #{cupId}
+		AND round = #{round}
+
+		ORDER BY pdate ASC, ptime ASC
+		]]>
+        <!-- 		ORDER BY pdate DESC, ptime DESC -->
+
+        <!-- LIMIT ${msRow}, ${meCount} -->
+    </select>
+
+    <update id="updateAllCupTourMatch" parameterType="hashmap" >
+            UPDATE ${cupTourMatchTB}
+            SET
+            match_date = #{pDate},
+            place = #{place},
+            <if test="homeId != '-1' and homeId != null">
+                home_id = #{homeId},
+                home = #{home},
+            </if>
+            <if test="awayId != '-1' and awayId != null">
+                away_id = #{awayId},
+                away = #{away},
+            </if>
+            round = #{round}
+            WHERE cup_tour_match_id = #{cupTourMatchId}
+            AND cup_id = #{cupId}
+    </update>
+
+    <!-- 대회 토너먼트 경기일정 삭제  -->
+    <delete id="delteCupTourMatch" parameterType="hashmap" >
+        DELETE FROM ${cupTourMatchTB}
+        WHERE cup_id = #{cupId}
+    </delete>
+
+    <!-- 대회 관리 - 대회결과 경기 리스트 -->
+    <select id="selectCupMgrList" parameterType="hashmap" resultType="hashmap">
+        SELECT
+            a.*, IFNULL(b.cup_id, 0) AS noti_cup_id
+        FROM
+            (
+                SELECT
+                    a.*, IFNULL(b.ctmCnt, 0) AS ctmCnt
+                FROM
+                    (
+                        SELECT
+                            a.*, IFNULL(b.cmmCnt, 0) AS cmmCnt
+                        FROM
+                            (
+                                SELECT
+                                    a.*,
+                                    IFNULL(b.csmCnt, 0) AS csmCnt
+                                    <if test="ageGroup == 'U12' or ageGroup == 'U11'">
+                                    ,IFNULL(c.csmCnt, 0) AS csmCnt1
+                                    ,IFNULL(d.csmCnt, 0) AS csmCnt2
+                                    </if>
+                                FROM
+                                    (
+                                        SELECT
+                                            a.cup_id,
+                                            a.cup_name,
+                                            a.cup_team,
+                                            <if test="ageGroup == 'U12' or ageGroup == 'U11'">
+                                            a.cup_team2,
+                                            </if>
+                                            DATE_FORMAT(a.play_sdate, '%Y.%m.%d') AS play_sdate,
+                                            DATE_FORMAT(a.play_edate, '%Y.%m.%d') AS play_edate,
+                                            a.play_flag,
+                                            a.cup_type,
+                                            a.rank_type,
+                                            a.sub_team_count,
+                                            a.main_team_count,
+                                            a.tour_type,
+                                            a.tour_team,
+                                            a.cup_info,
+                                            CASE
+                                                WHEN now() <![CDATA[>]]> a.play_edate THEN '종료'
+                                                WHEN now() BETWEEN a.play_sdate AND a.play_edate THEN '진행중'
+                                                WHEN now() <![CDATA[<]]> a.play_sdate THEN '예정'
+                                            END AS progress,
+                                            IFNULL(b.ctCnt, 0) AS ctCnt
+                                        FROM
+                                            ${cupInfoTB} a
+                                            LEFT JOIN
+                                                    (
+                                                        SELECT
+                                                            COUNT(*) AS ctCnt,
+                                                            cup_id
+                                                        FROM
+                                                            ${cupTeamTB} WHERE use_flag = 0 GROUP BY cup_id
+                                                    )b ON a.cup_id = b.cup_id
+                                        WHERE
+                                            a.use_flag = 0
+                                            <if test="sCupName != null and !sCupName.equals('')  ">
+                                            AND a.cup_name LIKE CONCAT('%',#{sCupName},'%')
+                                            </if>
+                                            <if test="sYear != null and !sYear.equals('')">
+                                                AND (a.play_sdate BETWEEN CONCAT(#{sYear}, '-01-01 00:00:00') AND CONCAT(#{sYear}, '-12-31 23:59:59') OR
+                                                a.play_edate BETWEEN CONCAT(#{sYear}, '-01-01 00:00:00') AND CONCAT(#{sYear}, '-12-31 23:59:59'))
+                                            </if>
+                                    ) a
+                                    <choose>
+                                        <when test="ageGroup == 'U12' or ageGroup == 'U11'">
+                                        LEFT JOIN
+                                                (
+                                                    SELECT
+                                                        COUNT(*) AS csmCnt,
+                                                        cup_id
+                                                    FROM
+                                                        ${cupSubMatchTB}
+                                                    WHERE
+                                                        use_flag = 0
+                                                        AND team_type IS NULL
+                                                    GROUP BY cup_id
+                                                )b ON a.cup_id = b.cup_id
+                                        LEFT JOIN
+                                                (
+                                                    SELECT
+                                                        COUNT(*) AS csmCnt,
+                                                        cup_id
+                                                    FROM
+                                                        ${cupSubMatchTB}
+                                                    WHERE
+                                                        use_flag = 0
+                                                        AND team_type = '1'
+                                                    GROUP BY cup_id
+                                                )c ON a.cup_id = c.cup_id
+                                        LEFT JOIN
+                                                (
+                                                    SELECT
+                                                        COUNT(*) AS csmCnt,
+                                                        cup_id
+                                                    FROM
+                                                        ${cupSubMatchTB}
+                                                    WHERE
+                                                        use_flag = 0
+                                                        AND team_type = '2'
+                                                    GROUP BY cup_id
+                                                )d ON a.cup_id = d.cup_id
+                                        </when>
+                                        <otherwise>
+                                        LEFT JOIN
+                                                (
+                                                    SELECT
+                                                        COUNT(*) AS csmCnt,
+                                                        cup_id
+                                                    FROM
+                                                        ${cupSubMatchTB}
+                                                    WHERE
+                                                        use_flag = 0
+                                                    GROUP BY cup_id
+                                                )b ON a.cup_id = b.cup_id
+                                        </otherwise>
+                                    </choose>
+
+                            ) a
+                            LEFT JOIN
+                                    (
+                                        SELECT
+                                            COUNT(*) AS cmmCnt,
+                                            cup_id
+                                        FROM
+                                            ${cupMainMatchTB}
+                                        WHERE
+                                            use_flag = 0
+                                        GROUP BY cup_id
+                                    )b ON a.cup_id = b.cup_id
+                    ) a
+                    LEFT JOIN
+                            (
+                                SELECT
+                                    COUNT(*) AS ctmCnt,
+                                    cup_id
+                                FROM
+                                    ${cupTourMatchTB}
+                                WHERE
+                                    use_flag = 0
+                                GROUP BY cup_id
+                            )b ON a.cup_id = b.cup_id
+            ) a
+            LEFT JOIN
+                    (
+                        SELECT
+                            *
+                        FROM
+                            (
+                                SELECT
+                                    cup_id
+                                FROM
+                                    ${cupInfoTB}
+                                WHERE
+                                    use_flag = 0
+                            ) a
+                            LEFT JOIN
+                                    (
+                                        SELECT
+                                            cup_id AS res_cup_id,
+                                            `result`
+                                        FROM
+                                            ${cupResultTB}
+                                        WHERE use_flag = 0
+                                    ) b ON a.cup_id = b.res_cup_id
+                        WHERE
+                            `result` is null or `result` = ""
+                        GROUP BY cup_id
+                    ) b ON a.cup_id = b.cup_id
+        ORDER BY a.play_sDate DESC , a.cup_id DESC
+        LIMIT ${sRow}, ${eCount}
+
+    </select>
+
+    <!-- 대회 관리 - 대회 예선결과 경기 순위 -->
+    <select id="selectCupSubMatchRank" parameterType="hashmap" resultType="hashmap">
+        SELECT
+            a.team_type, a.emblem, b.cup_id,
+            b.team_id, b.team, b.playTotalCnt, b.playCnt, b.point, b.losePoint, b.win, b.lose, b.draw, b.goalPoint, (b.win*3)+b.draw AS rankPoint
+        FROM
+            Team a
+            INNER JOIN
+                        (
+                            SELECT
+                                a.team_id , a.team,
+                                SUM(a.playCnt) AS playTotalCnt,
+                                SUM(a.matchType) AS playCnt,
+                                SUM(a.point) AS point, SUM(a.losePoint) AS losePoint,
+                                SUM(a.win + a.pk_win) AS win,
+                                SUM(a.lose + a.pk_lose) AS lose,
+                                SUM(a.draw - a.pk_win - a.pk_lose) AS draw,
+                                SUM(a.point) - SUM(a.losePoint) AS goalPoint, a.cup_id
+                            FROM
+                                (
+                                    SELECT
+                                        a.home_id AS team_id, a.home AS team,
+                                        cup_sub_match_id,
+                                        CASE
+                                            WHEN DATE_FORMAT(SUBSTRING_INDEX(a.match_date, ' ', 1), '%Y-%m-%d')  <![CDATA[<=]]>  DATE_FORMAT(CURDATE(), '%Y-%m-%d') THEN COUNT(a.cup_sub_match_id)
+                                            ELSE 0
+                                        END AS playCnt,
+                                        SUM(a.match_type) AS matchType,
+                                        SUM(a.home_score) AS point,
+                                        SUM(a.away_score) AS losePoint,
+                                        a.cup_id, a.match_type,
+                                        SUM(IFNULL(a.home_score <![CDATA[>]]> a.away_score, 1)) AS win,
+                                        SUM(IFNULL(a.home_pk <![CDATA[>]]> a.away_pk, 1)) AS pk_win,
+                                        SUM(IFNULL(a.home_score <![CDATA[<]]> a.away_score, 1)) AS lose,
+                                        SUM(IFNULL(a.home_pk <![CDATA[<]]> a.away_pk, 1)) AS pk_lose,
+                                        CASE
+                                            WHEN DATE(SUBSTRING_INDEX(a.match_date, ' ', 1)) <![CDATA[<=]]> CURDATE() THEN SUM(IFNULL(a.home_score  =  a.away_score, 1))
+                                            ELSE 0
+                                        END AS draw
+                                    FROM
+                                        ${cupSubMatchTB} a INNER JOIN ${cupTeamTB} b ON a.home_id = b.team_id
+                                    WHERE
+                                        a.use_flag = 0
+                                        AND b.use_flag = 0
+                                        AND a.cup_id = #{cupId}
+                                        AND b.cup_id = #{cupId}
+                                        <choose>
+                                            <when test="groups != null and groups != '' ">
+                                        AND a.groups = #{groups}
+                                        AND b.groups = #{groups}
+                                            </when>
+                                            <otherwise>
+                                        AND a.groups = 1
+                                        AND b.groups = 1
+                                            </otherwise>
+                                        </choose>
+                                        <if test="(ageGroup == 'U12' or ageGroup == 'U11') and (teamType != null and teamType != '')">
+                                        AND a.team_type = #{teamType}
+                                        AND b.team_type = #{teamType}
+                                        </if>
+                                        /*AND DATE(SUBSTRING_INDEX(a.match_date, ' ', 1)) <![CDATA[<=]]>  CURDATE()*/
+                                    GROUP BY team, cup_sub_match_id
+                                UNION ALL
+                                    SELECT
+                                        a.away_id AS team_id, a.away AS team,
+                                        cup_sub_match_id,
+                                        CASE
+                                            WHEN DATE_FORMAT(SUBSTRING_INDEX(a.match_date, ' ', 1), '%Y-%m-%d') <![CDATA[<=]]> DATE_FORMAT(CURDATE(), '%Y-%m-%d') THEN COUNT(a.cup_sub_match_id)
+                                            ELSE 0
+                                        END AS playCnt,
+                                        SUM(a.match_type) AS matchType,
+                                        SUM(a.away_score) AS point,
+                                        SUM(a.home_score) AS losePoint,
+                                        a.cup_id, a.match_type,
+                                        SUM(IFNULL(a.away_score <![CDATA[>]]> a.home_score, 1)) AS win,
+                                        SUM(IFNULL(a.away_pk <![CDATA[>]]> a.home_pk, 1)) AS pk_win,
+                                        SUM(IFNULL(a.away_score <![CDATA[<]]> a.home_score, 1)) AS lose,
+                                        SUM(IFNULL(a.away_pk <![CDATA[<]]> a.home_pk, 1)) AS pk_lose,
+                                        CASE
+                                            WHEN DATE(SUBSTRING_INDEX(a.match_date, ' ', 1)) <![CDATA[<=]]> CURDATE() THEN SUM(IFNULL(a.home_score  =  a.away_score, 1))
+                                            ELSE 0
+                                        END AS draw
+                                    FROM
+                                        ${cupSubMatchTB} a INNER JOIN ${cupTeamTB} b ON a.away_id = b.team_id
+                                    WHERE
+                                        a.use_flag = 0
+                                        AND b.use_flag = 0
+                                        AND a.cup_id = #{cupId}
+                                        AND b.cup_id = #{cupId}
+
+                                        <choose>
+                                            <when test="groups != null and groups != '' ">
+                                        AND a.groups = #{groups}
+                                        AND b.groups = #{groups}
+                                            </when>
+                                            <otherwise>
+                                        AND a.groups = 1
+                                        AND b.groups = 1
+                                            </otherwise>
+                                        </choose>
+                                        <if test="(ageGroup == 'U12' or ageGroup == 'U11') and (teamType != null and teamType != '')">
+                                        AND a.team_type = #{teamType}
+                                        AND b.team_type = #{teamType}
+                                        </if>
+                                        /*AND DATE(SUBSTRING_INDEX(a.match_date, ' ', 1)) <![CDATA[<=]]>  CURDATE()*/
+                                    GROUP BY team, cup_sub_match_id
+                                ) a
+                            GROUP BY team
+                        ) b ON a.team_id = b.team_id
+        ORDER BY rankPoint DESC, b.goalPoint DESC
+    </select>
+
+    <!-- 대회 관리 - 대회 예선결과 경기 최종순위 -->
+    <select id="selectCupSubMatchRankByFinal" parameterType="hashmap" resultType="hashmap">
+        SELECT
+            a.team_type, a.emblem,
+            SUBSTRING_INDEX(b.sub_rank , '/', -1) AS confirmRank,
+            b.*
+        FROM
+            (
+                SELECT team_id, team_type, emblem
+                FROM Team
+            ) a
+            INNER JOIN
+                        (
+                            SELECT a.team, b.*
+                            FROM
+                                (
+                                    SELECT team_id, nick_name AS team
+                                    FROM ${cupTeamTB}
+                                    WHERE
+                                        use_flag = 0
+                                        AND cup_id = #{cupId}
+                                        <choose>
+                                            <when test="groups != null and groups != '' ">
+                                        AND groups = #{groups}
+                                            </when>
+                                            <otherwise>
+                                        AND groups = 1
+                                            </otherwise>
+                                        </choose>
+                                        <if test="teamType != null and teamType != ''">
+                                        AND team_type = #{teamType}
+                                        </if>
+                                ) a
+                                LEFT JOIN
+                                        (
+                                            SELECT
+                                                cup_result_id, team_id, `result`, sub_rank, main_rank,
+                                                played1 AS playTotalCnt,
+                                                points1 AS rankPoint,
+                                                won1 AS win, draw1 AS draw, lost1 AS lose,
+                                                gf1 AS point, ga1 AS losePoint, gd1 as goalPoint,
+                                                mod_date1
+                                            FROM ${cupResultTB}
+                                            WHERE
+                                                use_flag = 0
+                                                AND cup_id = #{cupId}
+                                                <choose>
+                                                    <when test="groups != null and groups != '' ">
+                                                AND groups1 = #{groups}
+                                                    </when>
+                                                    <otherwise>
+                                                AND groups1 = 1
+                                                    </otherwise>
+                                                </choose>
+                                                <if test="teamType != null and teamType != ''">
+                                                AND team_type = #{teamType}
+                                                </if>
+                                        ) b ON a.team_id = b.team_id
+                        ) b ON a.team_id = b.team_id
+        /*WHERE b.playTotalCnt <![CDATA[>]]> 0*/
+
+        ORDER BY confirmRank ASC
+    </select>
+
+    <!-- 대회 관리 - 대회 예선결과 경기 리스트 -->
+    <select id="selectCupSubMatchResultList" parameterType="hashmap" resultType="hashmap">
+        <![CDATA[
+		SELECT a.cup_sub_match_id, a.groups,
+		SUBSTRING_INDEX(a.match_date,' ',2 ) AS playdate,
+		DATE_FORMAT(SUBSTRING_INDEX(match_date,' ',1 ), '%Y%m%d') AS pdate,
+		SUBSTRING_INDEX(a.match_date,' ',-1 ) AS ptime,
+		a.match_date, a.place,
+        CONCAT(DATE_FORMAT(SUBSTRING_INDEX(match_date,' ',1 ), '%Y-%m-%d'), ' ', SUBSTRING_INDEX(a.match_date,' ',-1 )) AS parse_date,
+		a.home_id, a.home,  a.home_score, a.home_pk,
+		b.emblem AS home_emblem, b.team_type AS home_type,
+		a.away_id, a.away, a.away_score, a.away_pk,
+		c.emblem AS away_emblem, c.team_type AS away_type,
+		a.match_type, a.reason, a.cup_id
+        ,a.match_order
+        ,a.match_status
+		,a.video_live, a.video_rep, a.video_high
+        ,TIMESTAMPDIFF(minute, CONCAT(DATE_FORMAT(SUBSTRING_INDEX(a.match_date,' ',1 ), '%Y-%m-%d'), " ", right(a.match_date,5), ':00'), now()) AS time_diff
+		,a.upd_flag
+		,end_flag
+		,a.send_flag
+		FROM ${cupSubMatchTB} a
+		INNER JOIN Team b
+		ON a.home_id = b.team_id
+		INNER JOIN Team c
+		ON a.away_id  = c.team_id
+		WHERE a.use_flag = 0
+		AND a.cup_id = #{cupId}
+		]]>
+
+        <choose>
+            <when test="groups != null and groups != '' ">
+                AND groups = #{groups}
+            </when>
+            <otherwise>
+                AND groups = 1
+            </otherwise>
+        </choose>
+
+		<if test="teamType != null and teamType != ''">
+		    AND a.team_type = #{teamType}
+        </if>
+        ORDER BY pdate ASC , ptime ASC
+
+    </select>
+
+    <!-- 대회 예선 영상 -->
+    <update id="updateCupSubVideo" parameterType="hashmap" >
+        UPDATE ${cupSubMatchTB}
+        SET
+            video_live = #{live},
+            video_rep = #{reply},
+            video_high = #{highlight}
+        WHERE cup_sub_match_id = #{cupSubMatchId}
+    </update>
+
+    <!-- 대회 예선 스코어 수정 -->
+    <update id="updateCupSubMatchScore" parameterType="hashmap" >
+            UPDATE ${cupSubMatchTB}
+            SET
+            home_score = #{homeScore},
+            away_score = #{awayScore},
+            home_pk = #{homePk},
+            away_pk = #{awayPk},
+            <if test="endFlag != null and endFlag != '' and endFlag != 0">
+            	end_flag = #{endFlag},
+            </if>
+            <if test="updFlag != null and updFlag != '' and updFlag != '0'">
+            	upd_flag = #{updFlag},
+            </if>
+            match_type = #{selMatchType}
+            WHERE cup_sub_match_id = #{cupSubMatchId}
+    </update>
+
+    <!-- 대회 예선 최종순위 확정 - 등록 -->
+    <insert id="insertCupSubRank" parameterType="hashmap" >
+        INSERT INTO ${cupResultTB}(
+        team_id,
+        result,
+        cup_id,
+        groups1,
+        sub_rank,
+        played1,
+        points1,
+        won1,
+        draw1,
+        lost1,
+        gf1,
+        ga1,
+        gd1,
+        reg_date,
+        mod_date1
+        <if test="teamType != null and teamType != ''">
+        ,team_type
+        </if>
+        )VALUES
+            (
+            #{teamId},
+            #{result},
+            #{cupId},
+            #{groups},
+            #{subRank},
+            #{played},
+            #{points},
+            #{won},
+            #{draw},
+            #{lost},
+            #{gf},
+            #{ga},
+            #{gd},
+            now(),
+            now()
+            <if test="teamType != null and teamType != ''">
+            ,#{teamType}
+            </if>
+            )
+    </insert>
+
+    <!-- 대회 예선 최종순위 확정 - 수정  -->
+    <update id="updateCupSubRank" parameterType="hashmap" >
+            UPDATE ${cupResultTB}
+            SET
+            sub_rank = #{subRank},
+            result = #{result},
+            played1 = #{played},
+            points1 = #{points},
+            won1 = #{won},
+            draw1 = #{draw},
+            lost1 = #{lost},
+            gf1 = #{gf},
+            ga1 = #{ga},
+            gd1 = #{gd},
+            <if test="teamType != null and teamType != ''">
+            team_type = #{teamType},
+            </if>
+            mod_date1 = now()
+            WHERE cup_result_id = #{cupResultId}
+    </update>
+
+    <!-- 대회 예선 최종순위 확정 - 삭제  -->
+    <delete id="deleteCupSubRank" parameterType="hashmap" >
+        <foreach item="item" index="index" collection="list" separator=";" >
+            DELETE FROM ${cupResultTB}
+            WHERE cup_result_id = #{item.cupResultId}
+        </foreach>
+    </delete>
+
+    <!-- 대회 관리 - 대회 본선결과 경기 순위 -->
+    <select id="selectCupMainMatchRank" parameterType="hashmap" resultType="hashmap">
+        SELECT a.*, b.cup_result_id
+        FROM
+        (
+        SELECT
+        a.team_type, a.emblem, b.cup_id,
+        b.team_id, b.team, b.playTotalCnt, b.playCnt, b.point, b.losePoint, b.win, b.lose, b.draw, b.goalPoint, (b.win*3)+b.draw AS rankPoint
+        FROM Team a
+        INNER JOIN
+        (
+        SELECT  a.team_id , a.team,
+        SUM(a.playCnt) AS playTotalCnt, SUM(a.matchType) AS playCnt,
+        SUM(a.point) AS point, SUM(a.losePoint) AS losePoint,
+        SUM(a.win + a.pk_win) AS win,
+        SUM(a.lose + a.pk_lose) AS lose,
+        SUM(a.draw - a.pk_win - a.pk_lose) AS draw,
+        SUM(a.point) - SUM(a.losePoint) AS goalPoint, a.cup_id
+
+        FROM
+
+        (
+
+        SELECT  a.home_id AS team_id, a.home AS team,
+        COUNT(a.cup_main_match_id) AS playCnt, SUM(a.match_type) AS matchType,
+        SUM(a.home_score) AS point,
+        SUM(a.away_score) AS losePoint,
+        a.cup_id, a.match_type,
+        SUM(IFNULL(a.home_score <![CDATA[>]]> a.away_score, 1)) AS win,
+        SUM(IFNULL(a.home_pk <![CDATA[>]]> a.away_pk, 1)) AS pk_win,
+        SUM(IFNULL(a.home_score <![CDATA[<]]> a.away_score, 1)) AS lose,
+        SUM(IFNULL(a.home_pk <![CDATA[<]]> a.away_pk, 1)) AS pk_lose,
+        SUM(IFNULL(a.home_score <![CDATA[=]]> a.away_score, 1)) AS draw
+
+        FROM ${cupMainMatchTB} a INNER JOIN ${cupTeamTB} b
+        ON a.home_id = b.team_id
+        WHERE a.use_flag = 0
+        AND b.use_flag = 0
+        AND a.cup_id = #{cupId}
+        AND b.cup_id = #{cupId}
+
+        <choose>
+            <when test="groups != null and groups != '' ">
+                AND a.groups = #{groups}
+                AND b.main_groups = #{groups}
+            </when>
+            <otherwise>
+                AND a.groups = 1
+                AND b.main_groups = 1
+            </otherwise>
+        </choose>
+
+        AND DATE(SUBSTRING_INDEX(a.match_date, ' ', 1)) <![CDATA[<=]]>  CURDATE()
+
+        GROUP BY team
+
+        UNION ALL
+
+        SELECT  a.away_id AS team_id, a.away AS team,
+        COUNT(a.cup_main_match_id) AS playCnt, SUM(a.match_type) AS matchType,
+        SUM(a.away_score) AS point,
+        SUM(a.home_score) AS losePoint,
+        a.cup_id, a.match_type,
+        SUM(IFNULL(a.away_score <![CDATA[>]]> a.home_score, 1)) AS win,
+        SUM(IFNULL(a.away_pk <![CDATA[>]]> a.home_pk, 1)) AS pk_win,
+        SUM(IFNULL(a.away_score <![CDATA[<]]> a.home_score, 1)) AS lose,
+        SUM(IFNULL(a.away_pk <![CDATA[<]]> a.home_pk, 1)) AS pk_lose,
+        SUM(IFNULL(a.away_score <![CDATA[=]]> a.home_score, 1)) AS draw
+
+        FROM ${cupMainMatchTB} a INNER JOIN ${cupTeamTB} b
+        ON a.away_id = b.team_id
+        WHERE a.use_flag = 0
+        AND b.use_flag = 0
+        AND a.cup_id = #{cupId}
+        AND b.cup_id = #{cupId}
+
+        <choose>
+            <when test="groups != null and groups != '' ">
+                AND a.groups = #{groups}
+                AND b.main_groups = #{groups}
+            </when>
+            <otherwise>
+                AND a.groups = 1
+                AND b.main_groups = 1
+            </otherwise>
+        </choose>
+
+        AND DATE(SUBSTRING_INDEX(a.match_date, ' ', 1)) <![CDATA[<=]]>  CURDATE()
+
+        GROUP BY team
+
+        ) a
+
+        GROUP BY team
+
+        ) b
+        ON a.team_id = b.team_id
+
+        ) a LEFT JOIN
+        (
+
+        SELECT a.*, b.cup_result_id
+        FROM
+        (
+        SELECT *
+        FROM
+        (
+        SELECT `groups`, home AS team, home_id AS team_id
+        FROM ${cupMainMatchTB}
+        WHERE use_flag = 0
+        AND cup_id = #{cupId}
+
+        UNION ALL
+
+        SELECT `groups`, away AS team, away_id AS team_id
+        FROM ${cupMainMatchTB}
+        WHERE use_flag = 0
+        AND cup_id = #{cupId}
+        ) a
+        ) a LEFT JOIN
+        (
+        SELECT cup_result_id, team_id FROM ${cupResultTB} WHERE cup_id = #{cupId}
+        ) b
+        ON a.team_id = b.team_id
+        GROUP BY team
+        ORDER BY groups
+
+        ) b
+        ON a.team_id = b.team_id
+
+
+        ORDER BY a.rankPoint DESC, a.goalPoint DESC
+
+    </select>
+
+    <!-- 대회 관리 - 대회 본선결과 경기 최종순위 -->
+    <select id="selectCupMainMatchRankByFinal" parameterType="hashmap" resultType="hashmap">
+        SELECT a.team_type, a.emblem,
+        SUBSTRING_INDEX(b.main_rank , '/', -1) AS confirmRank,
+        b.*
+        FROM
+        (
+        SELECT team_id, team_type, emblem
+        FROM Team
+        ) a INNER JOIN
+        (
+        SELECT a.team, b.*
+        FROM
+        (
+        SELECT team_id, nick_name AS team
+        FROM ${cupTeamTB}
+        WHERE use_flag = 0
+        AND cup_id = #{cupId}
+        <choose>
+            <when test="groups != null and groups != '' ">
+                AND main_groups = #{groups}
+            </when>
+            <otherwise>
+                AND main_groups = 1
+            </otherwise>
+        </choose>
+        ) a LEFT JOIN
+        (
+        SELECT cup_result_id, team_id, `result`, sub_rank, main_rank,
+        played2 AS playTotalCnt,
+        points2 AS rankPoint,
+        won2 AS win, draw2 AS draw, lost2 AS lose,
+        gf2 AS point, ga2 AS losePoint, gd2 as goalPoint,
+        mod_date2
+        FROM ${cupResultTB}
+        WHERE use_flag = 0
+        AND cup_id = #{cupId}
+        <choose>
+            <when test="groups != null and groups != '' ">
+                AND groups2 = #{groups}
+            </when>
+            <otherwise>
+                AND groups2 = 1
+            </otherwise>
+        </choose>
+        ) b
+        ON a.team_id = b.team_id
+        ) b
+        ON a.team_id = b.team_id
+        WHERE b.playTotalCnt <![CDATA[>]]> 0
+
+        ORDER BY confirmRank ASC
+    </select>
+
+    <!-- 대회 - 관리 최종순위 등록된 팀 수  -->
+    <select id="selectCupRankCount" parameterType="hashmap" resultType="String">
+        SELECT COUNT(*)
+        FROM ${cupResultTB}
+        WHERE use_flag = 0
+          AND cup_id = #{cupId}
+    </select>
+
+    <!-- 대회 관리 - 대회 본선결과 경기 리스트 -->
+    <select id="selectCupMainMatchResultList" parameterType="hashmap" resultType="hashmap">
+        <![CDATA[
+		SELECT a.cup_main_match_id, a.groups,
+		SUBSTRING_INDEX(a.match_date,' ',2 ) AS playdate,
+		DATE_FORMAT(SUBSTRING_INDEX(match_date,' ',1 ), '%Y%m%d') AS pdate,
+		SUBSTRING_INDEX(a.match_date,' ',-1 ) AS ptime,
+		CONCAT(DATE_FORMAT(SUBSTRING_INDEX(match_date,' ',1 ), '%Y-%m-%d'), ' ', SUBSTRING_INDEX(a.match_date,' ',-1 )) AS parse_date,
+		a.match_date, a.place,
+
+		a.home_id, a.home,  a.home_score, a.home_pk,
+		b.emblem AS home_emblem, b.team_type AS home_type,
+		a.away_id, a.away, a.away_score, a.away_pk,
+		c.emblem AS away_emblem, c.team_type AS away_type,
+		a.match_type, a.reason, a.cup_id
+
+		,a.video_live, a.video_rep, a.video_high
+        ,TIMESTAMPDIFF(minute, CONCAT(DATE_FORMAT(SUBSTRING_INDEX(a.match_date,' ',1 ), '%Y-%m-%d'), " ", right(a.match_date,5), ':00'), now()) AS time_diff
+        ,a.end_flag
+        ,a.match_order
+        ,a.match_status
+        ,a.upd_flag
+        ,a.send_flag
+		FROM ${cupMainMatchTB} a
+		INNER JOIN Team b
+		ON a.home_id = b.team_id
+		INNER JOIN Team c
+		ON a.away_id  = c.team_id
+		WHERE a.use_flag = 0
+		AND a.cup_id = #{cupId}
+		]]>
+
+        <choose>
+            <when test="groups != null and groups != '' ">
+                AND groups = #{groups}
+            </when>
+            <otherwise>
+                AND groups = 1
+            </otherwise>
+        </choose>
+
+        ORDER BY pdate ASC , ptime ASC
+
+    </select>
+
+    <!-- 대회 본선 스코어 수정 -->
+    <update id="updateCupMainMatchScore" parameterType="hashmap" >
+            UPDATE ${cupMainMatchTB}
+            SET
+            home_score = #{homeScore},
+            away_score = #{awayScore},
+            home_pk = #{homePk},
+            away_pk = #{awayPk},
+            match_type = #{selMatchType},
+            <if test="endFlag != null and endFlag != '' and endFlag != 0">
+            	end_flag = #{endFlag},
+            </if>
+            <if test="updFlag != null and updFlag != '' and updFlag != '0'">
+            	upd_flag = #{updFlag},
+            </if>
+            reason = #{reason}
+            WHERE cup_main_match_id = #{cupMainMatchId}
+    </update>
+
+    <!-- 대회 본선 영상 -->
+    <update id="updateCupMainVideo" parameterType="hashmap" >
+        UPDATE ${cupMainMatchTB}
+        SET
+            video_live = #{live},
+            video_rep = #{reply},
+            video_high = #{highlight}
+        WHERE cup_main_match_id = #{cupMainMatchId}
+    </update>
+
+    <!-- 대회 본선 최종순위 확정 - 수정  -->
+    <update id="updateCupMainRank" parameterType="hashmap" >
+            UPDATE ${cupResultTB}
+            SET
+            main_rank = #{mainRank},
+            result = #{result},
+            played2 = #{played},
+            points2 = #{points},
+            won2 = #{won},
+            draw2 = #{draw},
+            lost2 = #{lost},
+            gf2 = #{gf},
+            ga2 = #{ga},
+            gd2 = #{gd},
+            groups2 = #{groups},
+            mod_date2 = now()
+            WHERE cup_result_id = #{cupResultId}
+    </update>
+
+    <!-- 대회 본선 최종순위 확정 - 초기화 -->
+    <update id="updateCupMainRankReset" parameterType="hashmap" >
+            UPDATE ${cupResultTB}
+            SET
+            main_rank = #{mainRank},
+            result = #{result},
+            played2 = #{played},
+            points2 = #{points},
+            won2 = #{won},
+            draw2 = #{draw},
+            lost2 = #{lost},
+            gf2 = #{gf},
+            ga2 = #{ga},
+            gd2 = #{gd},
+            groups2 = #{groups},
+            mod_date2 = now()
+            WHERE cup_result_id = #{cupResultId}
+    </update>
+
+    <!-- 대회 관리 - 대회 토너먼트 최종 순위 -->
+    <select id="selectCupTourMatchRank" parameterType="hashmap" resultType="hashmap">
+        SELECT IF(b.round = 2, IF(lose = 0, '우승', '준우승'), CONCAT(b.round,'강') ) AS `round`, a.*, b.cup_result_id
+        FROM
+            (
+                SELECT
+                    a.team_type, b.cup_id, b.cup_team_id,
+                    b.team_id, b.team, b.playTotalCnt, b.playCnt, b.point, b.losePoint, b.win, b.lose, b.draw, b.goalPoint, (b.win*3)+b.draw AS rankPoint
+                FROM Team a
+                         INNER JOIN
+                     (
+                         SELECT  a.team_id , a.team, a.cup_team_id,
+                                 SUM(a.playCnt) AS playTotalCnt, SUM(a.matchType) AS playCnt,
+                                 SUM(a.point) AS point, SUM(a.losePoint) AS losePoint,
+                                 SUM(a.win + a.pk_win) AS win, SUM(a.lose + a.pk_lose) AS lose,
+                                 SUM(a.draw) AS draw,
+                                 SUM(a.point) - SUM(a.losePoint) AS goalPoint, a.cup_id
+                         FROM
+                             (
+                                 SELECT  a.home_id AS team_id, a.home AS team, b.cup_team_id,
+                                         COUNT(a.cup_tour_match_id) AS playCnt, SUM(a.match_type) AS matchType,
+                                         SUM(a.home_score) AS point,
+                                         SUM(a.away_score) AS losePoint,
+                                         a.cup_id, a.match_type,
+                                         SUM(IFNULL(a.home_score <![CDATA[>]]> a.away_score, 1)) AS win,
+                                         SUM(IFNULL(a.home_pk <![CDATA[>]]> a.away_pk, 1)) AS pk_win,
+                                         SUM(IFNULL(a.home_score <![CDATA[<]]> a.away_score, 1)) AS lose,
+                                         SUM(IFNULL(a.home_pk <![CDATA[<]]> a.away_pk, 1)) AS pk_lose,
+                                         0 AS draw
+                                 FROM ${cupTourMatchTB} a INNER JOIN ${cupTeamTB} b
+                                                                     ON a.home_id = b.team_id
+                                 WHERE a.use_flag = 0
+                                   AND b.use_flag = 0
+                                   AND a.cup_id = #{cupId}
+                                   AND b.cup_id = #{cupId}
+                                   AND DATE(SUBSTRING_INDEX(a.match_date, ' ', 1)) <![CDATA[<=]]>  CURDATE()
+
+                         GROUP BY team
+
+                         UNION ALL
+
+                         SELECT  a.away_id AS team_id, a.away AS team, b.cup_team_id,
+                             COUNT(a.cup_tour_match_id) AS playCnt, SUM(a.match_type) AS matchType,
+                             SUM(a.away_score) AS point,
+                             SUM(a.home_score) AS losePoint,
+                             a.cup_id, a.match_type,
+                             SUM(IFNULL(a.away_score <![CDATA[>]]> a.home_score, 1)) AS win,
+                             SUM(IFNULL(a.away_pk <![CDATA[>]]> a.home_pk, 1)) AS pk_win,
+                             SUM(IFNULL(a.away_score <![CDATA[<]]> a.home_score, 1)) AS lose,
+                             SUM(IFNULL(a.away_pk <![CDATA[<]]> a.home_pk, 1)) AS pk_lose,
+                             0 AS draw
+                         FROM ${cupTourMatchTB} a INNER JOIN ${cupTeamTB} b
+                         ON a.away_id = b.team_id
+                         WHERE a.use_flag = 0
+                           AND b.use_flag = 0
+                           AND a.cup_id = #{cupId}
+                           AND b.cup_id = #{cupId}
+                           AND DATE(SUBSTRING_INDEX(a.match_date, ' ', 1)) <![CDATA[<=]]>  CURDATE()
+
+                         GROUP BY team
+
+                     ) a
+                GROUP BY team
+            ) b
+            ON a.team_id = b.team_id
+		) a
+		LEFT JOIN
+		        (
+                    SELECT a.*, b.cup_result_id
+                    FROM
+                        (
+                            SELECT *
+                            FROM
+                                (
+                                    SELECT
+                                        `round`, home AS team, home_id AS team_id
+                                    FROM
+                                        ${cupTourMatchTB}
+                                    WHERE
+                                        use_flag = 0
+                                        AND cup_id = #{cupId}
+                                    UNION ALL
+                                    SELECT
+                                        `round`, away AS team, away_id AS team_id
+                                    FROM
+                                        ${cupTourMatchTB}
+                                    WHERE
+                                        use_flag = 0
+                                        AND cup_id = #{cupId}
+                                ) a
+                            ORDER BY `round`
+                        ) a
+                        LEFT JOIN
+                                (
+                                    SELECT
+                                        cup_result_id, team_id
+                                    FROM
+                                        ${cupResultTB}
+                                    WHERE cup_id = #{cupId}
+                                ) b ON a.team_id = b.team_id
+                    GROUP BY team
+                    ORDER BY `round`
+                ) b ON a.team_id = b.team_id
+        ORDER BY b.round
+    </select>
+    <select id="selectCupTourMatchRankRenewal" parameterType="hashmap" resultType="hashmap">
+        SELECT
+            a.*, b.cup_result_id
+            ,b.result AS rResult
+        FROM
+            (
+                SELECT
+                    a.team_type, a.emblem, b.cup_id, IF(b.round = 2, IF(lose = 0, '우승', '준우승'), CONCAT(b.round,'강') ) AS `round`,
+                    b.team_id, b.team, b.playTotalCnt, b.playCnt, b.point, b.losePoint, b.win, b.lose, b.draw, b.goalPoint, (b.win*3)+b.draw AS rankPoint
+                FROM
+                    Team a
+                    INNER JOIN
+                                (
+                                    SELECT
+                                        a.team_id , a.team,
+                                        SUM(a.playCnt) AS playTotalCnt, SUM(a.matchType) AS playCnt,
+                                        SUM(a.point) AS point, SUM(a.losePoint) AS losePoint,
+                                        SUM(a.win + a.pk_win) AS win,
+                                        SUM(a.lose + a.pk_lose) AS lose,
+                                        SUM(a.draw - a.pk_win - a.pk_lose) AS draw,
+                                        SUM(a.point) - SUM(a.losePoint) AS goalPoint, a.cup_id,
+                                        round
+                                    FROM
+                                        (
+                                            SELECT
+                                                a.home_id AS team_id, a.home AS team,
+                                                COUNT(a.cup_tour_match_id) AS playCnt, SUM(a.match_type) AS matchType,
+                                                SUM(a.home_score) AS point,
+                                                SUM(a.away_score) AS losePoint,
+                                                a.cup_id, a.match_type,
+                                                SUM(IFNULL(a.home_score <![CDATA[>]]> a.away_score, 1)) AS win,
+                                                SUM(IFNULL(a.home_pk <![CDATA[>]]> a.away_pk, 1)) AS pk_win,
+                                                SUM(IFNULL(a.home_score <![CDATA[<]]> a.away_score, 1)) AS lose,
+                                                SUM(IFNULL(a.home_pk <![CDATA[<]]> a.away_pk, 1)) AS pk_lose,
+                                                SUM(IFNULL(a.home_score <![CDATA[=]]> a.away_score, 1)) AS draw,
+                                                round
+                                            FROM
+                                                ${cupTourMatchTB} a
+                                            WHERE
+                                                a.use_flag = 0
+                                                AND a.cup_id = #{cupId}
+                                                <choose>
+                                                    <when test="round != null and round != '' ">
+                                                        AND a.round = #{round}
+                                                    </when>
+                                                </choose>
+                                                AND DATE(SUBSTRING_INDEX(a.match_date, ' ', 1)) <![CDATA[<=]]>  CURDATE()
+                                            GROUP BY team
+                                        UNION ALL
+                                            SELECT
+                                                a.away_id AS team_id, a.away AS team,
+                                                COUNT(a.cup_tour_match_id) AS playCnt, SUM(a.match_type) AS matchType,
+                                                SUM(a.away_score) AS point,
+                                                SUM(a.home_score) AS losePoint,
+                                                a.cup_id, a.match_type,
+                                                SUM(IFNULL(a.away_score <![CDATA[>]]> a.home_score, 1)) AS win,
+                                                SUM(IFNULL(a.away_pk <![CDATA[>]]> a.home_pk, 1)) AS pk_win,
+                                                SUM(IFNULL(a.away_score <![CDATA[<]]> a.home_score, 1)) AS lose,
+                                                SUM(IFNULL(a.away_pk <![CDATA[<]]> a.home_pk, 1)) AS pk_lose,
+                                                SUM(IFNULL(a.away_score <![CDATA[=]]> a.home_score, 1)) AS draw,
+                                                round
+                                            FROM
+                                                ${cupTourMatchTB} a
+                                            WHERE
+                                                a.use_flag = 0
+                                                AND a.cup_id = #{cupId}
+                                                <choose>
+                                                    <when test="round != null and round != '' ">
+                                                        AND a.round = #{round}
+                                                    </when>
+                                                </choose>
+                                                AND DATE(SUBSTRING_INDEX(a.match_date, ' ', 1)) <![CDATA[<=]]>  CURDATE()
+                                            GROUP BY team
+                                        ) a
+                                    GROUP BY team
+                                ) b ON a.team_id = b.team_id
+            ) a
+            LEFT JOIN
+                    (
+                        SELECT a.*, b.cup_result_id, b.result
+                        FROM
+                            (
+                                SELECT *
+                                FROM
+                                    (
+                                        SELECT round, home AS team, home_id AS team_id
+                                        FROM ${cupTourMatchTB}
+                                        WHERE use_flag = 0
+                                        AND cup_id = #{cupId}
+                                        <choose>
+                                            <when test="round != null and round != '' ">
+                                                AND round = #{round}
+                                            </when>
+                                        </choose>
+                                    UNION ALL
+                                        SELECT round, away AS team, away_id AS team_id
+                                        FROM ${cupTourMatchTB}
+                                        WHERE use_flag = 0
+                                        AND cup_id = #{cupId}
+                                        <choose>
+                                            <when test="round != null and round != '' ">
+                                                AND round = #{round}
+                                            </when>
+                                        </choose>
+                                    ) a
+                            ) a
+                            LEFT JOIN
+                                    (
+                                        SELECT cup_result_id, team_id, result FROM ${cupResultTB} WHERE cup_id = #{cupId}
+                                    ) b ON a.team_id = b.team_id
+                        GROUP BY team
+                    ) b ON a.team_id = b.team_id
+        ORDER BY a.rankPoint DESC, a.goalPoint DESC
+    </select>
+
+    <select id="selectCupTourRankCount" parameterType="hashmap" resultType="_int">
+        SELECT COUNT(1)
+        FROM ${cupResultTB}
+        WHERE
+            use_flag = 0
+            AND cup_id = #{cupId}
+            <choose>
+                <when test="round != null and round != ''">
+                    <choose>
+                        <when test="round != 2">
+                            AND result = CONCAT(#{round}, '강')
+                        </when>
+                        <otherwise>
+                            AND result LIKE '%우승%'
+                        </otherwise>
+                    </choose>
+                </when>
+            </choose>
+    </select>
+
+    <!-- 대회 관리 - 대회 토너먼트 결과 경기 리스트 -->
+    <select id="selectCupTourMatchResultList" parameterType="hashmap" resultType="hashmap">
+		<![CDATA[
+        SELECT a.cup_tour_match_id, a.round,
+               SUBSTRING_INDEX(a.match_date,' ',2 ) AS playdate,
+               DATE_FORMAT(SUBSTRING_INDEX(match_date,' ',1 ), '%Y%m%d') AS pdate,
+               SUBSTRING_INDEX(a.match_date,' ',-1 ) AS ptime,
+               a.match_date, a.place,
+               CONCAT(DATE_FORMAT(SUBSTRING_INDEX(match_date,' ',1 ), '%Y-%m-%d'), ' ', SUBSTRING_INDEX(a.match_date,' ',-1 )) AS parse_date,
+            /*DATE_FORMAT(SUBSTRING_INDEX(match_date,' ',1 ), '%Y-%m-%d') AS parse_date,*/
+               a.home_id, a.home,  a.home_score, a.home_pk,
+               b.emblem AS home_emblem, b.team_type AS home_type,
+               a.away_id, a.away, a.away_score, a.away_pk,
+               c.emblem AS away_emblem, c.team_type AS away_type,
+               a.match_type, a.reason, a.cup_id
+                ,a.next_tour_no, a.next_tour_port
+                ,a.video_live, a.video_rep, a.video_high
+                ,TIMESTAMPDIFF(minute, CONCAT(DATE_FORMAT(SUBSTRING_INDEX(match_date,' ',1 ), '%Y-%m-%d'), " ", right(a.match_date,5) + ':00'), now()) AS time_diff
+                ,a.fix_flag
+                ,a.end_flag
+                ,a.match_order
+                ,a.match_status
+                ,a.upd_flag
+                ,a.send_flag
+        FROM ${cupTourMatchTB} a
+                 LEFT JOIN Team b
+                           ON a.home_id = b.team_id
+                 LEFT JOIN Team c
+                           ON a.away_id  = c.team_id
+        WHERE a.use_flag = 0
+          AND a.cup_id = #{cupId}
+          AND a.round = #{round}
+
+        ORDER BY a.tour_no ASC
+        ]]>
+
+	</select>
+
+    <!-- 대회 관리 - 대회 예선결과 경기 순위 -->
+    <select id="selectCupSubMatchRankRenewal" parameterType="hashmap" resultType="hashmap">
+        SELECT
+            a.team_type, a.emblem, b.cup_id,
+            b.team_id, b.team, b.playTotalCnt, b.playCnt, b.point, b.losePoint, b.win, b.lose, b.draw, b.goalPoint, (b.win*3)+b.draw AS rankPoint
+        FROM
+            Team a
+            INNER JOIN
+                    (
+                        SELECT
+                            a.team_id , a.team,
+                            SUM(a.playCnt) AS playTotalCnt,
+                            SUM(a.matchType) AS playCnt,
+                            SUM(a.point) AS point, SUM(a.losePoint) AS losePoint,
+                            SUM(a.win + a.pk_win) AS win,
+                            SUM(a.lose + a.pk_lose) AS lose,
+                            SUM(a.draw - a.pk_win - a.pk_lose) AS draw,
+                            SUM(a.point) - SUM(a.losePoint) AS goalPoint, a.cup_id
+                        FROM
+                            (
+                                SELECT
+                                    a.home_id AS team_id, a.home AS team,
+                                    cup_tour_match_id,
+                                    CASE
+                                        WHEN DATE_FORMAT(SUBSTRING_INDEX(a.match_date, ' ', 1), '%Y-%m-%d')  <![CDATA[<=]]>  DATE_FORMAT(CURDATE(), '%Y-%m-%d') THEN COUNT(a.cup_tour_match_id)
+                                        ELSE 0
+                                    END AS playCnt,
+                                    SUM(a.match_type) AS matchType,
+                                    SUM(a.home_score) AS point,
+                                    SUM(a.away_score) AS losePoint,
+                                    a.cup_id, a.match_type,
+                                    SUM(IFNULL(a.home_score <![CDATA[>]]> a.away_score, 1)) AS win,
+                                    SUM(IFNULL(a.home_pk <![CDATA[>]]> a.away_pk, 1)) AS pk_win,
+                                    SUM(IFNULL(a.home_score <![CDATA[<]]> a.away_score, 1)) AS lose,
+                                    SUM(IFNULL(a.home_pk <![CDATA[<]]> a.away_pk, 1)) AS pk_lose,
+                                    CASE
+                                        WHEN DATE(SUBSTRING_INDEX(a.match_date, ' ', 1)) <![CDATA[<=]]> CURDATE() THEN SUM(IFNULL(a.home_score  =  a.away_score, 1))
+                                        ELSE 0
+                                    END AS draw
+                                FROM
+                                    ${cupTourMatchTB} a
+                                    INNER JOIN ${cupTeamTB} b ON a.home_id = b.team_id
+                                WHERE
+                                    a.use_flag = 0
+                                    AND b.use_flag = 0
+                                    AND a.cup_id = #{cupId}
+                                    AND b.cup_id = #{cupId}
+                                    <choose>
+                                        <when test="round != null and round != '' ">
+                                            AND a.round = #{round}
+                                        </when>
+                                    </choose>
+                                GROUP BY team, cup_tour_match_id
+                                UNION ALL
+                                SELECT
+                                    a.away_id AS team_id, a.away AS team,
+                                    cup_tour_match_id,
+                                    CASE
+                                        WHEN DATE_FORMAT(SUBSTRING_INDEX(a.match_date, ' ', 1), '%Y-%m-%d') <![CDATA[<=]]> DATE_FORMAT(CURDATE(), '%Y-%m-%d') THEN COUNT(a.cup_tour_match_id)
+                                        ELSE 0
+                                    END AS playCnt,
+                                    SUM(a.match_type) AS matchType,
+                                    SUM(a.away_score) AS point,
+                                    SUM(a.home_score) AS losePoint,
+                                    a.cup_id, a.match_type,
+                                    SUM(IFNULL(a.away_score <![CDATA[>]]> a.home_score, 1)) AS win,
+                                    SUM(IFNULL(a.away_pk <![CDATA[>]]> a.home_pk, 1)) AS pk_win,
+                                    SUM(IFNULL(a.away_score <![CDATA[<]]> a.home_score, 1)) AS lose,
+                                    SUM(IFNULL(a.away_pk <![CDATA[<]]> a.home_pk, 1)) AS pk_lose,
+                                    CASE
+                                        WHEN DATE(SUBSTRING_INDEX(a.match_date, ' ', 1)) <![CDATA[<=]]> CURDATE() THEN SUM(IFNULL(a.home_score  =  a.away_score, 1))
+                                        ELSE 0
+                                    END AS draw
+                                FROM
+                                    ${cupTourMatchTB} a
+                                    INNER JOIN ${cupTeamTB} b ON a.away_id = b.team_id
+                                WHERE
+                                    a.use_flag = 0
+                                    AND b.use_flag = 0
+                                    AND a.cup_id = #{cupId}
+                                    AND b.cup_id = #{cupId}
+                                    <choose>
+                                        <when test="round != null and round != '' ">
+                                            AND a.round = #{round}
+                                        </when>
+                                    </choose>
+                                GROUP BY team, cup_tour_match_id
+                            ) a
+                        GROUP BY team
+                    ) b ON a.team_id = b.team_id
+        ORDER BY rankPoint DESC, b.goalPoint DESC
+    </select>
+
+    <!-- 대회 토너먼트 스코어 수정 -->
+    <update id="updateCupTourMatchScore" parameterType="hashmap" >
+            UPDATE ${cupTourMatchTB}
+            SET
+            home_score = #{homeScore},
+            away_score = #{awayScore},
+            home_pk = #{homePk},
+            away_pk = #{awayPk},
+            <if test="fixFlag != null and fixFlag != '' and fixFlag != 0">
+            	fix_flag = #{fixFlag},
+            </if>
+            <if test="endFlag != null and endFlag != '' and endFlag != 0">
+            	end_flag = #{endFlag},
+            </if>
+            <if test="updFlag != null and updFlag != '' and updFlag != '0'">
+            	upd_flag = #{updFlag},
+            </if>
+            match_type = #{selMatchType}
+            WHERE cup_tour_match_id = #{cupTourMatchId}
+    </update>
+
+    <!-- 대회 토너먼트 경기 수정 -->
+    <update id="updateCupTourMatchByMatchId" parameterType="hashmap" >
+        UPDATE ${cupTourMatchTB}
+        SET
+            match_date = #{matchDate},
+            place = #{place},
+            home = #{home},
+            home_id = #{homeId},
+            home_score = #{homeScore},
+            home_pk = #{homePk},
+            away = #{away},
+            away_id = #{awayId},
+            away_score = #{awayScore},
+            away_pk = #{awayPk},
+            match_type = #{matchType},
+            end_flag = #{endFlag},
+            reason = #{reason}
+        WHERE cup_tour_match_id = #{cupTourMatchId}
+    </update>
+
+    <!-- 대회 토너먼트 영상 -->
+    <update id="updateCupTourVideo" parameterType="hashmap" >
+        UPDATE ${cupTourMatchTB}
+        SET
+            video_live = #{live},
+            video_rep = #{reply},
+            video_high = #{highlight}
+        WHERE cup_tour_match_id = #{cupTourMatchId}
+    </update>
+
+    <!-- 대회 토너먼트 최종순위 확정 - 등록  -->
+    <insert id="insertCupTourRank" parameterType="hashmap" >
+        INSERT INTO ${cupResultTB}(
+        team_id,
+        result,
+        cup_id,
+        played3,
+        points3,
+        won3,
+        draw3,
+        lost3,
+        gf3,
+        ga3,
+        gd3,
+        reg_date,
+        mod_date3
+        )VALUES
+            (
+            #{teamId},
+            #{result},
+            #{cupId},
+            #{played},
+            #{points},
+            #{won},
+            #{draw},
+            #{lost},
+            #{gf},
+            #{ga},
+            #{gd},
+            now(),
+            now()
+            )
+    </insert>
+
+    <!-- 대회 토너먼트 최종순위 확정 - 수정  -->
+    <update id="updateCupTourRankRenewal" parameterType="hashmap" >
+            UPDATE ${cupResultTB}
+            SET
+            <if test="resultType != null" >
+            result = #{resultType},
+            </if>
+            played3 = played3 + #{played},
+            points3 = points3 + #{points},
+            won3 = won3 + #{won},
+            draw3 = draw3 + #{draw},
+            lost3 = lost3 + #{lost},
+            gf3 = gf3 + #{gf},
+            ga3 = ga3 + #{ga},
+            gd3 = gd3 + #{gd},
+            mod_date3 = now()
+            WHERE cup_result_id = #{cupResultId}
+    </update>
+
+    <!-- 대회 토너먼트 최종순위 확정 - 수정  -->
+    <update id="updateCupTourRank" parameterType="hashmap" >
+        UPDATE ${cupResultTB}
+        SET
+            result = #{result},
+            played3 = #{played},
+            points3 = #{points},
+            won3 = #{won},
+            draw3 = #{draw},
+            lost3 = #{lost},
+            gf3 = #{gf},
+            ga3 = #{ga},
+            gd3 = #{gd},
+            mod_date3 = now()
+        WHERE cup_result_id = #{cupResultId}
+    </update>
+
+    <!-- 대회 토너먼트 최종순위 확정 - 삭제  -->
+    <delete id="deleteCupTourRank" parameterType="hashmap" >
+            DELETE FROM ${cupResultTB}
+            WHERE cup_result_id = #{cupResultId}
+    </delete>
+
+    <select id="selectCupMatchList" parameterType="hashmap" resultType="hashmap">
+        SELECT
+            A.cup_id
+             ,A.cup_name
+             ,B.cup_sub_match_id AS match_id
+             ,B.place
+             ,B.home_id
+             ,B.away_id
+             ,B.home
+             ,B.away
+             ,B.home_score
+             ,B.home_pk
+             ,B.away_pk
+             ,B.away_score
+             ,B.match_date
+             ,C.emblem AS home_emblem
+             ,D.emblem AS away_emblem
+             , 'sub' AS match_category
+             , `groups`
+             , score_show_flag
+             , live_show_flag
+             , #{ageGroup} AS ageGroup
+        FROM
+            ${cupInfoTB} A
+                INNER JOIN ${cupSubMatchTB} B ON A.cup_id = B.cup_id
+                LEFT JOIN Team C ON B.home_id = C.team_id
+                LEFT JOIN Team D ON B.away_id = D.team_id
+        WHERE
+            B.use_flag = 0
+          AND DATE_FORMAT(match_date, '%Y-%m-%d 00:00:00') BETWEEN DATE_FORMAT(#{sdate}, '%Y-%m-%d 00:00:00') AND DATE_FORMAT(#{sdate}, '%Y-%m-%d 23:59:59')
+
+        UNION ALL
+
+        SELECT
+            A.cup_id
+             ,A.cup_name
+             ,B.cup_main_match_id AS match_id
+             ,B.place
+             ,B.home_id
+             ,B.away_id
+             ,B.home
+             ,B.away
+             ,B.home_score
+             ,B.home_pk
+             ,B.away_pk
+             ,B.away_score
+             ,B.match_date
+             ,C.emblem AS home_emblem
+             ,D.emblem AS away_emblem
+             , 'main' AS match_category
+             , `groups`
+             , score_show_flag
+             , live_show_flag
+             , #{ageGroup} AS ageGroup
+        FROM
+            ${cupInfoTB} A
+                INNER JOIN ${cupMainMatchTB} B ON A.cup_id = B.cup_id
+                LEFT JOIN Team C ON B.home_id = C.team_id
+                LEFT JOIN Team D ON B.away_id  = D.team_id
+        WHERE
+            B.use_flag = 0
+          AND DATE_FORMAT(match_date, '%Y-%m-%d 00:00:00') BETWEEN DATE_FORMAT(#{sdate}, '%Y-%m-%d 00:00:00') AND DATE_FORMAT(#{sdate}, '%Y-%m-%d 23:59:59')
+
+        UNION ALL
+
+        SELECT
+            A.cup_id
+             ,A.cup_name
+             ,B.cup_tour_match_id AS match_id
+             ,B.place
+             ,B.home_id
+             ,B.away_id
+             ,B.home
+             ,B.away
+             ,B.home_score
+             ,B.home_pk
+             ,B.away_pk
+             ,B.away_score
+             ,B.match_date
+             ,C.emblem AS home_emblem
+             ,D.emblem AS away_emblem
+             , 'tour' AS match_category
+             , round AS `groups`
+             , score_show_flag
+             , live_show_flag
+             , #{ageGroup} AS ageGroup
+        FROM
+            ${cupInfoTB} A
+                INNER JOIN ${cupTourMatchTB} B ON A.cup_id = B.cup_id
+                LEFT JOIN Team C ON B.home_id = C.team_id
+                LEFT JOIN Team D ON B.away_id  = D.team_id
+        WHERE
+            B.use_flag = 0
+          AND DATE_FORMAT(match_date, '%Y-%m-%d 00:00:00') BETWEEN DATE_FORMAT(#{sdate}, '%Y-%m-%d 00:00:00') AND DATE_FORMAT(#{sdate}, '%Y-%m-%d 23:59:59')
+
+    </select>
+
+    <select id="selectCupTourMatchInfo" parameterType="hashmap" resultType="hashmap">
+        SELECT
+            cup_tour_match_id
+             ,round
+             ,tour_no
+             ,next_tour_no
+             ,next_tour_port
+             ,home
+             ,away
+             ,home_score
+             ,away_score
+             ,home_pk
+             ,away_pk
+             ,home_id
+             ,away_id
+        FROM
+            ${cupTourMatchTB}
+        WHERE
+            cup_id = #{cupId}
+          AND cup_tour_match_id = #{cupTourMatchId}
+          AND use_flag = 0
+    </select>
+
+    <select id="selectCupNextTourMatch" parameterType="hashmap" resultType="hashmap">
+        SELECT
+            cup_tour_match_id
+        FROM
+            ${cupTourMatchTB}
+        WHERE
+            cup_id = #{cupId}
+          AND tour_no = #{nextTourNo}
+          AND use_flag = 0
+    </select>
+
+
+    <update id="updateCupTourMatchFixFlag" parameterType="hashmap">
+        UPDATE
+            ${cupTourMatchTB}
+        SET
+            fix_flag = 1
+            ,end_flag= 1
+        WHERE
+            cup_id = #{cupId}
+          AND cup_tour_match_id = #{cupTourMatchId}
+    </update>
+
+    <update id="updateCupTourNextMatch" parameterType="hashmap">
+        UPDATE
+        ${cupTourMatchTB}
+        SET
+        <if test="home != '' and home != null">
+            home = #{home},
+        </if>
+        <if test="away != '' and away != null">
+            away = #{away},
+        </if>
+        <if test="homeId != '' and homeId != null">
+            home_id = #{homeId}
+        </if>
+        <if test="awayId != '' and awayId != null">
+            away_id = #{awayId}
+        </if>
+        <if test="fixFlag != null and fixFlag != '' and fixFlag != 0">
+            ,fix_flag = #{fixFlag}
+        </if>
+        <if test="endFlag != null and endFlag != '' and endFlag != 0">
+            ,end_flag = #{endFlag}
+        </if>
+        <if test="updFlag != null and updFlag != '' and updFlag != '0'">
+            ,upd_flag = #{updFlag}
+        </if>
+        WHERE
+        cup_tour_match_id = #{cupTourMatchId}
+        AND cup_id = #{cupId}
+    </update>
+
+    <!-- Excel Insert 대회 기본정보 - 일괄등록-->
+    <insert id="insertCupInfoExcel" parameterType="hashmap" >
+        INSERT INTO ${cupInfoTB}(
+        cup_name,
+        cup_team,
+        play_sdate,
+        play_edate,
+        play_flag,
+        cup_type,
+        rank_type,
+        sub_team_count,
+        main_team_count,
+        tour_type,
+        tour_team,
+        cup_prize,
+        cup_info,
+        reg_date
+        ) VALUES
+        <foreach collection="excelContent" item="item" separator=",">
+            (
+            #{item.A},
+            #{item.B},
+            #{item.C},
+            CONCAT(#{item.D}," 23:59:59"),
+            #{item.E},
+            #{item.F},
+            #{item.G},
+            #{item.H},
+            #{item.I},
+            #{item.J},
+            #{item.K},
+            #{item.L},
+            #{item.M},
+            now()
+            )
+        </foreach>
+    </insert>
+
+    <insert id="insertCupTeamExcelByOnlyTour" parameterType="hashmap" >
+        INSERT INTO ${cupTeamTB}(
+        nick_name,
+        groups,
+        teams,
+        cup_id,
+        reg_date
+        ) VALUES
+            (
+            #{A},
+            #{B},
+            #{C},
+            #{cupId},
+            now()
+            )
+    </insert>
+
+    <!-- Excel Insert 대회 참가팀 정보 - 일괄등록-->
+    <insert id="insertCupTeamExcel" parameterType="hashmap" >
+        INSERT INTO ${cupTeamTB}(
+        nick_name,
+        groups,
+        teams,
+        <if test="teamType != null and teamType != ''">
+        team_type,
+        </if>
+        cup_id,
+        reg_date
+        ) VALUES
+            (
+            #{nick_name},
+            #{groups},
+            #{teams},
+            <if test="teamType != null and teamType != ''">
+            #{teamType},
+            </if>
+            #{cupId},
+            now()
+            )
+    </insert>
+
+    <!-- cup team - 대회참가팀 리그 아이디 정보 수정-->
+    <update id="updateCupTeamExcelBycupId" parameterType="hashmap" >
+		<![CDATA[
+        UPDATE ${cupTeamTB}
+        SET
+            cup_id = #{cupId}
+        WHERE cup_id = -1
+        ]]>
+	</update>
+
+    <select id="selectCupTeamList" parameterType="hashmap" resultType="hashmap">
+        SELECT
+            a.cup_team_id, a.nick_name, a.cup_id, a.cup_name,
+            IFNULL(c.team_id, a.team_id) AS team_id ,
+            c.team_name, c.team_type, c.emblem, c.addr
+        FROM
+            (
+                SELECT  a.cup_team_id, a.nick_name, a.team_id, a.cup_id, b.cup_name
+                FROM ${cupTeamTB} a
+                         INNER JOIN ${cupInfoTB} b
+                                    ON a.cup_id = b.cup_id
+                WHERE a.use_flag = 0
+                  AND b.use_flag = 0
+                  AND a.cup_id = #{cupId}
+            ) a
+
+                LEFT JOIN
+            (
+                SELECT team_id, nick_name, team_name, team_type, emblem, addr, uage FROM Team WHERE uage = #{ageGroup}
+            )c
+            ON a.nick_name = c.nick_name
+
+    </select>
+
+    <update id="updateCupTeamExcel_type1" parameterType="hashmap" >
+        UPDATE ${cupTeamTB}
+        SET
+            team_id = #{teamId}
+        WHERE nick_name = #{nickName}
+    </update>
+
+    <update id="updateCupTeamExcel_type2" parameterType="hashmap" >
+            UPDATE ${cupTeamTB}
+            SET
+            team_id = #{team_id}
+            WHERE nick_name = #{nick_name} AND cup_id = #{cupId}
+    </update>
+
+    <!-- 대회 예선 경기일정 -->
+    <select id="selectCupSubMatchListCount" parameterType="hashmap" resultType="hashmap">
+        SELECT COUNT(*) AS totalCount
+        FROM ${cupSubMatchTB}
+        WHERE use_flag = 0
+          AND cup_id = #{cupId}
+          <if test="teamType != null and teamType != ''">
+          AND team_type = #{teamType}
+          </if>
+    </select>
+
+    <!-- Excel Insert 대회 예선 경기일정 정보 - 일괄등록-->
+    <insert id="insertCupSubMatchExcel" parameterType="hashmap" >
+        INSERT INTO ${cupSubMatchTB}(
+        match_order,
+        groups,
+        match_date,
+        place,
+        home,
+        away,
+        home_score,
+        away_score,
+        home_pk,
+        away_pk,
+        match_type,
+        reason,
+        <if test="teamType != null and teamType != ''">
+        team_type,
+        </if>
+        reg_date,
+        end_flag
+        )VALUES
+        <foreach collection="excelContent" item="item" separator=",">
+            (
+            #{item.A},
+            #{item.B},
+            #{item.C},
+            #{item.D},
+            #{item.E},
+            #{item.F},
+            #{item.G},
+            #{item.H},
+            #{item.I},
+            #{item.J},
+            #{item.K},
+            #{item.L},
+            <if test="teamType != null and teamType != ''">
+            #{teamType},
+            </if>
+            now(),
+            #{item.isEnd}
+            )
+        </foreach>
+    </insert>
+
+    <insert id="insertCupSubMatchForExcel" parameterType="hashmap" >
+        INSERT INTO ${cupSubMatchTB}(
+        match_order,
+        groups,
+        match_date,
+        place,
+        home,
+        away,
+        home_score,
+        away_score,
+        home_pk,
+        away_pk,
+        match_type,
+        reason,
+        cup_id,
+        <if test="teamType != null and teamType != ''">
+            team_type,
+        </if>
+        reg_date,
+        end_flag
+        )VALUES
+            (
+            #{A},
+            #{B},
+            #{C},
+            #{D},
+            #{E},
+            #{F},
+            #{G},
+            #{H},
+            #{I},
+            #{J},
+            #{K},
+            #{L},
+            #{cupId},
+            <if test="teamType != null and teamType != ''">
+                #{teamType},
+            </if>
+            now(),
+            #{isEnd}
+            )
+    </insert>
+
+    <!-- cup sub match - 대회 예선 경기일정 리그 아이디 정보 수정-->
+    <update id="updateCupSubMatchExcelByCupId" parameterType="hashmap" >
+		<![CDATA[
+        UPDATE ${cupSubMatchTB}
+        SET
+            cup_id = #{cupId}
+        WHERE cup_id = -1
+        ]]>
+	</update>
+
+    <!-- 홈/어웨이 ID	 -->
+    <select id="selectCupSubMatchListByHomeTeam" parameterType="hashmap" resultType="hashmap">
+        SELECT
+            a.cup_sub_match_id,
+            b.team_id, b.nick_name
+
+        FROM ${cupSubMatchTB} a
+                 LEFT JOIN Team b
+                           ON a.home = b.nick_name
+        WHERE a.cup_id = #{cupId} AND b.uage = #{ageGroup} AND b.use_flag = 0
+    </select>
+    <select id="selectCupSubMatchListByAwayTeam" parameterType="hashmap" resultType="hashmap">
+        SELECT
+            a.cup_sub_match_id,
+            b.team_id, b.nick_name
+
+        FROM ${cupSubMatchTB} a
+                 LEFT JOIN Team b
+                           ON a.away = b.nick_name
+        WHERE a.cup_id = #{cupId} AND b.uage = #{ageGroup} AND b.use_flag = 0
+    </select>
+
+    <!-- 대회 예선 경기일정 홈팅 정보 업데이트  -->
+    <update id="updateCupSubMatchExcel_home" parameterType="hashmap" >
+        <foreach item="item" index="index" collection="list" separator=";" >
+            UPDATE ${cupSubMatchTB}
+            SET
+            home_id = #{item.teamId}
+            WHERE home = #{item.nickName}
+        </foreach>
+    </update>
+
+    <update id="updateCupSubMatchExcelHome" parameterType="hashmap" >
+            UPDATE ${cupSubMatchTB}
+            SET
+            home_id = #{team_id}
+            WHERE cup_sub_match_id = #{cup_sub_match_id} AND home = #{nick_name} AND cup_id = #{cupId}
+    </update>
+
+    <!-- 대회 예선 경기일정 어웨이팅 정보 업데이트  -->
+    <update id="updateCupSubMatchExcel_away" parameterType="hashmap" >
+        <foreach item="item" index="index" collection="list" separator=";" >
+            UPDATE ${cupSubMatchTB}
+            SET
+            away_id = #{item.teamId}
+            WHERE away = #{item.nickName}
+        </foreach>
+    </update>
+
+    <update id="updateCupSubMatchExcelAway" parameterType="hashmap" >
+            UPDATE ${cupSubMatchTB}
+            SET
+            away_id = #{team_id}
+            WHERE cup_sub_match_id = #{cup_sub_match_id} AND away = #{nick_name} AND cup_id = #{cupId}
+    </update>
+
+    <!-- Excel Insert 대회 본선 참가팀 정보 - 일괄등록-->
+    <update id="updateCupMainTeam" parameterType="hashmap" >
+            UPDATE ${cupTeamTB}
+            SET
+            main_groups = #{groups},
+            main_teams = #{teams}
+            WHERE cup_team_id =
+            (
+            SELECT *
+            FROM
+            (
+            SELECT cup_team_id
+            FROM ${cupTeamTB}
+            WHERE use_flag = 0
+            AND cup_id = #{cupId}
+            AND nick_name = #{nick_name}
+            ) as t
+            )
+    </update>
+
+    <!-- 대회 본선 경기일정 -->
+    <select id="selectCupMainMatchListCount" parameterType="hashmap" resultType="hashmap">
+        SELECT COUNT(*) AS totalCount
+        FROM ${cupMainMatchTB}
+        WHERE use_flag = 0
+          AND cup_id = #{cupId}
+
+    </select>
+
+    <!-- 홈/어웨이 ID	 -->
+    <select id="selectCupMainMatchListByHomeTeam" parameterType="hashmap" resultType="hashmap">
+        SELECT
+            a.cup_main_match_id,
+            b.team_id, b.nick_name
+
+        FROM ${cupMainMatchTB} a
+                 LEFT JOIN Team b
+                           ON a.home = b.nick_name
+        WHERE a.cup_id = #{cupId} AND b.uage = #{ageGroup}
+    </select>
+    <select id="selectCupMainMatchListByAwayTeam" parameterType="hashmap" resultType="hashmap">
+        SELECT
+            a.cup_main_match_id,
+            b.team_id, b.nick_name
+
+        FROM ${cupMainMatchTB} a
+                 LEFT JOIN Team b
+                           ON a.away = b.nick_name
+        WHERE a.cup_id = #{cupId} AND b.uage = #{ageGroup}
+    </select>
+
+    <!-- Excel Insert 대회 본선 경기일정 정보 - 일괄등록-->
+    <insert id="insertCupMainMatchExcel" parameterType="hashmap" >
+        INSERT INTO ${cupMainMatchTB}(
+        match_order,
+        groups,
+        match_date,
+        place,
+        home,
+        away,
+        home_score,
+        away_score,
+        home_pk,
+        away_pk,
+        match_type,
+        reason,
+        reg_date
+        )VALUES
+        <foreach collection="excelContent" item="item" separator=",">
+            (
+            #{item.A},
+            #{item.B},
+            #{item.C},
+            #{item.D},
+            #{item.E},
+            #{item.F},
+            #{item.G},
+            #{item.H},
+            #{item.I},
+            #{item.J},
+            #{item.K},
+            #{item.L},
+            now()
+            )
+        </foreach>
+    </insert>
+
+    <insert id="insertCupMainMatch" parameterType="hashmap" >
+        INSERT INTO ${cupMainMatchTB}(
+        match_order,
+        groups,
+        match_date,
+        place,
+        home,
+        away,
+        home_score,
+        away_score,
+        home_pk,
+        away_pk,
+        match_type,
+        reason,
+        cup_id,
+        reg_date,
+        end_flag
+        )VALUES
+            (
+            #{A},
+            #{B},
+            #{C},
+            #{D},
+            #{E},
+            #{F},
+            #{G},
+            #{H},
+            #{I},
+            #{J},
+            #{K},
+            #{L},
+            now(),
+            #{end_flag}
+            )
+    </insert>
+
+    <!-- cup main match - 대회 본선 경기일정 리그 아이디 정보 수정-->
+    <update id="updateCupMainMatchExcelByCupId" parameterType="hashmap" >
+		<![CDATA[
+        UPDATE ${cupMainMatchTB}
+        SET
+            cup_id = #{cupId}
+        WHERE cup_id = -1
+        ]]>
+	</update>
+
+    <!-- 대회 본선 경기일정 홈팅 정보 업데이트  -->
+    <update id="updateCupMainMatchExcel_home" parameterType="hashmap" >
+        <foreach item="item" index="index" collection="list" separator=";" >
+            UPDATE ${cupMainMatchTB}
+            SET
+            home_id = #{item.teamId}
+            WHERE home = #{item.nickName}
+        </foreach>
+    </update>
+
+    <update id="updateCupMainMatchExcelHome" parameterType="hashmap" >
+            UPDATE ${cupMainMatchTB}
+            SET
+            home_id = #{team_id}
+            WHERE cup_main_match_id = #{cup_main_match_id} AND home = #{nick_name} AND cup_id = #{cupId}
+    </update>
+
+    <!-- 대회 본선 경기일정 어웨이팅 정보 업데이트  -->
+    <update id="updateCupMainMatchExcel_away" parameterType="hashmap" >
+        <foreach item="item" index="index" collection="list" separator=";" >
+            UPDATE ${cupMainMatchTB}
+            SET
+            away_id = #{item.teamId}
+            WHERE away = #{item.nickName}
+        </foreach>
+    </update>
+
+    <update id="updateCupMainMatchExcelAway" parameterType="hashmap" >
+            UPDATE ${cupMainMatchTB}
+            SET
+            away_id = #{team_id}
+            WHERE cup_main_match_id = #{cup_main_match_id} AND away = #{nick_name} AND cup_id = #{cupId}
+    </update>
+
+    <!-- 대회 토너먼트 경기일정 삭제  -->
+    <delete id="deleteCupTourMatch" parameterType="hashmap" >
+        DELETE FROM ${cupTourMatchTB}
+        WHERE cup_id = #{cupId}
+
+    </delete>
+
+    <!-- Excel Insert 대회 토너먼트 경기일정 정보 - 일괄등록-->
+    <insert id="insertCupTourMatchExcel" parameterType="hashmap" >
+        INSERT INTO ${cupTourMatchTB}(
+        match_order,
+        round,
+        tour_no,
+        next_tour_no,
+        next_tour_port,
+        match_date,
+        place,
+        home,
+        away,
+        home_score,
+        away_score,
+        home_pk,
+        away_pk,
+        match_type,
+        reason,
+        reg_date,
+        fix_flag,
+        end_flag
+        )VALUES
+        <foreach collection="excelContent" item="item" separator=",">
+            (
+            #{item.A},
+            #{item.B},
+            #{item.C},
+            #{item.D},
+            #{item.E},
+            #{item.F},
+            #{item.G},
+            #{item.H},
+            #{item.I},
+            #{item.J},
+            #{item.K},
+            #{item.L},
+            #{item.M},
+            #{item.N},
+            #{item.O},
+            now(),
+            #{item.isFixed},
+            #{item.isEnd}
+            )
+        </foreach>
+    </insert>
+
+    <insert id="insertCupTourMatch" parameterType="hashmap" >
+        INSERT INTO ${cupTourMatchTB}(
+        match_order,
+        round,
+        tour_no,
+        next_tour_no,
+        next_tour_port,
+        match_date,
+        place,
+        home,
+        away,
+        home_score,
+        away_score,
+        home_pk,
+        away_pk,
+        match_type,
+        reason,
+        cup_id,
+        reg_date,
+        fix_flag,
+        end_flag
+        )VALUES
+            (
+            #{A},
+            #{B},
+            #{C},
+            #{D},
+            #{E},
+            #{F},
+            #{G},
+            #{H},
+            #{I},
+            #{J},
+            #{K},
+            #{L},
+            #{M},
+            #{N},
+            #{O},
+            #{cupId},
+            now(),
+            #{isFixed},
+            #{isEnd}
+            )
+    </insert>
+
+    <!-- cup sub match - 대회 토너먼트 경기일정 리그 아이디 정보 수정-->
+    <update id="updateCupTourMatchExcelByCupId" parameterType="hashmap" >
+		<![CDATA[
+        UPDATE ${cupTourMatchTB}
+        SET
+            cup_id = #{cupId}
+        WHERE cup_id = -1
+        ]]>
+	</update>
+
+    <!-- 홈/어웨이 ID	 -->
+    <select id="selectCupTourMatchListByHomeTeam" parameterType="hashmap" resultType="hashmap">
+        SELECT
+            a.cup_tour_match_id,
+            b.team_id, b.nick_name
+
+        FROM ${cupTourMatchTB} a
+                 LEFT JOIN Team b
+                           ON a.home = b.nick_name
+        WHERE a.cup_id = #{cupId} AND b.uage = #{ageGroup}
+    </select>
+    <select id="selectCupTourMatchListByAwayTeam" parameterType="hashmap" resultType="hashmap">
+        SELECT
+            a.cup_tour_match_id,
+            b.team_id, b.nick_name
+
+        FROM ${cupTourMatchTB} a
+                 LEFT JOIN Team b
+                           ON a.away = b.nick_name
+        WHERE a.cup_id = #{cupId} AND b.uage = #{ageGroup}
+    </select>
+
+    <!-- 대회 토너먼트 경기일정 홈팀 정보 업데이트  -->
+    <update id="updateCupTourMatchExcel_home" parameterType="hashmap" >
+        <foreach item="item" index="index" collection="list" separator=";" >
+            UPDATE ${cupTourMatchTB}
+            SET
+            home_id = #{item.teamId}
+            WHERE home = #{item.nickName}
+        </foreach>
+    </update>
+
+    <update id="updateCupTourMatchExcelHome" parameterType="hashmap" >
+            UPDATE ${cupTourMatchTB}
+            SET
+            home_id = #{team_id}
+            WHERE cup_tour_match_id = #{cup_tour_match_id} AND home = #{nick_name} AND cup_id = #{cupId}
+    </update>
+
+    <!-- 대회 토너먼트 경기일정 어웨이팀 정보 업데이트  -->
+    <update id="updateCupTourMatchExcel_away" parameterType="hashmap" >
+        <foreach item="item" index="index" collection="list" separator=";" >
+            UPDATE ${cupTourMatchTB}
+            SET
+            away_id = #{item.teamId}
+            WHERE away = #{item.nickName}
+        </foreach>
+    </update>
+
+    <update id="updateCupTourMatchExcelAway" parameterType="hashmap" >
+            UPDATE ${cupTourMatchTB}
+            SET
+            away_id = #{team_id}
+            WHERE cup_tour_match_id = #{cup_tour_match_id} AND away = #{nick_name} AND cup_id = #{cupId}
+    </update>
+
+    <select id="selectCupMatchListForMedia" parameterType="hashmap" resultType="hashmap">
+		SELECT
+		    SUBSTRING_INDEX(a.match_date,' ',2 ) AS playdate,
+            DATE_FORMAT(SUBSTRING_INDEX(match_date,' ',1 ), '%Y%m%d') AS pdate,
+            SUBSTRING_INDEX(a.match_date,' ',-1 ) AS ptime,
+		    a.match_date, a.place,
+		    a.home_id, a.home,  a.home_score, a.home_pk,
+		    b.emblem AS home_emblem, b.team_type AS home_type,
+            a.away_id, a.away, a.away_score, a.away_pk,
+		    c.emblem AS away_emblem, c.team_type AS away_type,
+		    a.match_type, a.reason, a.cup_id
+            , cup_name , play_sdate , play_edate, b.uage
+		    <choose>
+                <when test="childTB != null and (childTB.contains('Sub_Match'))">
+            , a.cup_sub_match_id AS matchId
+                </when>
+                <when test="childTB != null and (childTB.contains('Tour_Match'))">
+                    , a.cup_tour_match_id AS matchId
+                </when>
+                <when test="childTB != null and (childTB.contains('Main_Match'))">
+                    , a.cup_main_match_id AS matchId
+                </when>
+            </choose>
+		FROM ${childTB} a
+		INNER JOIN Team b ON a.home_id = b.team_id
+		INNER JOIN Team c ON a.away_id  = c.team_id
+		INNER JOIN ${parentTB} d ON a.cup_id = d.cup_id
+		WHERE
+		    a.use_flag = 0
+		    AND a.cup_id = #{parentId}
+            AND ${childKey} IN ${childId}
+    </select>
+
+    <select id="selectSearchCupMatchList" parameterType="hashmap" resultType="hashmap">
+        SELECT
+            cup_id,
+            cup_name,
+            cup_team,
+            DATE_FORMAT(play_sdate, '%Y.%m.%d') AS play_sdate,
+            DATE_FORMAT(play_edate, '%Y.%m.%d') AS play_edate,
+            play_flag,
+            cup_type,
+            rank_type,
+            sub_team_count,
+            main_team_count,
+            tour_type,
+            tour_team
+        FROM
+            ${cupInfoTB}
+        WHERE
+            1=1
+            <if test="sCupName != null and sCupName != ''">
+            AND cup_name LIKE CONCAT('%',#{sCupName},'%')
+            </if>
+            <if test="sYear != null and sYear != ''">
+            AND play_sdate BETWEEN CONCAT(#{sYear}, '-01-01 00:00:00') AND CONCAT(#{sYear}, '-12-31 23:59:59')
+            </if>
+    </select>
+
+    <select id="selectCupMatchForModifyResultRequest" parameterType="hashmap" resultType="hashmap">
+        SELECT
+        SUBSTRING_INDEX(a.match_date,' ',2 ) AS playdate,
+        DATE_FORMAT(SUBSTRING_INDEX(match_date,' ',1 ), '%Y%m%d') AS pdate,
+        SUBSTRING_INDEX(a.match_date,' ',-1 ) AS ptime,
+        a.match_date, a.place,
+        a.home_id, a.home,  a.home_score, a.home_pk,
+        b.emblem AS home_emblem, b.team_type AS home_type,
+        a.away_id, a.away, a.away_score, a.away_pk,
+        c.emblem AS away_emblem, c.team_type AS away_type,
+        a.reason, a.cup_id
+        , cup_name , play_sdate , play_edate, b.uage
+        <choose>
+            <when test="childTB != null and (childTB.contains('Sub_Match'))">
+                , a.cup_sub_match_id AS matchId
+                , a.groups AS groups
+                , 'Sub' AS match_category
+            </when>
+            <when test="childTB != null and (childTB.contains('Tour_Match'))">
+                , a.cup_tour_match_id AS matchId
+                , a.round AS groups
+                , 'Tour' AS match_category
+            </when>
+            <when test="childTB != null and (childTB.contains('Main_Match'))">
+                , a.cup_main_match_id AS matchId
+                , a.groups AS groups
+                , 'Main' AS match_category
+            </when>
+        </choose>
+        , cup_name AS match_name
+        , 'Cup' AS cup_league_category
+        FROM ${childTB} a
+        INNER JOIN Team b ON a.home_id = b.team_id
+        INNER JOIN Team c ON a.away_id  = c.team_id
+        INNER JOIN ${parentTB} d ON a.cup_id = d.cup_id
+        WHERE
+        a.use_flag = 0
+        AND a.cup_id = #{parentId}
+        AND ${childKey} = ${childId}
+    </select>
+
+    <select id="selectGetCupInfoForMedia" parameterType="hashmap" resultType="hashmap">
+        SELECT
+        cup_id,
+        cup_name,
+        cup_name AS match_name,
+        cup_team,
+        cup_type, tour_type, tour_team, rank_type,
+        DATE_FORMAT(play_sdate, '%Y%m%d') AS play_sdate, DATE_FORMAT(play_edate, '%Y%m%d') AS play_edate,
+        DATE_FORMAT(play_sdate, '%Y.%m.%d') AS sdate, DATE_FORMAT(play_edate, '%Y.%m.%d') AS edate,
+        DATE_FORMAT(play_sdate, '%Y-%m-%d') AS sdate1, DATE_FORMAT(play_edate, '%Y-%m-%d') AS edate1,
+        DATE_FORMAT(SUBSTRING_INDEX(play_edate,' ',1 ), '%Y') AS lyears,
+        play_flag, sub_team_count, main_team_count,
+
+        SUBSTRING_INDEX(sub_team_count,'/',1 ) AS group_count,
+        SUBSTRING_INDEX(sub_team_count,'/',-1 ) AS team_count,
+        SUBSTRING_INDEX(main_team_count,'/',1 ) AS m_group_count,
+        SUBSTRING_INDEX(main_team_count,'/',-1 ) AS m_team_count
+        ,LEFT(#{cupInfoTB}, 3) AS uage
+        FROM ${cupInfoTB}
+        WHERE use_flag = 0 AND cup_id = #{cupId}
+
+    </select>
+
+    <update id="updateCupSubMatchEndFlag" parameterType="hashmap">
+        UPDATE
+            ${cupSubMatchTB}
+        SET
+            end_flag = 1
+        WHERE
+            cup_id = #{cupId}
+          AND cup_sub_match_id = #{cupSubMatchId}
+    </update>
+
+    <update id="updateCupMainMatchEndFlag" parameterType="hashmap">
+        UPDATE
+            ${cupMainMatchTB}
+        SET
+            end_flag = 1
+        WHERE
+            cup_id = #{cupId}
+          AND cup_main_match_id = #{cupMainMatchId}
+    </update>
+
+    <select id="selectSearchCupForChampion" parameterType="hashmap" resultType="hashmap">
+        SELECT
+            A.cup_id,
+            A.cup_name,
+            #{ageGroup} AS uage,
+            DATE_FORMAT(play_sdate, '%Y-%m-%d') AS play_sdate,
+            DATE_FORMAT(play_edate, '%Y-%m-%d') AS play_edate,
+            played1 + played2 + played3 AS played,
+            won1 + won2 + won3 AS win,
+            draw1 + draw2 + draw3 AS draw,
+            lost1 + lost2 + lost3 AS lose,
+            gf1 + gf2 + gf3 AS gf,
+            ga1 + ga2 + ga3 AS ga,
+            C.team_id,
+            C.emblem,
+            C.nick_name,
+            DATE_FORMAT(A.play_sdate, '%Y') AS year
+        FROM
+            ${cupInfoTB} A
+            INNER JOIN ${cupResultTB} B ON A.cup_id = B.cup_id
+            INNER JOIN Team C ON B.team_id = C.team_id
+        WHERE
+            A.play_flag = 0
+            AND A.use_flag = 0
+            AND B.result = '우승'
+            <if test="sCupName != null and sCupName != ''">
+            AND A.cup_name LIKE CONCAT('%', #{sCupName}, '%')
+            </if>
+            <if test="sCupYear != null and sCupYear != ''">
+            AND (DATE_FORMAT(A.play_sdate, '%Y-%m-%d') BETWEEN CONCAT(#{sCupYear}, '-01-01') AND CONCAT(#{sCupYear}, '-12-31') AND A.play_edate BETWEEN CONCAT(#{sCupYear}, '-01-01') AND CONCAT(#{sCupYear}, '-12-31'))
+            </if>
+            <if test="ageGroup == 'U11' or ageGroup == 'U12'">
+            AND cup_type != 2
+            </if>
+    </select>
+
+    <select id="selectSearchCupResultForChampion" parameterType="hashmap" resultType="hashmap">
+        SELECT
+            C.cup_id,
+            C.cup_name,
+            #{ageGroup} AS uage,
+            played1 + played2 + played3 AS played,
+            won1 + won2 + won3 AS win,
+            draw1 + draw2 + draw3 AS draw,
+            lost1 + lost2 + lost3 AS lose,
+            gf1 + gf2 + gf3 AS gf,
+            ga1 + ga2 + ga3 AS ga,
+            B.team_id,
+            B.emblem,
+            B.nick_name,
+            DATE_FORMAT(C.play_sdate, '%Y') AS year
+        FROM
+            ${cupResultTB} A
+            INNER JOIN Team B ON A.team_id = B.team_id
+            INNER JOIN ${cupInfoTB} C ON A.cup_id = C.cup_id
+        WHERE
+            A.cup_id = #{cupId}
+            AND C.use_flag = 0
+            AND C.play_flag = 0
+            AND result = '우승'
+    </select>
+
+    <insert id="insertCupResultForChampion" parameterType="hashmap" >
+        INSERT INTO Champion (
+        info_id,
+        year,
+        uage,
+        foreign_id,
+        foreign_type,
+        nick_name,
+        team_id,
+        played,
+        win,
+        draw,
+        lose,
+        gf,
+        ga
+        )VALUES
+        <foreach collection="list" item="item" separator=",">
+            (
+            #{item.infoId},
+            #{item.year},
+            #{item.ageGroup},
+            #{item.foreignId},
+            'cup',
+            #{item.nickName},
+            #{item.teamId},
+            #{item.played},
+            #{item.win},
+            #{item.draw},
+            #{item.lose},
+            #{item.gf},
+            #{item.ga}
+            )
+        </foreach>
+    </insert>
+
+    <update id="updateCupResultForChampion" parameterType="hashmap" >
+        <foreach collection="list" item="item" separator=";">
+            UPDATE
+                Champion
+            SET use_flag = '1'
+            WHERE
+                champion_id = #{item.championId}
+        </foreach>
+    </update>
+
+    <update id="updateMainMatchInfo" parameterType="java.util.HashMap">
+        update ${cupMatchTB}
+        set match_status = #{playData.status}
+          , audience = #{playData.audience}
+          , weather = #{playData.weather}
+          , play_time = #{playData.playTime}
+          , main_referee = #{playData.mainReferee}
+          , sub_referee = #{playData.subReferee}
+          , stand_by_referee = #{playData.standByReferee}
+          , referee_evaluation = #{playData.refereeEvaluation}
+          , game_supervisor = #{playData.gameSupervisor}
+        where cup_main_match_id = #{matchId}
+    </update>
+
+
+    <update id="updateSubMatchInfo" parameterType="java.util.HashMap">
+        update ${cupMatchTB}
+        set match_status = #{playData.status}
+          , audience = #{playData.audience}
+          , weather = #{playData.weather}
+          , play_time = #{playData.playTime}
+          , main_referee = #{playData.mainReferee}
+          , sub_referee = #{playData.subReferee}
+          , stand_by_referee = #{playData.standByReferee}
+          , referee_evaluation = #{playData.refereeEvaluation}
+          , game_supervisor = #{playData.gameSupervisor}
+        where cup_sub_match_id = #{matchId}
+    </update>
+
+
+    <update id="updateTourMatchInfo" parameterType="java.util.HashMap">
+        update ${cupMatchTB}
+        set match_status = #{playData.status}
+          , audience = #{playData.audience}
+          , weather = #{playData.weather}
+          , play_time = #{playData.playTime}
+          , main_referee = #{playData.mainReferee}
+          , sub_referee = #{playData.subReferee}
+          , stand_by_referee = #{playData.standByReferee}
+          , referee_evaluation = #{playData.refereeEvaluation}
+          , game_supervisor = #{playData.gameSupervisor}
+        where cup_tour_match_id = #{matchId}
+    </update>
+
+    <select id="selectMatchPlayData" parameterType="java.util.HashMap" resultType="java.util.HashMap">
+        select
+            play_data_id, player_number, position, player_name, compete, goal, help, warning, gexit, pso, home_away_gbn, sel_can_gbn, match_id, player_id, reg_date
+        from ${cupMatchPlayDataTB}
+        where home_away_gbn = #{homeAwayGbn}
+        and sel_can_gbn = #{selCanGbn}
+        and match_id = #{matchId}
+    </select>
+
+    <select id="selectMatchChangeData" parameterType="java.util.HashMap" resultType="java.util.HashMap">
+        select change_data_id, time, in_player_number, in_player_name, in_player_id, out_player_number, out_player_name, out_player_id, home_away_gbn, match_id, reg_date
+        from ${cupMatchChangeDataTB}
+        where home_away_gbn = #{homeAwayGbn}
+          and match_id = #{matchId}
+    </select>
+	
+	<select id="selectTeamNameForCupMainMatchCnt" parameterType="hashmap" resultType="hashmap">
+        SELECT
+			COUNT(1) AS cupMainMatchCnt
+        FROM ${cupMainMatchTB}
+        WHERE
+        	(
+        	home_id = #{teamId}
+        	OR away_id = #{teamId}
+        	)
+        	AND match_date BETWEEN DATE_FORMAT('${startDate}', '%Y-%m-%d') AND DATE_FORMAT(NOW(), '%Y-%m-%d')
+    </select>
+    
+    <select id="selectTeamNameForCupSubMatchCnt" parameterType="hashmap" resultType="hashmap">
+        SELECT
+			COUNT(1) AS cupSubMatchCnt
+        FROM ${cupSubMatchTB}
+        WHERE
+        	(
+        	home_id = #{teamId}
+        	OR away_id = #{teamId}
+        	)
+        	AND match_date BETWEEN DATE_FORMAT('${startDate}', '%Y-%m-%d') AND DATE_FORMAT(NOW(), '%Y-%m-%d')
+    </select>
+    
+    <select id="selectTeamNameForCupTourMatchCnt" parameterType="hashmap" resultType="hashmap">
+        SELECT
+			COUNT(1) AS cupTourMatchCnt
+        FROM ${cupTourMatchTB}
+        WHERE
+        	(
+        	home_id = #{teamId}
+        	OR away_id = #{teamId}
+        	)
+        	AND match_date BETWEEN DATE_FORMAT('${startDate}', '%Y-%m-%d') AND DATE_FORMAT(NOW(), '%Y-%m-%d')
+    </select>
+    
+    <select id="selectTeamNameForCupTeamInSubMatchCnt" parameterType="hashmap" resultType="hashmap">
+        SELECT
+			COUNT(1) AS cupTeamCnt
+        FROM ${cupTeamTB}
+        WHERE
+        	team_id = #{teamId}
+        	AND cup_id IN (
+        					SELECT 
+        						cup_id 
+        					FROM ${cupSubMatchTB} 
+        					WHERE (home_id = #{teamId} OR away_id = #{teamId}) 
+        					AND match_date BETWEEN DATE_FORMAT('${startDate}', '%Y-%m-%d') AND DATE_FORMAT(NOW(), '%Y-%m-%d')
+        					GROUP BY cup_id
+        				  )
+    </select>
+    
+    <select id="selectTeamNameForCupTeamInMainMatchCnt" parameterType="hashmap" resultType="hashmap">
+        SELECT
+			COUNT(1) AS cupTeamCnt
+        FROM ${cupTeamTB}
+        WHERE
+        	team_id = #{teamId}
+        	AND cup_id IN (
+        					SELECT 
+        						cup_id 
+        					FROM ${cupMainMatchTB} 
+        					WHERE (home_id = #{teamId} OR away_id = #{teamId}) 
+        					AND match_date BETWEEN DATE_FORMAT('${startDate}', '%Y-%m-%d') AND DATE_FORMAT(NOW(), '%Y-%m-%d')
+        					GROUP BY cup_id
+        				  )
+    </select>
+    
+    <update id="updateTeamNameForCupMainMatchHome" parameterType="hashmap" >
+    	UPDATE
+    		${cupMainMatchTB}
+    	SET home = #{newNickName}
+    	WHERE
+    		home_id = #{teamId}
+    		AND match_date BETWEEN DATE_FORMAT('${startDate}', '%Y-%m-%d') AND DATE_FORMAT(NOW(), '%Y-%m-%d')
+    </update>
+    
+    <update id="updateTeamNameForCupMainMatchAway" parameterType="hashmap" >
+    	UPDATE
+    		${cupMainMatchTB}
+    	SET away = #{newNickName}
+    	WHERE
+    		away_id = #{teamId}
+    		AND match_date BETWEEN DATE_FORMAT('${startDate}', '%Y-%m-%d') AND DATE_FORMAT(NOW(), '%Y-%m-%d')
+    </update>
+    
+    <update id="updateTeamNameForCupSubMatchHome" parameterType="hashmap">
+    	UPDATE
+    		${cupSubMatchTB}
+    	SET home = #{newNickName}
+    	WHERE
+    		home_id = #{teamId}
+    		AND match_date BETWEEN DATE_FORMAT('${startDate}', '%Y-%m-%d') AND DATE_FORMAT(NOW(), '%Y-%m-%d')
+    </update>
+    
+    <update id="updateTeamNameForCupSubMatchAway" parameterType="hashmap" >
+    	UPDATE
+    		${cupSubMatchTB}
+    	SET away = #{newNickName}
+    	WHERE
+    		away_id = #{teamId}
+    		AND match_date BETWEEN DATE_FORMAT('${startDate}', '%Y-%m-%d') AND DATE_FORMAT(NOW(), '%Y-%m-%d')
+    </update>
+    
+    <update id="updateTeamNameForCupTourMatchHome" parameterType="hashmap">
+    	UPDATE
+    		${cupTourMatchTB}
+    	SET home = #{newNickName}
+    	WHERE
+    		home_id = #{teamId}
+    		AND match_date BETWEEN DATE_FORMAT('${startDate}', '%Y-%m-%d') AND DATE_FORMAT(NOW(), '%Y-%m-%d')
+    </update>
+    
+    <update id="updateTeamNameForCupTourMatchAway" parameterType="hashmap">
+    	UPDATE
+    		${cupTourMatchTB}
+    	SET away = #{newNickName}
+    	WHERE
+    		away_id = #{teamId}
+    		AND match_date BETWEEN DATE_FORMAT('${startDate}', '%Y-%m-%d') AND DATE_FORMAT(NOW(), '%Y-%m-%d')
+    </update>
+    
+    <update id="updateTeamNameForCupTeamInMainMatch" parameterType="hashmap">
+    	UPDATE 
+    		${cupTeamTB}
+    	SET nick_name = #{newNickName}
+        WHERE
+        	team_id = #{teamId}
+        	AND cup_id IN (
+        					SELECT 
+        						cup_id 
+        					FROM ${cupSubMatchTB} 
+        					WHERE (home_id = #{teamId} OR away_id = #{teamId}) 
+        					AND match_date BETWEEN DATE_FORMAT('${startDate}', '%Y-%m-%d') AND DATE_FORMAT(NOW(), '%Y-%m-%d')
+        					GROUP BY cup_id
+        				  )
+    </update>
+    
+    <update id="updateTeamNameForCupTeamInSubMatch" parameterType="hashmap">
+    	UPDATE 
+    		${cupTeamTB}
+    	SET nick_name = #{newNickName}
+        WHERE
+        	team_id = #{teamId}
+        	AND cup_id IN (
+        					SELECT 
+        						cup_id 
+        					FROM ${cupSubMatchTB} 
+        					WHERE (home_id = #{teamId} OR away_id = #{teamId}) 
+        					AND match_date BETWEEN DATE_FORMAT('${startDate}', '%Y-%m-%d') AND DATE_FORMAT(NOW(), '%Y-%m-%d')
+        					GROUP BY cup_id
+        				  )
+    </update>
+    
+    <update id="updateTeamNameForChampion" parameterType="hashmap">
+    	UPDATE
+    		Champion
+    	SET nick_name = #{newNickName}
+    	WHERE
+    		team_id = #{teamId}
+    		AND year = #{year}
+    </update>
+    
+    <update id="updateCupSubMatchOne" parameterType="hashmap">
+    	UPDATE ${cupSubMatchTB}
+            SET
+            match_date = #{matchDate},
+            place = #{place},
+            home = #{home},
+            away = #{away},
+            home_id = #{homeId},
+            away_id = #{awayId},
+            end_flag = #{endFlag}
+		WHERE cup_sub_match_id = #{cupSubMatchId}
+    </update>
+    
+    <select id="selectCupSubMatchForWin" parameterType="hashmap" resultType="hashmap">
+    	SELECT * 
+    	FROM ${cupSubMatchTB} 
+    	WHERE (home_id IN (#{homeId}, #{awayId}) AND away_id IN (#{homeId}, #{awayId}))
+    	AND cup_id = #{cupId}
+    </select>
+    
+    <select id="selectGetCupInfoForWin" parameterType="hashmap" resultType="hashmap">
+        SELECT
+        cup_id,
+        cup_name,
+        cup_name_origin,
+        cup_team,
+        <if test="ageGroup == 'U12' || ageGroup == 'U11'">
+        cup_team2,
+        </if>
+        cup_type, cup_info, cup_prize, tour_type, tour_team, rank_type,
+        DATE_FORMAT(play_sdate, '%Y%m%d') AS play_sdate, DATE_FORMAT(play_edate, '%Y%m%d') AS play_edate,
+        DATE_FORMAT(play_sdate, '%Y.%m.%d') AS sdate, DATE_FORMAT(play_edate, '%Y.%m.%d') AS edate,
+        DATE_FORMAT(play_sdate, '%Y-%m-%d') AS sdate1, DATE_FORMAT(play_edate, '%Y-%m-%d') AS edate1,
+        DATE_FORMAT(SUBSTRING_INDEX(play_edate,' ',1 ), '%Y') AS lyears,
+        play_flag, sub_team_count, main_team_count,
+
+        SUBSTRING_INDEX(sub_team_count,'/',1 ) AS group_count,
+        SUBSTRING_INDEX(sub_team_count,'/',-1 ) AS team_count,
+        SUBSTRING_INDEX(main_team_count,'/',1 ) AS m_group_count,
+        SUBSTRING_INDEX(main_team_count,'/',-1 ) AS m_team_count
+        ,LEFT(#{cupInfoTB}, 3) AS ageGroup
+        FROM ${cupInfoTB}
+        WHERE use_flag = 0 AND cup_id = #{cupId}
+    </select>
+    
+    <update id="updateCupMainMatchOne" parameterType="hashmap">
+    	UPDATE ${cupMainMatchTB}
+            SET
+            match_date = #{matchDate},
+            place = #{place},
+            home = #{home},
+            away = #{away},
+            home_id = #{homeId},
+            away_id = #{awayId}
+		WHERE cup_main_match_id = #{cupMainMatchId}
+    </update>
+    
+    <select id="selectCupMainMatchForWin" parameterType="hashmap" resultType="hashmap">
+    	SELECT * 
+    	FROM ${cupMainMatchTB} 
+    	WHERE (home_id IN (#{homeId}, #{awayId}) AND away_id IN (#{homeId}, #{awayId}))
+    	AND cup_id = #{cupId}
+    </select>
+    
+    <select id="selectCupSubMatchRankForWin" parameterType="hashmap" resultType="hashmap">
+        SELECT
+            a.team_type, a.emblem, b.cup_id,
+            b.team_id, b.team, b.playTotalCnt, b.playCnt, b.point, b.losePoint, b.win, b.lose, b.draw, b.goalPoint, (b.win*3)+b.draw AS rankPoint
+        FROM
+            Team a
+            INNER JOIN
+                        (
+                            SELECT
+                                a.team_id , a.team,
+                                SUM(a.playCnt) AS playTotalCnt,
+                                SUM(a.matchType) AS playCnt,
+                                SUM(a.point) AS point, SUM(a.losePoint) AS losePoint,
+                                SUM(a.win + a.pk_win) AS win,
+                                SUM(a.lose + a.pk_lose) AS lose,
+                                SUM(a.draw - a.pk_win - a.pk_lose) AS draw,
+                                SUM(a.point) - SUM(a.losePoint) AS goalPoint, a.cup_id
+                            FROM
+                                (
+                                    SELECT
+                                        a.home_id AS team_id, a.home AS team,
+                                        cup_sub_match_id,
+                                        CASE
+                                            WHEN DATE_FORMAT(SUBSTRING_INDEX(a.match_date, ' ', 1), '%Y-%m-%d')  <![CDATA[<=]]>  DATE_FORMAT(CURDATE(), '%Y-%m-%d') THEN COUNT(a.cup_sub_match_id)
+                                            ELSE 0
+                                        END AS playCnt,
+                                        SUM(a.match_type) AS matchType,
+                                        SUM(a.home_score) AS point,
+                                        SUM(a.away_score) AS losePoint,
+                                        a.cup_id, a.match_type,
+                                        SUM(IFNULL(a.home_score <![CDATA[>]]> a.away_score, 1)) AS win,
+                                        SUM(IFNULL(a.home_pk <![CDATA[>]]> a.away_pk, 1)) AS pk_win,
+                                        SUM(IFNULL(a.home_score <![CDATA[<]]> a.away_score, 1)) AS lose,
+                                        SUM(IFNULL(a.home_pk <![CDATA[<]]> a.away_pk, 1)) AS pk_lose,
+                                        CASE
+                                            WHEN DATE(SUBSTRING_INDEX(a.match_date, ' ', 1)) <![CDATA[<=]]> CURDATE() THEN SUM(IFNULL(a.home_score  =  a.away_score, 1))
+                                            ELSE 0
+                                        END AS draw
+                                    FROM
+                                        ${cupSubMatchTB} a INNER JOIN ${cupTeamTB} b ON a.home_id = b.team_id
+                                    WHERE
+                                        a.use_flag = 0
+                                        AND b.use_flag = 0
+                                        AND a.cup_id = #{cupId}
+                                        AND b.cup_id = #{cupId}
+                                        <choose>
+                                            <when test="groups != null and groups != '' ">
+                                        AND a.groups = #{groups}
+                                        AND b.groups = #{groups}
+                                            </when>
+                                            <otherwise>
+                                        AND a.groups = 1
+                                        AND b.groups = 1
+                                            </otherwise>
+                                        </choose>
+                                        <if test="(ageGroup == 'U12' or ageGroup == 'U11') and (teamType != null and teamType != '')">
+                                        AND a.team_type = #{teamType}
+                                        AND b.team_type = #{teamType}
+                                        </if>
+                                        AND (
+                                        	a.home_id IN (
+                                        	<foreach collection="list" item="item" separator=", ">
+                                        	#{item}
+                                        	</foreach>
+                                        	) 
+                                        	AND a.away_id IN (
+                                        	<foreach collection="list" item="item" separator=", ">
+                                        	#{item}
+                                        	</foreach>
+                                        	)
+                                        )
+                                    GROUP BY team, cup_sub_match_id
+                                UNION ALL
+                                    SELECT
+                                        a.away_id AS team_id, a.away AS team,
+                                        cup_sub_match_id,
+                                        CASE
+                                            WHEN DATE_FORMAT(SUBSTRING_INDEX(a.match_date, ' ', 1), '%Y-%m-%d') <![CDATA[<=]]> DATE_FORMAT(CURDATE(), '%Y-%m-%d') THEN COUNT(a.cup_sub_match_id)
+                                            ELSE 0
+                                        END AS playCnt,
+                                        SUM(a.match_type) AS matchType,
+                                        SUM(a.away_score) AS point,
+                                        SUM(a.home_score) AS losePoint,
+                                        a.cup_id, a.match_type,
+                                        SUM(IFNULL(a.away_score <![CDATA[>]]> a.home_score, 1)) AS win,
+                                        SUM(IFNULL(a.away_pk <![CDATA[>]]> a.home_pk, 1)) AS pk_win,
+                                        SUM(IFNULL(a.away_score <![CDATA[<]]> a.home_score, 1)) AS lose,
+                                        SUM(IFNULL(a.away_pk <![CDATA[<]]> a.home_pk, 1)) AS pk_lose,
+                                        CASE
+                                            WHEN DATE(SUBSTRING_INDEX(a.match_date, ' ', 1)) <![CDATA[<=]]> CURDATE() THEN SUM(IFNULL(a.home_score  =  a.away_score, 1))
+                                            ELSE 0
+                                        END AS draw
+                                    FROM
+                                        ${cupSubMatchTB} a INNER JOIN ${cupTeamTB} b ON a.away_id = b.team_id
+                                    WHERE
+                                        a.use_flag = 0
+                                        AND b.use_flag = 0
+                                        AND a.cup_id = #{cupId}
+                                        AND b.cup_id = #{cupId}
+
+                                        <choose>
+                                            <when test="groups != null and groups != '' ">
+                                        AND a.groups = #{groups}
+                                        AND b.groups = #{groups}
+                                            </when>
+                                            <otherwise>
+                                        AND a.groups = 1
+                                        AND b.groups = 1
+                                            </otherwise>
+                                        </choose>
+                                        <if test="(ageGroup == 'U12' or ageGroup == 'U11') and (teamType != null and teamType != '')">
+                                        AND a.team_type = #{teamType}
+                                        AND b.team_type = #{teamType}
+                                        </if>
+                                        AND (
+                                        	a.home_id IN (
+                                        	<foreach collection="list" item="item" separator=", ">
+                                        	#{item}
+                                        	</foreach>
+                                        	) 
+                                        	AND a.away_id IN (
+                                        	<foreach collection="list" item="item" separator=", ">
+                                        	#{item}
+                                        	</foreach>
+                                        	)
+                                        )
+                                    GROUP BY team, cup_sub_match_id
+                                ) a
+                            GROUP BY team
+                        ) b ON a.team_id = b.team_id
+        ORDER BY 
+		rankPoint DESC,
+		goalPoint DESC
+    </select>
+
+    <select id="selectCupMainMatchRankForWin" parameterType="hashmap" resultType="hashmap">
+        SELECT
+            a.team_type, a.emblem, b.cup_id,
+            b.team_id, b.team, b.playTotalCnt, b.playCnt, b.point, b.losePoint, b.win, b.lose, b.draw, b.goalPoint, (b.win*3)+b.draw AS rankPoint
+        FROM
+            Team a
+            INNER JOIN
+                        (
+                            SELECT
+                                a.team_id , a.team,
+                                SUM(a.playCnt) AS playTotalCnt,
+                                SUM(a.matchType) AS playCnt,
+                                SUM(a.point) AS point, SUM(a.losePoint) AS losePoint,
+                                SUM(a.win + a.pk_win) AS win,
+                                SUM(a.lose + a.pk_lose) AS lose,
+                                SUM(a.draw - a.pk_win - a.pk_lose) AS draw,
+                                SUM(a.point) - SUM(a.losePoint) AS goalPoint, a.cup_id
+                            FROM
+                                (
+                                    SELECT
+                                        a.home_id AS team_id, a.home AS team,
+                                        cup_main_match_id,
+                                        CASE
+                                            WHEN DATE_FORMAT(SUBSTRING_INDEX(a.match_date, ' ', 1), '%Y-%m-%d')  <![CDATA[<=]]>  DATE_FORMAT(CURDATE(), '%Y-%m-%d') THEN COUNT(a.cup_main_match_id)
+                                            ELSE 0
+                                        END AS playCnt,
+                                        SUM(a.match_type) AS matchType,
+                                        SUM(a.home_score) AS point,
+                                        SUM(a.away_score) AS losePoint,
+                                        a.cup_id, a.match_type,
+                                        SUM(IFNULL(a.home_score <![CDATA[>]]> a.away_score, 1)) AS win,
+                                        SUM(IFNULL(a.home_pk <![CDATA[>]]> a.away_pk, 1)) AS pk_win,
+                                        SUM(IFNULL(a.home_score <![CDATA[<]]> a.away_score, 1)) AS lose,
+                                        SUM(IFNULL(a.home_pk <![CDATA[<]]> a.away_pk, 1)) AS pk_lose,
+                                        CASE
+                                            WHEN DATE(SUBSTRING_INDEX(a.match_date, ' ', 1)) <![CDATA[<=]]> CURDATE() THEN SUM(IFNULL(a.home_score  =  a.away_score, 1))
+                                            ELSE 0
+                                        END AS draw
+                                    FROM
+                                        ${cupMainMatchTB} a INNER JOIN ${cupTeamTB} b ON a.home_id = b.team_id
+                                    WHERE
+                                        a.use_flag = 0
+                                        AND b.use_flag = 0
+                                        AND a.cup_id = #{cupId}
+                                        AND b.cup_id = #{cupId}
+                                        <choose>
+                                            <when test="groups != null and groups != '' ">
+                                        AND a.groups = #{groups}
+                                        AND b.groups = #{groups}
+                                            </when>
+                                            <otherwise>
+                                        AND a.groups = 1
+                                        AND b.groups = 1
+                                            </otherwise>
+                                        </choose>
+                                        <if test="(ageGroup == 'U12' or ageGroup == 'U11') and (teamType != null and teamType != '')">
+                                        AND a.team_type = #{teamType}
+                                        AND b.team_type = #{teamType}
+                                        </if>
+                                        AND (
+                                        	a.home_id IN (
+                                        	<foreach collection="list" item="item" separator=", ">
+                                        	#{item}
+                                        	</foreach>
+                                        	) 
+                                        	AND a.away_id IN (
+                                        	<foreach collection="list" item="item" separator=", ">
+                                        	#{item}
+                                        	</foreach>
+                                        	)
+                                        )
+                                    GROUP BY team, cup_main_match_id
+                                UNION ALL
+                                    SELECT
+                                        a.away_id AS team_id, a.away AS team,
+                                        cup_main_match_id,
+                                        CASE
+                                            WHEN DATE_FORMAT(SUBSTRING_INDEX(a.match_date, ' ', 1), '%Y-%m-%d') <![CDATA[<=]]> DATE_FORMAT(CURDATE(), '%Y-%m-%d') THEN COUNT(a.cup_main_match_id)
+                                            ELSE 0
+                                        END AS playCnt,
+                                        SUM(a.match_type) AS matchType,
+                                        SUM(a.away_score) AS point,
+                                        SUM(a.home_score) AS losePoint,
+                                        a.cup_id, a.match_type,
+                                        SUM(IFNULL(a.away_score <![CDATA[>]]> a.home_score, 1)) AS win,
+                                        SUM(IFNULL(a.away_pk <![CDATA[>]]> a.home_pk, 1)) AS pk_win,
+                                        SUM(IFNULL(a.away_score <![CDATA[<]]> a.home_score, 1)) AS lose,
+                                        SUM(IFNULL(a.away_pk <![CDATA[<]]> a.home_pk, 1)) AS pk_lose,
+                                        CASE
+                                            WHEN DATE(SUBSTRING_INDEX(a.match_date, ' ', 1)) <![CDATA[<=]]> CURDATE() THEN SUM(IFNULL(a.home_score  =  a.away_score, 1))
+                                            ELSE 0
+                                        END AS draw
+                                    FROM
+                                        ${cupMainMatchTB} a INNER JOIN ${cupTeamTB} b ON a.away_id = b.team_id
+                                    WHERE
+                                        a.use_flag = 0
+                                        AND b.use_flag = 0
+                                        AND a.cup_id = #{cupId}
+                                        AND b.cup_id = #{cupId}
+
+                                        <choose>
+                                            <when test="groups != null and groups != '' ">
+                                        AND a.groups = #{groups}
+                                        AND b.groups = #{groups}
+                                            </when>
+                                            <otherwise>
+                                        AND a.groups = 1
+                                        AND b.groups = 1
+                                            </otherwise>
+                                        </choose>
+                                        <if test="(ageGroup == 'U12' or ageGroup == 'U11') and (teamType != null and teamType != '')">
+                                        AND a.team_type = #{teamType}
+                                        AND b.team_type = #{teamType}
+                                        </if>
+                                        AND (
+                                        	a.home_id IN (
+                                        	<foreach collection="list" item="item" separator=", ">
+                                        	#{item}
+                                        	</foreach>
+                                        	) 
+                                        	AND a.away_id IN (
+                                        	<foreach collection="list" item="item" separator=", ">
+                                        	#{item}
+                                        	</foreach>
+                                        	)
+                                        )
+                                    GROUP BY team, cup_main_match_id
+                                ) a
+                            GROUP BY team
+                        ) b ON a.team_id = b.team_id
+        ORDER BY
+        rankPoint DESC,
+        goalPoint DESC
+    </select>
+
+    <update id="updateMatchScoreShowFlag" parameterType="hashmap">
+        UPDATE
+            ${cupMatchTB}
+        SET
+            score_show_flag = #{scoreShowFlag}
+        WHERE
+            <choose>
+                <when test="matchCategory eq 'sub'">
+            cup_sub_match_id = #{matchId}
+                </when>
+                <when test="matchCategory eq 'main'">
+            cup_main_match_id = #{matchId}
+                </when>
+                <when test="matchCategory eq 'tour'">
+            cup_tour_match_id = #{matchId}
+                </when>
+            </choose>
+    </update>
+
+    <update id="updateLiveShowFlag" parameterType="hashmap">
+        UPDATE
+            ${cupMatchTB}
+        SET
+            live_show_flag = #{liveShowFlag}
+        WHERE
+            <choose>
+                <when test="matchCategory eq 'sub'">
+            cup_sub_match_id = #{matchId}
+                </when>
+                <when test="matchCategory eq 'main'">
+            cup_main_match_id = #{matchId}
+                </when>
+                <when test="matchCategory eq 'tour'">
+            cup_tour_match_id = #{matchId}
+                </when>
+            </choose>
+    </update>
+
+    <select id="selectProgressCupInfo" parameterType="hashmap" resultType="hashmap">
+        SELECT
+            #{ageGroup} AS ageGroup,
+            cup_id,
+            cup_name,
+            cup_team,
+            <if test="ageGroup == 'U12' or ageGroup == 'U11'">
+            cup_team2,
+            </if>
+            DATE_FORMAT(play_sdate, '%Y.%m.%d') AS play_sdate,
+            DATE_FORMAT(play_edate, '%Y.%m.%d') AS play_edate,
+            cup_type,
+            tour_type,
+            tour_team,
+            play_flag,
+            show_flag
+        FROM
+            ${cupInfoTB}
+        WHERE
+            use_flag = 0
+            <if test="sdate != null and sdate != ''">
+                AND #{sdate} BETWEEN play_sdate AND play_edate
+            </if>
+    </select>
+
+    <update id="updateShowFlagProgressCup" parameterType="hashmap">
+        UPDATE
+            ${cupInfoTB}
+        SET
+            show_flag = #{showFlag}
+        WHERE
+            cup_id = #{cupId}
+    </update>
+
+    <select id="selectStaffData" parameterType="java.util.HashMap" resultType="java.util.HashMap">
+        select
+            staff_data_id,
+            `rank`,
+            staff_name
+        from ${staffDataTB}
+        where home_away_gbn = #{homeAwayGbn}
+          and match_id = #{matchId}
+    </select>
+
+    <select id="selectOwnGoalData" parameterType="java.util.HashMap" resultType="java.util.HashMap">
+        select
+            own_goal_data_id,
+            time,
+            player_number,
+            player_name,
+            player_id
+        from ${ownGoalDataTB}
+        where home_away_gbn = #{homeAwayGbn}
+          and match_id = #{matchId}
+    </select>
+
+    <select id="selectStaffPenaltyData" parameterType="java.util.HashMap" resultType="java.util.HashMap">
+        select
+            staff_penalty_data_id,
+            time,
+            `rank`,
+            staff_name,
+            penalty_type
+        from ${staffPenaltyDataTB}
+        where home_away_gbn = #{homeAwayGbn}
+          and match_id = #{matchId}
+    </select>
+
+    <select id="selectSearchMatchOrderForPlayDataCraw" parameterType="java.util.HashMap" resultType="java.util.HashMap">
+        select
+            match_order
+            <choose>
+                <when test="cupType.equals('SUB')">
+                    ,cup_sub_match_id as match_id
+                </when>
+                <when test="cupType.equals('MAIN')">
+                    ,cup_main_match_id as match_id
+                </when>
+                <when test="cupType.equals('TOUR')">
+                    ,cup_tour_match_id as match_id
+                </when>
+            </choose>
+        from
+            ${matchTB}
+        where
+            cup_id = #{cupId}
+            <if test="sDate != null and sTime != null and sMinute != null and sDate != '' and sTime != '' and sMinute != ''">
+            	and concat(SUBSTRING_INDEX(match_date , ' ', 1), ' ', SUBSTRING_INDEX(match_date,' ',-1 )) = concat(#{sDate}, concat(' ', #{sTime}, ':', #{sMinute}))
+            </if>
+    </select>
+    
+	<select id="selectCupTourMatchListCraw" parameterType="java.util.HashMap" resultType="kr.co.nextplayer.base.backend.dto.joinkfaCraw.MatchDataDto">
+        select
+            match_order
+			,cup_tour_match_id as match_id
+			,round
+			,tour_no
+			,next_tour_no
+			,next_tour_port
+			,home
+			,away 
+			,home_id
+			,away_id
+			,home_score as home_bf_score
+			,away_score as away_bf_score
+			,home_pk
+			,away_pk
+			,end_flag
+			,upd_flag
+        from
+            ${matchTB}
+        where
+            cup_id = #{cupId}
+		and use_flag = 0
+		and end_flag = 0
+    </select>
+    
+    <select id="selectCupMainMatchListCraw" parameterType="java.util.HashMap" resultType="kr.co.nextplayer.base.backend.dto.joinkfaCraw.MatchDataDto">
+        select
+            match_order
+			,cup_main_match_id as match_id
+			,home
+			,away 
+			,home_id
+			,away_id
+			,home_score as home_bf_score
+			,away_score as away_bf_score
+			,home_pk
+			,away_pk
+			,end_flag
+			,upd_flag
+        from
+            ${matchTB}
+        where
+            cup_id = #{cupId}
+		and use_flag = 0
+		and end_flag = 0
+    </select>
+    
+    <select id="selectCupSubMatchListCraw" parameterType="java.util.HashMap" resultType="kr.co.nextplayer.base.backend.dto.joinkfaCraw.MatchDataDto">
+        select
+            match_order
+			,cup_sub_match_id as match_id
+			,home
+			,away 
+			,home_id
+			,away_id
+			,home_score as home_bf_score
+			,away_score as away_bf_score
+			,home_pk
+			,away_pk
+			,end_flag
+			,upd_flag
+        from
+            ${matchTB}
+        where
+            cup_id = #{cupId}
+		and use_flag = 0
+		and end_flag = 0
+    </select>
+    
+    <select id="selectCupMainMatchInfo" parameterType="hashmap" resultType="hashmap">
+        SELECT
+            cup_main_match_id
+             ,home
+             ,away
+             ,home_id
+             ,away_id
+        FROM
+            ${cupMainMatchTB}
+        WHERE
+            cup_id = #{cupId}
+          AND cup_main_match_id = #{cupMainMatchId}
+          AND use_flag = 0
+    </select>
+    
+    <select id="selectCupSubMatchInfo" parameterType="hashmap" resultType="hashmap">
+        SELECT
+            cup_sub_match_id
+             ,home
+             ,away
+             ,home_id
+             ,away_id
+        FROM
+            ${cupSubMatchTB}
+        WHERE
+            cup_id = #{cupId}
+          AND cup_sub_match_id = #{cupSubMatchId}
+          AND use_flag = 0
+    </select>
+
+    <select id="selectCrawSettingCupList" parameterType="hashmap" resultType="hashmap">
+        select cup_name,auto_craw_flag, auto_craw_data_flag,a.play_sdate, a.play_edate, a.cup_id
+        from ${cupInfoTB} a
+        where a.play_sdate  <![CDATA[<=]]> #{sdate} and a.play_edate  <![CDATA[>=]]> #{sdate}
+          and a.use_flag = 0
+    </select>
+
+    <update id="updateCrawSetting" parameterType="hashmap">
+        update ${cupInfoTB}
+        <set>
+            <if test="autoCrawFlag != null and autoCrawFlag != ''">
+                , auto_craw_flag = #{autoCrawFlag}
+            </if>
+            <if test="autoCrawDataFlag != null and autoCrawDataFlag != ''">
+                , auto_craw_data_flag = #{autoCrawDataFlag}
+            </if>
+        </set>
+        where cup_id = #{cupId}
+    </update>
+
+
+</mapper>

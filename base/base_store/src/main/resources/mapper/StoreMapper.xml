@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.co.nextplayer.base.store.mapper.StoreMapper">
+
+    <resultMap id="StoreResultMap" type="kr.co.nextplayer.base.store.model.Store">
+        <id column="MEMBER_CD" property="memberCd"/>
+        <result column="CMONEY" property="cMoney"/>
+    </resultMap>
+    <select id="selectMemberCMoney" parameterType="java.lang.String" resultMap="StoreResultMap">
+        SELECT
+            A.MEMBER_CD,
+            B.CMONEY
+        FROM
+            t_user A
+                INNER JOIN t_user_total B ON A.NO = B.USERNO
+        WHERE
+            A.MEMBER_CD = #{memberCd}
+    </select>
+
+</mapper>

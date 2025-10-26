@@ -1,0 +1,39 @@
+server.port: 8112
+spring:
+  redis:
+    host: 127.0.0.1
+    port: 7617
+
+nextplayer:
+  shopDomainPath: store.nextplayer.co.kr
+
+auth:
+  naver:
+    cas:
+      client_id: Qd21Zd0keyOQ9DWVEOAa
+      client_secret: w9gwEaGfqG
+  kakao:
+    cas:
+      client_id: 9efe5000a2446cb7a3d2be4f2a8ad373
+      client_secret: rqKEnctZRmW7yVxBICYp4rfZezsr5VRu
+  apple:
+    cas:
+      client_id: kr.co.nextplayer.mobile
+      client_secret: eyJraWQiOiIyUENYOE0zRzdQIiwiYWxnIjoiRVMyNTYifQ.eyJpc3MiOiJLTDhZVzc5UDRTIiwiaWF0IjoxNjkwMzQ4OTcwLCJleHAiOjE3MDU5MDA5NzAsImF1ZCI6Imh0dHBzOi8vYXBwbGVpZC5hcHBsZS5jb20iLCJzdWIiOiJrci5jby5uZXh0cGxheWVyLm1vYmlsZSJ9.7lD6KkiTYp4AasCDBui_x9l38yKBnsJlmmHEmRbYZ2NJXLSX9q2ZYSqufYANEXpfT2C-qln0e2efLs65iDX5gA
+      redirect_uri: https://mobile.nextplayer.co.kr/auth/callbackApple
+      team_id: KL8YW79P4S
+      key_id: 2PCX8M3G7P
+  google:
+    cas:
+      client_id: abc
+      client_secret: abc
+      application_name: nextplayer
+      redirect_uri: http://localhost:8080/login/account/googleAuthorizing
+  solapi:
+    cas:
+      api_key: NCS0BJBIAPRXAWW4
+      api_secret: PSYU9QONQARDRKYEPOKNK7N3FPRZE3ZG
+      api_url: https://api.solapi.com/messages/v4/send
+      api_admin_tel: 16615046
+logging:
+  config: classpath:config/logback-spring-prod.xml

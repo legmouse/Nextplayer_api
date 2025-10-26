@@ -1,0 +1,84 @@
+server.port: 8112
+
+spring:
+  profiles:
+    active: dev
+    group:
+      local: base-datasource
+      dev: base-datasource
+      prod: base-datasource
+  main:
+    web-application-type: REACTIVE
+  main.allow-bean-definition-overriding: true
+  redis:
+    host: 192.168.1.12
+    port: 6379
+  mvc:
+    pathmatch:
+      matching-strategy: ANT_PATH_MATCHER
+  batch:
+    job:
+      enabled: false
+  messages:
+    basename: i18n/messages, i18n/messages_ko
+    encoding: UTF-8
+  servlet:
+    multipart:
+      enabled: true
+      max-file-size: 10MB
+      max-request-size: 10MB
+      location: /Users/content_nextplayer/
+
+nextplayer:
+  domainPath: http://127.0.0.1:8112
+  shopDomainPath: 127.0.0.1
+  client-id: 546f189b39f0be980b43a5d16c006c09
+  language-cookie-name: alpha_languageinfo #다국어 구분 쿠키
+  jwt:
+    secretKey: renS0Mz6ESEItE6OiI9ALw==KToaP17AikIAWoals8fgJg==
+
+auth:
+  naver:
+    cas:
+      client_id: Qd21Zd0keyOQ9DWVEOAa
+      client_secret: w9gwEaGfqG
+  kakao:
+    cas:
+      client_id: 9efe5000a2446cb7a3d2be4f2a8ad373
+      client_secret: rqKEnctZRmW7yVxBICYp4rfZezsr5VRu
+  apple:
+    cas:
+      client_id: kr.co.nextplayer.mobile
+      client_secret: -----BEGIN PRIVATE KEY-----\nMIGTAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBHkwdwIBAQQgKlK6kleP5e18XsOT\nYM8uH6DtOTtgnn82DvRm0Kd9+zSgCgYIKoZIzj0DAQehRANCAATibJwJrG/3llU9\ndC4VIDNsJ9Cw8SF0PMn/3ndoH8DtAAwF2otgvb43qt3DhysJfwskIibvAVWNUapA\npqLK8ouh\n-----END PRIVATE KEY-----
+      redirect_uri: https://beta.nextplayer.co.kr/auth/callbackApple
+      team_id: KL8YW79P4S
+      key_id: 2PCX8M3G7P
+  google:
+    cas:
+      client_id: abc
+      client_secret: abc
+      application_name: nextplayer
+      redirect_uri: http://localhost:8080/login/account/googleAuthorizing
+  solapi:
+    cas:
+      api_key: NCS0BJBIAPRXAWW4
+      api_secret: PSYU9QONQARDRKYEPOKNK7N3FPRZE3ZG
+      api_url: https://api.solapi.com/messages/v4/send
+      api_admin_tel: 16615046
+
+logging:
+  config: classpath:config/logback-spring.xml
+  file:
+    path: logs/back_login
+
+mybatis:
+  mapper-locations: classpath*:mapper/**/*.xml
+  config-location: classpath:config/mybatis-config.xml
+
+springfox:
+  documentation:
+    swagger-ui:
+      base-url: /back_login/api/docs
+    open-api:
+      v3:
+        path: /back_login/api/docs/v3/api-docs

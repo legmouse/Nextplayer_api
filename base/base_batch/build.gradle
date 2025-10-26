@@ -1,0 +1,17 @@
+dependencies {
+    implementation 'com.linecorp.armeria:armeria-spring-boot2-webflux-starter'
+    implementation 'org.mybatis.spring.boot:mybatis-spring-boot-starter'
+    implementation 'org.springframework.boot:spring-boot-starter-data-redis-reactive'
+    implementation 'io.springfox:springfox-boot-starter'
+    implementation 'org.springframework.boot:spring-boot-starter-webflux'
+    implementation 'org.springframework.boot:spring-boot-starter-quartz:2.7.4'
+    implementation 'org.springframework:spring-web'
+    implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310'
+    implementation 'com.google.firebase:firebase-admin:9.2.0'
+
+    implementation project(":lib:util")
+    implementation project(":lib:common")
+    implementation project(":base:base")
+    implementation project(":base:base_member")
+    implementation project(":base:base_store")
+}

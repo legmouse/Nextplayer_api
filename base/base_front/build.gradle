@@ -1,0 +1,42 @@
+dependencies {
+    implementation 'com.linecorp.armeria:armeria-spring-boot2-webflux-starter'
+    implementation 'org.springframework.boot:spring-boot-starter-webflux'
+    implementation 'org.mybatis.spring.boot:mybatis-spring-boot-starter'
+    implementation 'org.springframework.boot:spring-boot-starter-data-redis-reactive'
+    implementation 'io.springfox:springfox-boot-starter'
+
+    implementation 'org.springframework:spring-web'
+    implementation 'org.springframework.security:spring-security-crypto'
+
+    implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310'
+
+    implementation 'org.mapstruct:mapstruct:1.4.2.Final'
+    annotationProcessor 'org.mapstruct:mapstruct-processor:1.4.2.Final'
+
+    implementation group: 'com.googlecode.json-simple', name: 'json-simple', version: '1.1.1'
+    // https://mvnrepository.com/artifact/com.fasterxml.jackson.core/jackson-databind
+    implementation group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: '2.14.2'
+
+    // https://mvnrepository.com/artifact/joda-time/joda-time
+    implementation group: 'joda-time', name: 'joda-time', version: '2.3'
+
+    // https://mvnrepository.com/artifact/org.apache.commons/commons-configuration2
+    implementation group: 'org.apache.commons', name: 'commons-configuration2', version: '2.8.0'
+
+    implementation project(":lib:util")
+    implementation project(":base:base")
+    implementation project(":base:base_board")
+    implementation project(":base:base_cup")
+    implementation project(":base:base_league")
+    implementation project(":base:base_team")
+    implementation project(":base:base_member")
+    implementation project(":base:base_media")
+    implementation project(":base:base_file")
+    implementation project(":base:base_player")
+    implementation project(":base:base_community")
+    implementation project(":base:base_reply")
+    implementation project(":base:base_likes")
+    implementation project(":base:base_store")
+    implementation project(":proto:proto_login")
+    implementation project(":lib:common")
+}

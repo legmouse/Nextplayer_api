@@ -1,0 +1,2412 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.co.nextplayer.base.cup.mapper.CupMapper">
+
+    <!-- 메인 배너 - 연령별 대회 일정  -->
+    <select id="selectBannerCupList" parameterType="kr.co.nextplayer.base.cup.model.Cup" resultType="hashmap">
+        SELECT
+            cup_id,
+            cup_name,
+            TRIM(LEADING ' ' FROM SUBSTRING_INDEX(SUBSTRING_INDEX(cup_name, '[', -2), ']', -2)) AS  cup_name2,
+            TRIM(LEADING '[' FROM SUBSTRING_INDEX(cup_name, ']', 1)) AS place,
+            play_flag,
+            DATE_FORMAT(play_sdate, '%Y.%m.%d') AS play_sdate,
+            DATE_FORMAT(play_edate, '%Y.%m.%d') AS play_edate,
+            CONCAT (DATE_FORMAT(play_sdate, '%m.%d') ,
+                    CASE
+                        WHEN
+                            DATE_FORMAT(play_sdate, '%w') = 0 THEN ' (일) '
+                        WHEN
+                            DATE_FORMAT(play_sdate, '%w') = 1 THEN ' (월) '
+                        WHEN
+                            DATE_FORMAT(play_sdate, '%w') = 2 THEN ' (화) '
+                        WHEN
+                            DATE_FORMAT(play_sdate, '%w') = 3 THEN ' (수) '
+                        WHEN
+                            DATE_FORMAT(play_sdate, '%w') = 4 THEN ' (목) '
+                        WHEN
+                            DATE_FORMAT(play_sdate, '%w') = 5 THEN ' (금) '
+                        WHEN
+                            DATE_FORMAT(play_sdate, '%w') = 6 THEN ' (토) '
+                        END
+                ) AS parsSDate,
+            CONCAT (DATE_FORMAT(play_edate, '%m.%d') ,
+                    CASE
+                        WHEN
+                            DATE_FORMAT(play_edate, '%w') = 0 THEN ' (일) '
+                        WHEN
+                            DATE_FORMAT(play_edate, '%w') = 1 THEN ' (월) '
+                        WHEN
+                            DATE_FORMAT(play_edate, '%w') = 2 THEN ' (화) '
+                        WHEN
+                            DATE_FORMAT(play_edate, '%w') = 3 THEN ' (수) '
+                        WHEN
+                            DATE_FORMAT(play_edate, '%w') = 4 THEN ' (목) '
+                        WHEN
+                            DATE_FORMAT(play_edate, '%w') = 5 THEN ' (금) '
+                        WHEN
+                            DATE_FORMAT(play_edate, '%w') = 6 THEN ' (토) '
+                        END
+                ) AS parsEDate,
+            CASE
+                WHEN now() BETWEEN play_sdate AND play_edate THEN 'ac'
+                END AS progress,
+            #{ageGroup} AS uage
+        FROM
+            ${cupInfoTB}
+        WHERE
+            use_flag = 0
+          AND show_flag = 0
+          AND play_flag = 0
+          AND (DATE_FORMAT(NOW(), '%Y.%m.%d') BETWEEN play_sdate AND play_edate OR DATE_FORMAT(NOW(), '%Y.%m.%d') <![CDATA[<]]>  play_sdate)
+        ORDER BY play_sdate ASC
+            LIMIT 8
+    </select>
+
+    <!-- 메인 - 연령별 대회 경기결과  -->
+    <select id="selectCupInfoList" parameterType="kr.co.nextplayer.base.cup.model.Cup" resultType="hashmap">
+        <!--SELECT
+            cup_id, cup_name, play_sdate , play_edate, #{ageGroup} AS ageGroup
+        FROM ${cupInfoTB}
+        WHERE
+
+        <choose>
+            <when test="matchDate != null and matchDate != '' ">
+                #{matchDate} BETWEEN play_sdate AND play_edate
+            </when>
+            <otherwise>
+                CURDATE() BETWEEN play_sdate AND play_edate
+            </otherwise>
+        </choose>
+            AND use_flag = 0
+            AND play_flag = 0
+        ORDER BY RAND()
+        LIMIT 8-->
+        SELECT
+        A.cup_id, A.cup_name, A.play_sdate , A.play_edate, #{ageGroup} AS ageGroup
+        FROM
+        ${cupInfoTB} A
+        INNER JOIN (
+        SELECT
+        A.cup_id
+        FROM
+        (
+        SELECT
+        a.cup_id
+        FROM
+        ${cupSubMatchTB} a
+        INNER JOIN ${cupInfoTB} i ON a.cup_id = i.cup_id AND i.use_flag = 0 AND i.play_flag = 0
+        INNER JOIN Team b ON a.home_id = b.team_id
+        INNER JOIN Team c ON a.away_id  = c.team_id
+        WHERE
+        a.use_flag = 0
+        <choose>
+            <when test="sDate != null and sDate != ''">
+                AND DATE(DATE_FORMAT(SUBSTRING_INDEX(match_date,' ',1 ), '%Y-%m-%d')) = #{sDate}
+            </when>
+            <otherwise>
+                AND DATE(DATE_FORMAT(SUBSTRING_INDEX(match_date,' ',1 ), '%Y-%m-%d')) = CURDATE()
+            </otherwise>
+        </choose>
+        UNION ALL
+        SELECT
+        a.cup_id
+        FROM
+        ${cupMainMatchTB} a
+        INNER JOIN ${cupInfoTB} i ON a.cup_id = i.cup_id AND i.use_flag = 0 AND i.play_flag = 0
+        INNER JOIN Team b ON a.home_id = b.team_id
+        INNER JOIN Team c ON a.away_id  = c.team_id
+        WHERE
+        a.use_flag = 0
+        <choose>
+            <when test="sDate != null and sDate != ''">
+                AND DATE(DATE_FORMAT(SUBSTRING_INDEX(match_date,' ',1 ), '%Y-%m-%d')) = #{sDate}
+            </when>
+            <otherwise>
+                AND DATE(DATE_FORMAT(SUBSTRING_INDEX(match_date,' ',1 ), '%Y-%m-%d')) = CURDATE()
+            </otherwise>
+        </choose>
+        UNION ALL
+        SELECT
+        a.cup_id
+        FROM
+        ${cupTourMatchTB} a
+        INNER JOIN ${cupInfoTB} i ON a.cup_id = i.cup_id AND i.use_flag = 0 AND i.play_flag = 0
+        INNER JOIN Team b ON a.home_id = b.team_id
+        INNER JOIN Team c ON a.away_id  = c.team_id
+        WHERE
+        a.use_flag = 0
+        <choose>
+            <when test="sDate != null and sDate != ''">
+                AND DATE(DATE_FORMAT(SUBSTRING_INDEX(match_date,' ',1 ), '%Y-%m-%d')) = #{sDate}
+            </when>
+            <otherwise>
+                AND DATE(DATE_FORMAT(SUBSTRING_INDEX(match_date,' ',1 ), '%Y-%m-%d')) = CURDATE()
+            </otherwise>
+        </choose>
+        ) A
+        GROUP BY
+        A.cup_id
+        ) B ON A.cup_id = B.cup_id
+        WHERE
+
+        <choose>
+            <when test="matchDate != null and matchDate != '' ">
+                #{matchDate} BETWEEN A.play_sdate AND A.play_edate
+            </when>
+            <when test="sDate != null and sDate != '' ">
+                #{sDate} BETWEEN A.play_sdate AND A.play_edate
+            </when>
+            <otherwise>
+                CURDATE() BETWEEN A.play_sdate AND A.play_edate
+            </otherwise>
+        </choose>
+        AND A.use_flag = 0
+        AND A.play_flag = 0
+        ORDER BY RAND()
+        LIMIT 8
+    </select>
+
+    <!-- 메인 - 연령별 대회 경기결과  -->
+    <select id="selectCupMatchList" parameterType="kr.co.nextplayer.base.cup.model.CupMatch" resultMap="mainPageMatchResultMap">
+        SELECT
+            A.*
+        FROM (
+                SELECT
+                    a.cup_sub_match_id,
+                    a.cup_sub_match_id AS match_id,
+                    a.groups, '' AS round,
+                    SUBSTRING_INDEX(a.match_date,' ',2 ) AS playdate,
+                    DATE_FORMAT(SUBSTRING_INDEX(a.match_date,' ',1 ), '%Y%m%d') AS pdate,
+                    SUBSTRING_INDEX(a.match_date,' ',-1 ) AS ptime,
+                    a.match_date, a.place,
+
+                    TIMESTAMPDIFF(minute, CONCAT(DATE_FORMAT(SUBSTRING_INDEX(a.match_date,' ',1 ), '%Y-%m-%d'), " ", right(a.match_date,5) + ':00'), now()) AS time_diff,
+                    a.video_live,
+
+                    a.home_id, a.home,  a.home_score, a.home_pk,
+                    b.emblem AS home_emblem, b.team_type AS home_type,
+                    a.away_id, a.away, a.away_score, a.away_pk,
+                    c.emblem AS away_emblem, c.team_type AS away_type,
+                    a.reason, a.cup_id
+                    ,SUBSTRING(a.match_date, 6) AS parse_date
+                    , 'Sub' AS match_category
+                    , i.cup_type
+                    <if test="ageGroup == 'U12' or ageGroup == 'U11'">
+                    , a.team_type
+                    </if>
+                    , a.end_flag
+                    , a.score_show_flag
+                FROM
+                    ${cupSubMatchTB} a
+                    INNER JOIN ${cupInfoTB} i ON a.cup_id = i.cup_id AND i.use_flag = 0 AND i.play_flag = 0
+                    INNER JOIN Team b ON a.home_id = b.team_id
+                    INNER JOIN Team c ON a.away_id  = c.team_id
+                WHERE
+                    a.use_flag = 0
+                    <choose>
+                        <when test="matchDate != null and matchDate != '' ">
+                            AND DATE(DATE_FORMAT(SUBSTRING_INDEX(a.match_date,' ',1 ), '%Y-%m-%d')) = #{matchDate}
+                        </when>
+                        <otherwise>
+                            AND DATE(DATE_FORMAT(SUBSTRING_INDEX(a.match_date,' ',1 ), '%Y-%m-%d')) = CURDATE()
+                        </otherwise>
+                    </choose>
+
+                UNION ALL
+
+                SELECT
+                    a.cup_main_match_id,
+                    a.cup_main_match_id AS match_id,
+                    a.groups, '' AS round,
+                    SUBSTRING_INDEX(a.match_date,' ',2 ) AS playdate,
+                    DATE_FORMAT(SUBSTRING_INDEX(a.match_date,' ',1 ), '%Y%m%d') AS pdate,
+                    SUBSTRING_INDEX(a.match_date,' ',-1 ) AS ptime,
+                    a.match_date, a.place,
+                    TIMESTAMPDIFF(minute, CONCAT(DATE_FORMAT(SUBSTRING_INDEX(a.match_date,' ',1 ), '%Y-%m-%d'), " ", right(a.match_date,5) + ':00'), now()) AS time_diff,
+                    a.video_live,
+                    a.home_id, a.home,  a.home_score, a.home_pk,
+                    b.emblem AS home_emblem, b.team_type AS home_type,
+                    a.away_id, a.away, a.away_score, a.away_pk,
+                    c.emblem AS away_emblem, c.team_type AS away_type,
+                    a.reason, a.cup_id
+                    ,SUBSTRING(a.match_date, 6) AS parse_date
+                    ,'Main' AS match_category
+                    , i.cup_type
+                    <if test="ageGroup == 'U12' or ageGroup == 'U11'">
+                    , '' AS team_type
+                    </if>
+                    ,'' AS end_flag
+                    , a.score_show_flag
+                FROM
+                    ${cupMainMatchTB} a
+                    INNER JOIN ${cupInfoTB} i ON a.cup_id = i.cup_id AND i.use_flag = 0 AND i.play_flag = 0
+                    INNER JOIN Team b ON a.home_id = b.team_id
+                    INNER JOIN Team c ON a.away_id  = c.team_id
+                WHERE
+                    a.use_flag = 0
+                    <choose>
+                        <when test="matchDate != null and matchDate != '' ">
+                            AND DATE(DATE_FORMAT(SUBSTRING_INDEX(a.match_date,' ',1 ), '%Y-%m-%d')) = #{matchDate}
+                        </when>
+                        <otherwise>
+                            AND DATE(DATE_FORMAT(SUBSTRING_INDEX(a.match_date,' ',1 ), '%Y-%m-%d')) = CURDATE()
+                        </otherwise>
+                    </choose>
+
+                UNION ALL
+
+                SELECT
+                    a.cup_tour_match_id,
+                    a.cup_tour_match_id AS match_id,
+                    '' AS groups, a.round,
+                    SUBSTRING_INDEX(a.match_date,' ',2 ) AS playdate,
+                    DATE_FORMAT(SUBSTRING_INDEX(a.match_date,' ',1 ), '%Y%m%d') AS pdate,
+                    SUBSTRING_INDEX(a.match_date,' ',-1 ) AS ptime,
+                    a.match_date, a.place,
+                    TIMESTAMPDIFF(minute, CONCAT(DATE_FORMAT(SUBSTRING_INDEX(a.match_date,' ',1 ), '%Y-%m-%d'), " ", right(a.match_date,5) + ':00'), now()) AS time_diff,
+                    a.video_live,
+                    a.home_id, a.home,  a.home_score, a.home_pk,
+                    b.emblem AS home_emblem, b.team_type AS home_type,
+                    a.away_id, a.away, a.away_score, a.away_pk,
+                    c.emblem AS away_emblem, c.team_type AS away_type,
+                    a.reason, a.cup_id
+                    ,SUBSTRING(a.match_date, 6) AS parse_date
+                    ,'Tour' AS match_category
+                    , i.cup_type
+                    <if test="ageGroup == 'U12' or ageGroup == 'U11'">
+                    , '' AS team_type
+                    </if>
+                    , a.end_flag
+                    , a.score_show_flag
+                FROM
+                    ${cupTourMatchTB} a
+                    INNER JOIN ${cupInfoTB} i ON a.cup_id = i.cup_id AND i.use_flag = 0 AND i.play_flag = 0
+                    INNER JOIN Team b ON a.home_id = b.team_id
+                    INNER JOIN Team c ON a.away_id  = c.team_id
+                WHERE
+                a.use_flag = 0
+                <choose>
+                    <when test="matchDate != null and matchDate != '' ">
+                        AND DATE(DATE_FORMAT(SUBSTRING_INDEX(a.match_date,' ',1 ), '%Y-%m-%d')) = #{matchDate}
+                    </when>
+                    <otherwise>
+                        AND DATE(DATE_FORMAT(SUBSTRING_INDEX(a.match_date,' ',1 ), '%Y-%m-%d')) = CURDATE()
+                    </otherwise>
+                </choose>
+        ) A
+        ORDER BY
+            A.match_date ASC
+    </select>
+
+    <!-- 전연령 대회 리스트 -->
+    <select id="selectCupList" parameterType="kr.co.nextplayer.base.cup.model.Cup" resultType="hashmap">
+        SELECT
+        cup_id, cup_name, cup_team, play_flag, #{ageGroup} AS uage,
+        CASE
+        WHEN now() > play_edate THEN '종료'
+        WHEN now() BETWEEN play_sdate AND play_edate THEN '진행중'
+        WHEN now() <![CDATA[<]]> play_sdate THEN '예정'
+        END AS progress
+        FROM ${cupInfoTB}
+        WHERE
+        use_flag = 0
+        AND play_flag = 0
+        <choose>
+            <when test="sYear != null and sYear != '' ">
+                AND play_sdate <![CDATA[>=]]> CONCAT(#{sYear},"-01-01 00:00:00")
+                AND play_sdate <![CDATA[<=]]> CONCAT(#{sYear},"-12-31 23:59:59")
+                AND play_edate <![CDATA[>=]]> CONCAT(#{sYear},"-01-01 00:00:00")
+                AND play_edate <![CDATA[<=]]> CONCAT(#{sYear},"-12-31 23:59:59")
+            </when>
+            <otherwise>
+                AND play_sdate <![CDATA[>=]]> CONCAT(YEAR(CURDATE()),"-01-01 00:00:00")
+                AND play_sdate <![CDATA[<=]]> CONCAT(YEAR(CURDATE()),"-12-31 23:59:59")
+                AND play_edate <![CDATA[>=]]> CONCAT(YEAR(CURDATE()),"-01-01 00:00:00")
+                AND play_edate <![CDATA[<=]]> CONCAT(YEAR(CURDATE()),"-12-31 23:59:59")
+            </otherwise>
+        </choose>
+        <if test="regionType != null and regionType != ''">
+            AND region_type = #{regionType}
+        </if>
+
+        ORDER BY play_sdate DESC , cup_name DESC
+    </select>
+
+    <resultMap id="cupInfoResultMap" type="kr.co.nextplayer.base.cup.model.CupInfo">
+        <id column="cup_id" property="cupId"/>
+        <result column="cup_name" property="cupName"/>
+        <result column="cup_team" property="cupTeam"/>
+        <result column="cup_type" property="cupType"/>
+        <result column="cup_info" property="cupInfo"/>
+        <result column="cup_prize" property="cupPrize"/>
+        <result column="tour_type" property="tourType"/>
+        <result column="tour_team" property="tourTeam"/>
+        <result column="play_sdate" property="playSdate"/>
+        <result column="play_edate" property="playEdate"/>
+        <result column="sdate" property="sdate"/>
+        <result column="edate" property="edate"/>
+        <result column="sdate1" property="sdate1"/>
+        <result column="edate1" property="edate1"/>
+        <result column="sdate2" property="sdate2"/>
+        <result column="edate2" property="edate2"/>
+        <result column="lyears" property="lyears"/>
+        <result column="play_flag" property="playFlag"/>
+        <result column="sub_team_count" property="subTeamCount"/>
+        <result column="main_team_count" property="mainTeamCount"/>
+        <result column="group_count" property="groupCount"/>
+        <result column="team_count" property="teamCount"/>
+        <result column="m_group_count" property="mGroupCount"/>
+        <result column="m_team_count" property="mTeamCount"/>
+        <association property="files" javaType="kr.co.nextplayer.base.file.model.PublicFileModel">
+            <result column="public_file_id" property="publicFileId"/>
+            <result column="file_save_name" property="fileSaveName"/>
+            <result column="file_name" property="fileName"/>
+            <result column="file_save_path" property="fileSavePath"/>
+            <result column="file_ext" property="fileExt"/>
+            <result column="file_size" property="fileSize"/>
+        </association>
+        <association property="allTimeChampions" javaType="java.util.HashMap">
+            <result column="team_id" property="teamId"/>
+            <result column="emblem" property="emblem"/>
+            <result column="bf_year" property="year"/>
+            <result column="bf_nick_name" property="nickName"/>
+            <result column="bf_cup_id" property="bf_cup_id"/>
+            <result column="bf_cup_name" property="cupName"/>
+            <result column="bf_played" property="played"/>
+            <result column="bf_win" property="win"/>
+            <result column="bf_lose" property="lose"/>
+            <result column="bf_draw" property="draw"/>
+            <result column="bf_gf" property="gf"/>
+            <result column="bf_ga" property="ga"/>
+        </association>
+    </resultMap>
+
+    <!-- 대회정보 -->
+    <select id="selectCupInfo" parameterType="kr.co.nextplayer.base.cup.model.Cup" resultMap="cupInfoResultMap">
+        SELECT
+            A.cup_id,
+            A.cup_name,
+            A.cup_team,
+            A.cup_type,
+            A.cup_info,
+            A.cup_prize,
+            A.tour_type,
+            A.tour_team,
+            DATE_FORMAT(play_sdate, '%Y%m%d') AS play_sdate,
+            DATE_FORMAT(play_edate, '%Y%m%d') AS play_edate,
+            DATE_FORMAT(play_sdate, '%Y.%m.%d') AS sdate,
+            DATE_FORMAT(play_edate, '%Y.%m.%d') AS edate,
+            DATE_FORMAT(play_sdate, '%Y-%m-%d') AS sdate1,
+            DATE_FORMAT(play_edate, '%Y-%m-%d') AS edate1,
+            DATE_FORMAT(play_sdate, '%m.%d') AS sdate2,
+            DATE_FORMAT(play_edate, '%m.%d') AS edate2,
+            DATE_FORMAT(SUBSTRING_INDEX(play_edate,' ',1 ), '%Y') AS lyears,
+            play_flag,
+            sub_team_count,
+            main_team_count,
+            SUBSTRING_INDEX(sub_team_count,'/',1 ) AS group_count,
+            SUBSTRING_INDEX(sub_team_count,'/',-1 ) AS team_count,
+            SUBSTRING_INDEX(main_team_count,'/',1 ) AS m_group_count,
+            SUBSTRING_INDEX(main_team_count,'/',-1 ) AS m_team_count
+                ,B.public_file_id
+                ,B.file_save_name
+                ,B.file_name
+                ,B.file_save_path
+                ,B.file_ext
+                ,B.file_size
+                ,C.team_id
+                ,C.emblem
+                ,C.year AS bf_year
+                ,C.cup_id AS bf_cup_id
+                ,C.cup_name AS bf_cup_name
+                ,C.nick_name AS bf_nick_name
+                ,C.team_name AS bf_team_name
+                ,C.played AS bf_played
+                ,C.win AS bf_win
+                ,C.lose AS bf_lose
+                ,C.draw AS bf_draw
+                ,C.gf AS bf_gf
+                ,C.ga AS bf_ga
+        FROM
+            ${cupInfoTB} A
+                LEFT JOIN (
+                SELECT
+                    b.foreign_id,
+                    c.public_file_id,
+                    c.file_save_name,
+                    c.file_name,
+                    c.file_save_path,
+                    c.file_ext,
+                    c.file_size
+                FROM
+                    Reference a
+                        INNER JOIN Reference_Cross b ON a.reference_id = b.reference_id
+                        LEFT OUTER JOIN Public_File c ON a.reference_id = c.foreign_id
+                WHERE
+                    b.foreign_id = #{cupId}
+                  AND b.foreign_type = #{cupInfoTB}
+                  AND a.use_flag = 0
+                  AND a.delete_flag = 0
+                  AND c.use_flag = 0
+                  AND c.foreign_type = 'Reference'
+            ) B ON A.cup_id = B.foreign_id
+                LEFT JOIN (
+                SELECT
+                    A.info_id,
+                    A.year,
+                    B.cup_id,
+                    B.cup_name,
+                    C.team_id,
+                    A.nick_name,
+                    C.team_name,
+                    C.emblem,
+                    IFNULL(A.played, '0') AS played,
+                    IFNULL(A.win, '0') AS win,
+                    IFNULL(A.lose, '0') AS lose,
+                    IFNULL(A.draw, '0') AS draw,
+                    IFNULL(A.gf, '0') AS gf,
+                    IFNULL(A.ga, '0') AS ga
+                FROM
+                    Champion A
+                    INNER JOIN ${cupInfoTB} B ON A.foreign_id = B.cup_id
+                    INNER JOIN Team C ON A.team_id = C.team_id
+                WHERE
+                    A.info_id = #{cupId}
+                    AND A.use_flag = 0
+                    AND A.foreign_type = 'cup'
+            ) C ON A.cup_id = C.info_id
+        WHERE use_flag = 0 AND A.cup_id = #{cupId}
+        ORDER BY C.year DESC
+    </select>
+
+    <!-- 대회 예선 팀내역 (순위표) -->
+    <select id="selectCupSubTeam" parameterType="hashmap" resultType="hashmap">
+        SELECT
+        a.team_type, a.emblem, b.*
+        FROM
+        (
+        SELECT
+        team_id, emblem,
+        CASE
+        WHEN team_type = 0 THEN '학원'
+        WHEN team_type = 1 THEN '클럽'
+        WHEN team_type = 2 THEN '유스'
+        END AS team_type
+        FROM Team
+        ) a
+        INNER JOIN
+        (
+        SELECT
+        team_id, nick_name AS team, teams
+        FROM ${cupTeamTB}
+        WHERE
+        use_flag = 0
+        AND cup_id = #{cupId}
+        <choose>
+            <when test="groups != null and groups != '' ">
+                AND groups = #{groups}
+            </when>
+            <otherwise>
+                AND groups = 1
+            </otherwise>
+        </choose>
+        <if test="(ageGroup == 'U12' or ageGroup == 'U11') and (teamType != '' and teamType != null)">
+            AND team_type = #{teamType}
+        </if>
+        ) b ON a.team_id = b.team_id
+        ORDER BY b.teams ASC
+    </select>
+
+    <!-- 대회 예선 최종순위 -->
+    <select id="selectCupSubMatchRankByFinal" parameterType="hashmap" resultType="hashmap">
+        SELECT
+        a.team_type,
+        a.emblem,
+        SUBSTRING_INDEX(b.sub_rank , '/', -1) AS confirmRank,
+        b.*
+        FROM
+        (
+        SELECT
+        team_id, emblem,
+        CASE
+        WHEN team_type = 0 THEN '학원'
+        WHEN team_type = 1 THEN '클럽'
+        WHEN team_type = 2 THEN '유스'
+        END AS team_type
+        FROM Team
+        ) a
+        INNER JOIN
+        (
+        SELECT
+        a.team,
+        b.*
+        FROM
+        (
+        SELECT
+        team_id,
+        nick_name AS team
+        FROM
+        ${cupTeamTB}
+        WHERE
+        use_flag = 0
+        AND cup_id = #{cupId}
+        <choose>
+            <when test="groups != null and groups != '' ">
+                AND groups = #{groups}
+            </when>
+            <otherwise>
+                AND groups = 1
+            </otherwise>
+        </choose>
+        <if test="teamType != null and teamType != ''">
+            AND team_type = #{teamType}
+        </if>
+        ) a
+        LEFT JOIN
+        (
+        SELECT
+        cup_result_id,
+        team_id,
+        `result`,
+        sub_rank,
+        main_rank,
+        played1 AS playTotalCnt,
+        points1 AS rankPoint,
+        won1 AS win, draw1 AS draw, lost1 AS lose,
+        gf1 AS point, ga1 AS losePoint, gd1 as goalPoint,
+        mod_date1
+        FROM
+        ${cupResultTB}
+        WHERE
+        use_flag = 0
+        AND cup_id = #{cupId}
+        <choose>
+            <when test="groups != null and groups != '' ">
+                AND groups1 = #{groups}
+            </when>
+            <otherwise>
+                AND groups1 = 1
+            </otherwise>
+        </choose>
+        <if test="teamType != null and teamType != ''">
+            AND team_type = #{teamType}
+        </if>
+        ) b ON a.team_id = b.team_id
+        ) b ON a.team_id = b.team_id
+        /*WHERE b.playTotalCnt <![CDATA[>]]> 0*/
+
+        ORDER BY confirmRank ASC
+    </select>
+
+    <!-- 대회 예선 경기일정 캘린더 -->
+    <select id="selectCupSubMatchCalendar" parameterType="hashmap" resultType="hashmap">
+        SELECT
+        DATE_FORMAT(SUBSTRING_INDEX(match_date,' ',1 ), '%Y%m%d') AS play_date
+        FROM ${cupSubMatchTB} WHERE use_flag = 0
+        AND cup_id = #{cupId}
+
+        <choose>
+            <when test="groups != null and groups != '' ">
+                AND groups = #{groups}
+            </when>
+            <otherwise>
+                AND groups = 1
+            </otherwise>
+        </choose>
+        <if test="teamType !=null and teamType != ''">
+            AND team_type = #{teamType}
+        </if>
+
+        GROUP By play_date
+        ORDER BY play_date ASC
+    </select>
+
+    <resultMap id="homeAwayMatchPlayDataMap" type="kr.co.nextplayer.base.team.dto.HomeAwayMatchPlayDataDto">
+        <result column="player_number" property="player_number"/>
+        <result column="position" property="position"/>
+        <result column="player_name" property="player_name"/>
+        <result column="compete" property="compete"/>
+        <result column="goal" property="goal"/>
+        <result column="help" property="help"/>
+        <result column="warning" property="warning"/>
+        <result column="gexit" property="gexit"/>
+        <result column="pso" property="pso"/>
+        <result column="home_away_gbn" property="home_away_gbn"/>
+        <result column="sel_can_gbn" property="sel_can_gbn"/>
+    </resultMap>
+
+    <resultMap id="homeAwayMatchChangeDataMap" type="kr.co.nextplayer.base.team.dto.HomeAwayMatchChangeDataDto">
+        <result column="time" property="time"/>
+        <result column="in_player_id" property="in_player_id"/>
+        <result column="in_player_number" property="in_player_number"/>
+        <result column="in_player_name" property="in_player_name"/>
+        <result column="out_player_id" property="out_player_id"/>
+        <result column="out_player_number" property="out_player_number"/>
+        <result column="out_player_name" property="out_player_name"/>
+        <result column="change_home_away_gbn" property="change_home_away_gbn"/>
+    </resultMap>
+
+    <resultMap id="homeAwayStaffDataMap" type="kr.co.nextplayer.base.team.dto.HomeAwayStaffDataDto">
+        <result column="staff_rank" property="staff_rank"/>
+        <result column="staff_name" property="staff_name"/>
+        <result column="staff_home_away_gbn" property="staff_home_away_gbn"/>
+    </resultMap>
+
+    <resultMap id="homeAwayStaffPenaltyDataMap" type="kr.co.nextplayer.base.team.dto.HomeAwayStaffPenaltyDataDto">
+        <result column="penalty_home_away_gbn" property="penalty_home_away_gbn"/>
+        <result column="penalty_time" property="penalty_time"/>
+        <result column="penalty_rank" property="penalty_rank"/>
+        <result column="penalty_staff_name" property="penalty_staff_name"/>
+        <result column="penalty_type" property="penalty_type"/>
+    </resultMap>
+
+    <resultMap id="homeAwayOwnGoalDataMap" type="kr.co.nextplayer.base.team.dto.HomeAwayOwnGoalDataDto">
+        <result column="own_home_away_gbn" property="own_home_away_gbn"/>
+        <result column="own_time" property="own_time"/>
+        <result column="own_player_number" property="own_player_number"/>
+        <result column="own_player_name" property="own_player_name"/>
+        <result column="own_player_id" property="own_player_id"/>
+    </resultMap>
+
+
+    <resultMap id="homeAwayResultMap" type="kr.co.nextplayer.base.team.dto.HomeAwayTeamDto">
+        <result column="home_id" property="home_id"/>
+        <result column="home" property="home"/>
+        <result column="home_score" property="home_score"/>
+        <result column="home_pk" property="home_pk"/>
+        <result column="home_emblem" property="home_emblem"/>
+        <result column="home_type" property="home_type"/>
+
+        <result column="away_id" property="away_id"/>
+        <result column="away" property="away"/>
+        <result column="away_score" property="away_score"/>
+        <result column="away_pk" property="away_pk"/>
+        <result column="away_emblem" property="away_emblem"/>
+        <result column="away_type" property="away_type"/>
+
+        <result column="home_sub_rank" property="home_sub_rank"/>
+        <result column="home_main_rank" property="home_main_rank"/>
+        <result column="away_sub_rank" property="away_sub_rank"/>
+        <result column="away_main_rank" property="away_main_rank"/>
+
+        <result column="home_sub_gf" property="home_sub_gf"/>
+        <result column="home_sub_ga" property="home_sub_ga"/>
+        <result column="home_main_gf" property="home_main_gf"/>
+        <result column="home_main_ga" property="home_main_ga"/>
+
+        <result column="away_sub_gf" property="away_sub_gf"/>
+        <result column="away_sub_ga" property="away_sub_ga"/>
+        <result column="away_main_gf" property="away_main_gf"/>
+        <result column="away_main_ga" property="away_main_ga"/>
+    </resultMap>
+
+    <resultMap id="subMatchResultMap" type="kr.co.nextplayer.base.cup.dto.cup.CupSubMatchDto">
+        <result column="cup_sub_match_id" property="cup_sub_match_id"/>
+        <result column="match_id" property="match_id"/>
+        <result column="groups" property="groups"/>
+        <result column="playdate" property="playdate"/>
+        <result column="pdate" property="pdate"/>
+        <result column="ptime" property="ptime"/>
+        <result column="match_date" property="match_date"/>
+        <result column="place" property="place"/>
+        <result column="time_diff" property="time_diff"/>
+        <result column="video_live" property="video_live"/>
+        <result column="match_type" property="match_type"/>
+        <result column="match_category" property="match_category"/>
+        <result column="reason" property="reason"/>
+        <result column="cup_id" property="cup_id"/>
+        <result column="cup_name" property="cup_name"/>
+        <result column="parse_date" property="parse_date"/>
+        <result column="cup_type" property="cup_type"/>
+        <result column="end_flag" property="end_flag"/>
+        <result column="img_url" property="img_url"/>
+        <result column="show_flag" property="show_flag"/>
+
+        <association property="homeAwayTeam" resultMap="homeAwayResultMap" />
+
+        <collection property="mediaList" javaType="kr.co.nextplayer.base.cup.dto.cup.CupMediaDto">
+            <result column="media_id" property="media_id"/>
+            <result column="url_link" property="url_link"/>
+            <result column="media_type" property="media_type"/>
+            <result column="video_type" property="video_type"/>
+            <result column="show_flag" property="show_flag"/>
+            <result column="img_url" property="img_url"/>
+        </collection>
+    </resultMap>
+
+    <resultMap id="mainPageMatchResultMap" type="kr.co.nextplayer.base.cup.dto.cup.CupSubMatchDto">
+        <result column="cup_sub_match_id" property="cup_sub_match_id"/>
+        <result column="match_id" property="match_id"/>
+        <result column="groups" property="groups"/>
+        <result column="round" property="round"/>
+        <result column="playdate" property="playdate"/>
+        <result column="pdate" property="pdate"/>
+        <result column="ptime" property="ptime"/>
+        <result column="match_date" property="match_date"/>
+        <result column="place" property="place"/>
+        <result column="time_diff" property="time_diff"/>
+        <result column="video_live" property="video_live"/>
+        <result column="match_type" property="match_type"/>
+        <result column="match_category" property="match_category"/>
+        <result column="reason" property="reason"/>
+        <result column="cup_id" property="cup_id"/>
+        <result column="cup_name" property="cup_name"/>
+        <result column="parse_date" property="parse_date"/>
+        <result column="cup_type" property="cup_type"/>
+        <result column="end_flag" property="end_flag"/>
+        <result column="score_show_flag" property="score_show_flag"/>
+        <result column="team_type" property="teamType"/>
+
+        <association property="homeAwayTeam" resultMap="homeAwayResultMap" />
+
+        <collection property="mediaList" javaType="kr.co.nextplayer.base.cup.dto.cup.CupMediaDto">
+            <result column="media_id" property="media_id"/>
+            <result column="url_link" property="url_link"/>
+            <result column="media_type" property="media_type"/>
+            <result column="video_type" property="video_type"/>
+            <result column="show_flag" property="show_flag"/>
+            <result column="img_url" property="img_url"/>
+        </collection>
+    </resultMap>
+
+    <select id="selectCupSubMatchResultList" parameterType="hashmap" resultMap="subMatchResultMap">
+        SELECT
+        a.cup_sub_match_id,
+        a.cup_sub_match_id AS match_id,
+        a.groups,
+        SUBSTRING_INDEX(a.match_date,' ',2 ) AS playdate,
+        DATE_FORMAT(SUBSTRING_INDEX(match_date,' ',1 ), '%Y%m%d') AS pdate,
+        SUBSTRING_INDEX(a.match_date,' ',-1 ) AS ptime,
+        a.match_date, a.place,
+
+        TIMESTAMPDIFF(minute, CONCAT(DATE_FORMAT(SUBSTRING_INDEX(match_date,' ',1 ), '%Y-%m-%d'), " ", right(a.match_date,5) + ':00'), now()) AS time_diff,
+        a.video_live
+        , a.video_rep, a.video_high,
+        a.home_id, a.home,  a.home_score, a.home_pk,
+        b.emblem AS home_emblem, b.team_type AS home_type,
+        a.away_id, a.away, a.away_score, a.away_pk,
+        c.emblem AS away_emblem, c.team_type AS away_type,
+        a.match_type, a.reason, a.cup_id
+        ,SUBSTRING(a.match_date, 6) AS parse_date
+        ,d.media_id
+        ,d.url_link
+        ,d.media_type
+        , CASE
+        WHEN
+        d.media_type = 'Video' THEN
+        CASE
+        WHEN d.type = '0' THEN '하이라이트'
+        WHEN d.type = '1' THEN '다시보기'
+        END
+        END AS video_type
+        , d.show_flag
+        , d.img_url
+        , 'Sub' AS match_category
+        , end_flag
+        FROM
+        ${cupSubMatchTB} a
+        INNER JOIN Team b ON a.home_id = b.team_id
+        INNER JOIN Team c ON a.away_id  = c.team_id
+        LEFT JOIN (
+        SELECT
+        a.media_id,
+        title,
+        media_type,
+        foreign_id,
+        url_link,
+        show_flag,
+        img_url,
+        `type`
+        FROM
+        Media a
+        INNER JOIN Media_Cross b ON a.media_id = b.media_id AND b.foreign_type = #{cupSubMatchTB}
+        WHERE
+        b.foreign_parent_id = #{cupId}
+        AND a.use_flag = 0
+        AND a.delete_flag = 0
+        AND a.media_type = 'Video'
+        /*GROUP BY
+        foreign_id*/
+        ) d ON a.cup_sub_match_id = d.foreign_id
+
+        WHERE a.use_flag = 0
+        AND a.cup_id = #{cupId}
+
+        <choose>
+            <when test="groups != null and groups != '' ">
+                AND groups = #{groups}
+            </when>
+            <otherwise>
+                AND groups = 1
+            </otherwise>
+        </choose>
+        <if test="(ageGroup == 'U12' or ageGroup == 'U11') and (teamType != '' and teamType != null)">
+            AND a.team_type = #{teamType}
+        </if>
+
+        <!-- 		ORDER BY pdate DESC , ptime DESC -->
+        ORDER BY pdate ASC , ptime ASC
+    </select>
+
+    <!-- 대회 본선 팀내역 (순위표) -->
+    <select id="selectCupMainTeam" parameterType="hashmap" resultType="hashmap">
+        SELECT
+        a.team_type, a.emblem, b.*
+        FROM
+        (
+        SELECT
+        team_id, emblem,
+        CASE
+        WHEN team_type = 0 THEN '학원'
+        WHEN team_type = 1 THEN '클럽'
+        WHEN team_type = 2 THEN '유스'
+        END AS team_type
+        FROM Team
+        ) a
+        INNER JOIN
+        (
+        SELECT
+        team_id, nick_name AS team, main_teams
+        FROM ${cupTeamTB}
+        WHERE
+        use_flag = 0
+        AND cup_id = #{cupId}
+        <choose>
+            <when test="groups != null and groups != '' ">
+                AND main_groups = #{groups}
+            </when>
+            <otherwise>
+                AND main_groups = 1
+            </otherwise>
+        </choose>
+        ) b ON a.team_id = b.team_id
+        ORDER BY b.main_teams ASC
+    </select>
+
+    <!-- 대회 본선 최종순위 -->
+    <select id="selectCupMainMatchRankByFinal" parameterType="hashmap" resultType="hashmap">
+        SELECT
+        a.team_type, a.emblem,
+        SUBSTRING_INDEX(b.main_rank , '/', -1) AS confirmRank,
+        b.*
+        FROM
+        (
+        SELECT
+        team_id, emblem,
+        CASE
+        WHEN team_type = 0 THEN '학원'
+        WHEN team_type = 1 THEN '클럽'
+        WHEN team_type = 2 THEN '유스'
+        END AS team_type
+        FROM Team
+        ) a
+        INNER JOIN
+        (
+        SELECT a.team, b.*
+        FROM
+        (
+        SELECT
+        team_id, nick_name AS team
+        FROM ${cupTeamTB}
+        WHERE
+        use_flag = 0
+        AND cup_id = #{cupId}
+        <choose>
+            <when test="groups != null and groups != '' ">
+                AND main_groups = #{groups}
+            </when>
+            <otherwise>
+                AND main_groups = 1
+            </otherwise>
+        </choose>
+        ) a
+        LEFT JOIN
+        (
+        SELECT
+        cup_result_id, team_id, `result`, sub_rank, main_rank,
+        played2 AS playTotalCnt,
+        points2 AS rankPoint,
+        won2 AS win, draw2 AS draw, lost2 AS lose,
+        gf2 AS point, ga2 AS losePoint, gd2 as goalPoint,
+        mod_date2
+        FROM ${cupResultTB}
+        WHERE
+        use_flag = 0
+        AND cup_id = #{cupId}
+        <choose>
+            <when test="groups != null and groups != '' ">
+                AND groups2 = #{groups}
+            </when>
+            <otherwise>
+                AND groups2 = 1
+            </otherwise>
+        </choose>
+        ) b ON a.team_id = b.team_id
+        ) b ON a.team_id = b.team_id
+        WHERE b.playTotalCnt <![CDATA[>]]> 0
+
+        ORDER BY confirmRank ASC
+    </select>
+
+    <!-- 대회 본선 경기일정 캘린더 -->
+    <select id="selectCupMainMatchCalendar" parameterType="hashmap" resultType="hashmap">
+        SELECT
+        DATE_FORMAT(SUBSTRING_INDEX(match_date,' ',1 ), '%Y%m%d') AS play_date
+        FROM ${cupMainMatchTB} WHERE use_flag = 0
+        AND cup_id = #{cupId}
+
+        <choose>
+            <when test="groups != null and groups != '' ">
+                AND groups = #{groups}
+            </when>
+            <otherwise>
+                AND groups = 1
+            </otherwise>
+        </choose>
+
+        GROUP By play_date
+        ORDER BY play_date ASC
+    </select>
+
+
+    <resultMap id="mainMatchResultMap" type="kr.co.nextplayer.base.cup.dto.cup.CupMainMatchDto">
+        <id column="cup_main_match_id" property="cup_main_match_id"/>
+        <result column="match_id" property="match_id"/>
+        <result column="groups" property="groups"/>
+        <result column="playdate" property="playdate"/>
+        <result column="pdate" property="pdate"/>
+        <result column="ptime" property="ptime"/>
+        <result column="match_date" property="match_date"/>
+        <result column="place" property="place"/>
+        <result column="time_diff" property="time_diff"/>
+        <result column="video_live" property="video_live"/>
+        <result column="match_type" property="match_type"/>
+        <result column="match_category" property="match_category"/>
+        <result column="reason" property="reason"/>
+        <result column="cup_id" property="cup_id"/>
+        <result column="parse_date" property="parse_date"/>
+        <result column="cup_type" property="cup_type"/>
+
+        <association property="homeAwayTeam" resultMap="homeAwayResultMap" />
+        <association property="homeAwayMatchPlayData" resultMap="homeAwayMatchPlayDataMap" />
+        <association property="homeAwayMatchChangeData" resultMap="homeAwayMatchChangeDataMap" />
+        <association property="homeAwayStaffData" resultMap="homeAwayStaffDataMap" />
+        <association property="homeAwayStaffPenaltyData" resultMap="homeAwayStaffPenaltyDataMap" />
+        <association property="homeAwayOwnGoalData" resultMap="homeAwayOwnGoalDataMap" />
+
+        <collection property="mediaList" javaType="kr.co.nextplayer.base.cup.dto.cup.CupMediaDto">
+            <result column="media_id" property="media_id"/>
+            <result column="url_link" property="url_link"/>
+            <result column="media_type" property="media_type"/>
+            <result column="video_type" property="video_type"/>
+            <result column="show_flag" property="show_flag"/>
+            <result column="img_url" property="img_url"/>
+        </collection>
+    </resultMap>
+    <!-- 대회 본선결과 리스트 -->
+    <select id="selectCupMainMatchResultList" parameterType="hashmap" resultMap="mainMatchResultMap">
+        SELECT
+        a.cup_main_match_id,
+        a.cup_main_match_id AS match_id,
+        a.groups,
+        SUBSTRING_INDEX(a.match_date,' ',2 ) AS playdate,
+        DATE_FORMAT(SUBSTRING_INDEX(match_date,' ',1 ), '%Y%m%d') AS pdate,
+        SUBSTRING_INDEX(a.match_date,' ',-1 ) AS ptime,
+        a.match_date, a.place,
+
+        TIMESTAMPDIFF(minute, CONCAT(DATE_FORMAT(SUBSTRING_INDEX(match_date,' ',1 ), '%Y-%m-%d'), " ", right(a.match_date,5) + ':00'), now()) AS time_diff,
+        a.video_live,
+
+        a.home_id, a.home,  a.home_score, a.home_pk,
+        b.emblem AS home_emblem, b.team_type AS home_type,
+        a.away_id, a.away, a.away_score, a.away_pk,
+        c.emblem AS away_emblem, c.team_type AS away_type,
+        a.match_type, a.reason, a.cup_id
+        ,d.media_id,d.url_link, d.media_type
+        , CASE
+        WHEN
+        d.media_type = 'Video' THEN
+        CASE
+        WHEN d.type = '0' THEN '하이라이트'
+        WHEN d.type = '1' THEN '다시보기'
+        END
+        END AS video_type
+        , d.show_flag
+        , d.img_url
+        ,'Main' AS match_category
+        FROM
+        ${cupMainMatchTB} a
+        INNER JOIN Team b ON a.home_id = b.team_id
+        INNER JOIN Team c ON a.away_id  = c.team_id
+        LEFT JOIN (
+        SELECT
+        a.media_id,
+        title,
+        media_type,
+        foreign_id,
+        url_link,
+        show_flag,
+        img_url,
+        `type`
+        FROM
+        Media a
+        INNER JOIN Media_Cross b ON a.media_id = b.media_id AND b.foreign_type = #{cupMainMatchTB}
+        WHERE
+        b.foreign_parent_id = #{cupId}
+        AND a.use_flag = 0
+        AND a.delete_flag = 0
+        AND a.media_type = 'Video'
+        GROUP BY
+        a.media_id
+        ) d ON a.cup_main_match_id = d.foreign_id
+        WHERE a.use_flag = 0
+        AND a.cup_id = #{cupId}
+
+        <choose>
+            <when test="groups != null and groups != '' ">
+                AND groups = #{groups}
+            </when>
+            <otherwise>
+                AND groups = 1
+            </otherwise>
+        </choose>
+
+        <!-- 		ORDER BY pdate DESC , ptime DESC -->
+        ORDER BY pdate ASC , ptime ASC
+    </select>
+
+    <!-- 대회 토너먼트 경기 리스트 -->
+    <select id="selectCupTourEmptyMatchList" parameterType="hashmap" resultType="hashmap">
+        SELECT
+        cup_tour_match_id, `round`, tour_no, next_tour_no, next_tour_port,
+        SUBSTRING_INDEX(match_date,' ',2 ) AS playdate,
+        DATE_FORMAT(SUBSTRING_INDEX(match_date,' ',1 ), '%Y%m%d') AS pdate,
+        SUBSTRING_INDEX(match_date,' ',-1 ) AS ptime,
+        match_date, place,
+        TIMESTAMPDIFF(minute, CONCAT(DATE_FORMAT(SUBSTRING_INDEX(match_date,' ',1 ), '%Y-%m-%d'), " ", SUBSTRING_INDEX(match_date,' ',-1 )), now()) AS time_diff,
+        home_id, home, home_score, home_pk,
+        away_id, away, away_score, away_pk,
+        match_type, reason, cup_id
+        , b.url_link, b.media_type
+        , CASE
+        WHEN
+        b.media_type = 'Video' THEN
+        CASE
+        WHEN b.type = '0' THEN '하이라이트'
+        WHEN b.type = '1' THEN '다시보기'
+        END
+        END AS video_type
+        ,'Tour' AS match_category
+        ,end_flag
+        FROM
+        ${cupTourMatchTB} a
+        LEFT JOIN (
+        SELECT
+        title,
+        media_type,
+        foreign_id,
+        url_link,
+        `type`
+        FROM
+        Media a
+        INNER JOIN Media_Cross b ON a.media_id = b.media_id
+        WHERE
+        b.foreign_parent_id = #{cupId}
+        AND a.use_flag = 0
+        AND a.delete_flag = 0
+        AND a.media_type = 'Video'
+        /*GROUP BY
+        a.media_id*/
+        ) b ON a.cup_tour_match_id = b.foreign_id
+        WHERE
+        use_flag = 0
+        AND cup_id = #{cupId}
+        <if test="round != null and round != ''">
+            AND a.round = #{round}
+        </if>
+
+        ORDER BY tour_no DESC
+
+    </select>
+    <!-- 대회 토너먼트 결과 경기 리스트 -->
+
+    <resultMap id="tourMatchResultMap" type="kr.co.nextplayer.base.cup.dto.cup.CupTourMatchDto">
+        <id column="cup_tour_match_id" property="cup_tour_match_id"/>
+        <result column="match_id" property="match_id"/>
+        <result column="round" property="round"/>
+        <result column="tour_no" property="tour_no"/>
+        <result column="next_tour_no" property="next_tour_no"/>
+        <result column="next_tour_port" property="next_tour_port"/>
+        <result column="playdate" property="playdate"/>
+        <result column="pdate" property="pdate"/>
+        <result column="ptime" property="ptime"/>
+        <result column="match_date" property="match_date"/>
+        <result column="place" property="place"/>
+        <result column="time_diff" property="time_diff"/>
+        <result column="video_live" property="video_live"/>
+        <result column="match_type" property="match_type"/>
+        <result column="match_category" property="match_category"/>
+        <result column="reason" property="reason"/>
+        <result column="cup_id" property="cup_id"/>
+        <result column="parse_date" property="parse_date"/>
+        <result column="cup_type" property="cup_type"/>
+        <result column="end_flag" property="end_flag"/>
+
+        <association property="homeAwayTeam" resultMap="homeAwayResultMap" />
+        <association property="homeAwayMatchPlayData" resultMap="homeAwayMatchPlayDataMap" />
+        <association property="homeAwayMatchChangeData" resultMap="homeAwayMatchChangeDataMap" />
+        <association property="homeAwayStaffData" resultMap="homeAwayStaffDataMap" />
+        <association property="homeAwayStaffPenaltyData" resultMap="homeAwayStaffPenaltyDataMap" />
+        <association property="homeAwayOwnGoalData" resultMap="homeAwayOwnGoalDataMap" />
+
+
+        <collection property="mediaList" javaType="kr.co.nextplayer.base.cup.dto.cup.CupMediaDto">
+            <result column="media_id" property="media_id"/>
+            <result column="url_link" property="url_link"/>
+            <result column="media_type" property="media_type"/>
+            <result column="video_type" property="video_type"/>
+            <result column="show_flag" property="show_flag"/>
+            <result column="img_url" property="img_url"/>
+        </collection>
+    </resultMap>
+    <select id="selectCupTourMatchResultList" parameterType="hashmap" resultMap="tourMatchResultMap">
+        SELECT
+            a.*,
+            b.sub_rank AS away_sub_rank,
+            b.main_rank AS away_main_rank
+            ,b.away_sub_gf AS away_sub_gf
+            ,b.away_main_gf AS away_main_gf
+            ,b.away_sub_ga AS away_sub_ga
+            ,b.away_main_ga AS away_main_ga
+        FROM
+            (
+            SELECT
+                a.*,
+                b.sub_rank AS home_sub_rank,
+                b.main_rank AS home_main_rank
+                , b.home_sub_gf AS home_sub_gf
+                , b.home_main_gf AS home_main_gf
+                , b.home_sub_ga AS home_sub_ga
+                , b.home_main_ga AS home_main_ga
+            FROM
+                (
+                SELECT
+                    a.cup_tour_match_id,
+                    a.cup_tour_match_id AS match_id,
+                    a.round, a.tour_no, a.next_tour_no, a.next_tour_port,
+                    SUBSTRING_INDEX(a.match_date,' ',2 ) AS playdate,
+                    DATE_FORMAT(SUBSTRING_INDEX(match_date,' ',1 ), '%Y%m%d') AS pdate,
+                    SUBSTRING_INDEX(a.match_date,' ',-1 ) AS ptime,
+                    a.match_date, a.place,
+                    TIMESTAMPDIFF(minute, CONCAT(DATE_FORMAT(SUBSTRING_INDEX(match_date,' ',1 ), '%Y-%m-%d'), " ", right(a.match_date,5) + ':00'), now()) AS time_diff,
+                    a.video_live, a.video_rep, a.video_high,
+                    a.home_id, a.home,  a.home_score, a.home_pk,
+                    b.emblem AS home_emblem, b.team_type AS home_type,
+                    a.away_id, a.away, a.away_score, a.away_pk,
+                    c.emblem AS away_emblem, c.team_type AS away_type,
+                    a.match_type, a.reason, a.cup_id
+                    ,d.url_link, d.media_type
+                    , CASE
+                        WHEN
+                        d.media_type = 'Video' THEN
+                            CASE
+                                WHEN d.type = '0' THEN '하이라이트'
+                                WHEN d.type = '1' THEN '다시보기'
+                            END
+                    END AS video_type
+                    ,'Tour' AS match_category
+                    , d.show_flag
+                    , d.img_url
+                    , end_flag
+                FROM
+                    ${cupTourMatchTB} a
+                    LEFT JOIN Team b ON a.home_id = b.team_id
+                    LEFT JOIN Team c ON a.away_id = c.team_id
+                    LEFT JOIN (
+                                SELECT
+                                    title,
+                                    media_type,
+                                    foreign_id,
+                                    url_link,
+                                    show_flag,
+                                    img_url,
+                                    `type`
+                                FROM
+                                    Media a
+                                    INNER JOIN Media_Cross b ON a.media_id = b.media_id AND b.foreign_type = #{cupTourMatchTB}
+                                WHERE
+                                    b.foreign_parent_id = #{cupId}
+                                    AND a.use_flag = 0
+                                    AND a.delete_flag = 0
+                                    AND a.media_type = 'Video'
+                                    /*GROUP BY
+                                    a.media_id*/
+                    ) d ON a.cup_tour_match_id = d.foreign_id
+                WHERE
+                    a.use_flag = 0
+                    AND a.cup_id = #{cupId}
+                    <if test="round != null and round != ''">
+                        AND a.round = #{round}
+                    </if>
+                ORDER BY a.tour_no ASC
+                ) a
+                LEFT JOIN (
+                            SELECT
+                                team_id, sub_rank, main_rank
+                                , gf1 AS home_sub_gf
+                                , gf2 AS home_main_gf
+                                , ga1 AS home_sub_ga
+                                , ga2 AS home_main_ga
+                            FROM ${cupResultTB}
+                            WHERE use_flag = 0 AND cup_id = #{cupId}
+                ) b ON a.home_id = b.team_id
+            ) a
+            LEFT JOIN
+                    (
+                    SELECT
+                        team_id, sub_rank, main_rank
+                        , gf1 AS away_sub_gf
+                        , gf2 AS away_main_gf
+                        , ga1 AS away_sub_ga
+                        , ga2 AS away_main_ga
+                    FROM ${cupResultTB}
+                    WHERE use_flag = 0 AND cup_id = #{cupId}
+            ) b ON a.away_id = b.team_id
+    </select>
+
+    <!-- 학원클럽 - 대회정보 - 대회성적 -->
+    <select id="selectTeamCupResult" parameterType="kr.co.nextplayer.base.cup.model.Cup" resultType="hashmap">
+        SELECT
+        *
+        FROM
+        (
+        SELECT
+        a.cup_id, `result`
+        FROM ${cupResultTB} a
+        INNER JOIN ${cupInfoTB} i ON a.cup_id = i.cup_id AND i.use_flag = 0 AND i.play_flag = 0
+        WHERE
+        a.use_flag = 0
+        AND team_id = #{teamId}
+        ) a
+        INNER JOIN
+        (
+        SELECT
+        cup_id, cup_name,
+        DATE_FORMAT(play_sdate, "%Y-%m-%d") AS play_sdate,
+        DATE_FORMAT(play_edate, "%Y-%m-%d") AS play_edate,
+        cup_type,
+        CASE
+        WHEN now() <![CDATA[>]]> play_edate THEN '종료'
+        WHEN now() BETWEEN play_sdate AND play_edate THEN '진행중'
+        WHEN now() <![CDATA[<]]> play_sdate THEN '예정'
+        END AS progress
+        FROM ${cupInfoTB}
+        WHERE
+        use_flag = 0
+        AND play_flag = 0
+        <choose>
+            <when test="sYear != null and sYear != '' ">
+                AND play_sdate <![CDATA[>=]]> CONCAT(#{sYear},"-01-01 00:00:00")
+                AND play_sdate <![CDATA[<=]]> CONCAT(#{sYear},"-12-31 23:59:59")
+                AND play_edate <![CDATA[>=]]> CONCAT(#{sYear},"-01-01 00:00:00")
+                AND play_edate <![CDATA[<=]]> CONCAT(#{sYear},"-12-31 23:59:59")
+            </when>
+            <otherwise>
+                AND play_sdate <![CDATA[>=]]> CONCAT(YEAR(CURDATE()),"-01-01 00:00:00")
+                AND play_sdate <![CDATA[<=]]> CONCAT(YEAR(CURDATE()),"-12-31 23:59:59")
+                AND play_edate <![CDATA[>=]]> CONCAT(YEAR(CURDATE()),"-01-01 00:00:00")
+                AND play_edate <![CDATA[<=]]> CONCAT(YEAR(CURDATE()),"-12-31 23:59:59")
+            </otherwise>
+        </choose>
+        ) b ON a.cup_id = b.cup_id
+        ORDER BY b.play_sdate DESC
+    </select>
+
+    <!-- 학원클럽 - 대회정보 -  대회 경기결과 리스트 -->
+    <select id="selectTeamCupMatch" parameterType="kr.co.nextplayer.base.cup.model.Cup" resultMap="subMatchResultMap">
+        SELECT
+        a.cup_sub_match_id,
+        a.cup_sub_match_id AS match_id,
+        DATE_FORMAT(SUBSTRING_INDEX(match_date,' ',1 ), '%Y%m%d') AS pdate,
+        a.match_date, a.place,
+        SUBSTRING_INDEX(a.match_date,' ',2 ) AS playdate,
+        TIMESTAMPDIFF(minute, CONCAT(DATE_FORMAT(SUBSTRING_INDEX(match_date,' ',1 ), '%Y-%m-%d'), " ", right(a.match_date,5) + ':00'), now()) AS time_diff,
+
+        a.home_id, a.home,  a.home_score, a.home_pk,
+        b.emblem AS home_emblem, b.team_type AS home_type,
+        a.away_id, a.away, a.away_score, a.away_pk,
+        c.emblem AS away_emblem, c.team_type AS away_type,
+        a.match_type, a.reason, a.cup_id
+        ,SUBSTRING(a.match_date, 6) AS parse_date
+        ,'Sub' AS match_category
+        ,d.cup_name
+        , a.video_live
+        , e.url_link
+        , CASE
+        WHEN e.type = '0' THEN '하이라이트'
+        WHEN e.type = '1' THEN '다시보기'
+        END AS video_type
+        , end_flag
+        , img_url
+        , e.show_flag
+        FROM ${cupSubMatchTB} a
+        INNER JOIN ${cupInfoTB} i ON a.cup_id = i.cup_id AND i.use_flag = 0 AND i.play_flag = 0
+        INNER JOIN Team b ON a.home_id = b.team_id
+        INNER JOIN Team c ON a.away_id  = c.team_id
+        INNER JOIN ${cupInfoTB} d ON a.cup_id = d.cup_id
+        LEFT JOIN (
+        SELECT
+        title,
+        media_type,
+        foreign_id,
+        url_link,
+        type,
+        img_url,
+        show_flag
+        FROM
+        Media a
+        INNER JOIN Media_Cross b ON a.media_id = b.media_id AND b.foreign_type = #{cupSubMatchTB}
+        WHERE
+        a.use_flag = 0
+        AND a.delete_flag = 0
+        AND a.media_type = 'Video'
+        /*GROUP BY
+        a.media_id*/
+        ) e ON a.cup_sub_match_id = e.foreign_id
+        WHERE a.use_flag = 0
+        AND a.home_id = #{teamId}
+        <choose>
+            <when test="sYear != null and sYear != '' ">
+                AND SUBSTRING_INDEX(a.match_date , ' ', 1) <![CDATA[>=]]> CONCAT(#{sYear},"-01-01 00:00:00")
+                AND SUBSTRING_INDEX(a.match_date , ' ', 1) <![CDATA[<=]]> CONCAT(#{sYear},"-12-31 23:59:59")
+            </when>
+            <otherwise>
+                AND SUBSTRING_INDEX(a.match_date , ' ', 1) <![CDATA[>=]]> CONCAT(YEAR(CURDATE()),"-01-01 00:00:00")
+                AND SUBSTRING_INDEX(a.match_date , ' ', 1) <![CDATA[<=]]> CONCAT(YEAR(CURDATE()),"-12-31 23:59:59")
+            </otherwise>
+        </choose>
+
+        UNION ALL
+
+        SELECT
+        a.cup_sub_match_id,
+        a.cup_sub_match_id AS match_id,
+        DATE_FORMAT(SUBSTRING_INDEX(match_date,' ',1 ), '%Y%m%d') AS pdate,
+        a.match_date, a.place,
+
+        SUBSTRING_INDEX(a.match_date,' ',2 ) AS playdate,
+        TIMESTAMPDIFF(minute, CONCAT(DATE_FORMAT(SUBSTRING_INDEX(match_date,' ',1 ), '%Y-%m-%d'), " ", right(a.match_date,5) + ':00'), now()) AS time_diff,
+
+        a.home_id, a.home,  a.home_score, a.home_pk,
+        b.emblem AS home_emblem, b.team_type AS home_type,
+        a.away_id, a.away, a.away_score, a.away_pk,
+        c.emblem AS away_emblem, c.team_type AS away_type,
+        a.match_type, a.reason, a.cup_id
+        ,SUBSTRING(a.match_date, 6) AS parse_date
+        ,'Sub' AS match_category
+        ,d.cup_name
+        , a.video_live
+        , e.url_link
+        , CASE
+        WHEN e.type = '0' THEN '하이라이트'
+        WHEN e.type = '1' THEN '다시보기'
+        END AS video_type
+        , end_flag
+        , img_url
+        , e.show_flag
+        FROM ${cupSubMatchTB} a
+        INNER JOIN ${cupInfoTB} i ON a.cup_id = i.cup_id AND i.use_flag = 0 AND i.play_flag = 0
+        INNER JOIN Team b ON a.home_id = b.team_id
+        INNER JOIN Team c ON a.away_id  = c.team_id
+        INNER JOIN ${cupInfoTB} d ON a.cup_id = d.cup_id
+        LEFT JOIN (
+        SELECT
+        title,
+        media_type,
+        foreign_id,
+        url_link,
+        type,
+        img_url,
+        show_flag
+        FROM
+        Media a
+        INNER JOIN Media_Cross b ON a.media_id = b.media_id AND b.foreign_type = #{cupSubMatchTB}
+        WHERE
+        a.use_flag = 0
+        AND a.delete_flag = 0
+        AND a.media_type = 'Video'
+        /*GROUP BY
+        a.media_id*/
+        ) e ON a.cup_sub_match_id = e.foreign_id
+        WHERE a.use_flag = 0
+        AND a.away_id = #{teamId}
+        <choose>
+            <when test="sYear != null and sYear != '' ">
+                AND SUBSTRING_INDEX(a.match_date , ' ', 1) <![CDATA[>=]]> CONCAT(#{sYear},"-01-01 00:00:00")
+                AND SUBSTRING_INDEX(a.match_date , ' ', 1) <![CDATA[<=]]> CONCAT(#{sYear},"-12-31 23:59:59")
+            </when>
+            <otherwise>
+                AND SUBSTRING_INDEX(a.match_date , ' ', 1) <![CDATA[>=]]> CONCAT(YEAR(CURDATE()),"-01-01 00:00:00")
+                AND SUBSTRING_INDEX(a.match_date , ' ', 1) <![CDATA[<=]]> CONCAT(YEAR(CURDATE()),"-12-31 23:59:59")
+            </otherwise>
+        </choose>
+
+        UNION ALL
+
+        SELECT
+        a.cup_main_match_id,
+        a.cup_main_match_id AS match_id,
+        DATE_FORMAT(SUBSTRING_INDEX(match_date,' ',1 ), '%Y%m%d') AS pdate,
+        a.match_date, a.place,
+
+        SUBSTRING_INDEX(a.match_date,' ',2 ) AS playdate,
+        TIMESTAMPDIFF(minute, CONCAT(DATE_FORMAT(SUBSTRING_INDEX(match_date,' ',1 ), '%Y-%m-%d'), " ", right(a.match_date,5) + ':00'), now()) AS time_diff,
+
+        a.home_id, a.home,  a.home_score, a.home_pk,
+        b.emblem AS home_emblem, b.team_type AS home_type,
+        a.away_id, a.away, a.away_score, a.away_pk,
+        c.emblem AS away_emblem, c.team_type AS away_type,
+        a.match_type, a.reason, a.cup_id
+        ,SUBSTRING(a.match_date, 6) AS parse_date
+        ,'Main' AS match_category
+        ,d.cup_name
+        , a.video_live
+        , e.url_link
+        , CASE
+        WHEN e.type = '0' THEN '하이라이트'
+        WHEN e.type = '1' THEN '다시보기'
+        END AS video_type
+        , '' AS end_flag
+        , img_url
+        , e.show_flag
+        FROM ${cupMainMatchTB} a
+        INNER JOIN ${cupInfoTB} i ON a.cup_id = i.cup_id AND i.use_flag = 0 AND i.play_flag = 0
+        INNER JOIN Team b ON a.home_id = b.team_id
+        INNER JOIN Team c ON a.away_id  = c.team_id
+        INNER JOIN ${cupInfoTB} d ON a.cup_id = d.cup_id
+        LEFT JOIN (
+        SELECT
+        title,
+        media_type,
+        foreign_id,
+        url_link,
+        type,
+        img_url,
+        show_flag
+        FROM
+        Media a
+        INNER JOIN Media_Cross b ON a.media_id = b.media_id AND b.foreign_type = #{cupMainMatchTB}
+        WHERE
+        a.use_flag = 0
+        AND a.delete_flag = 0
+        AND a.media_type = 'Video'
+        /*GROUP BY
+        a.media_id*/
+        ) e ON a.cup_main_match_id = e.foreign_id
+        WHERE a.use_flag = 0
+        AND a.home_id = #{teamId}
+        <choose>
+            <when test="sYear != null and sYear != '' ">
+                AND SUBSTRING_INDEX(a.match_date , ' ', 1) <![CDATA[>=]]> CONCAT(#{sYear},"-01-01 00:00:00")
+                AND SUBSTRING_INDEX(a.match_date , ' ', 1) <![CDATA[<=]]> CONCAT(#{sYear},"-12-31 23:59:59")
+            </when>
+            <otherwise>
+                AND SUBSTRING_INDEX(a.match_date , ' ', 1) <![CDATA[>=]]> CONCAT(YEAR(CURDATE()),"-01-01 00:00:00")
+                AND SUBSTRING_INDEX(a.match_date , ' ', 1) <![CDATA[<=]]> CONCAT(YEAR(CURDATE()),"-12-31 23:59:59")
+            </otherwise>
+        </choose>
+
+        UNION ALL
+
+        SELECT
+        a.cup_main_match_id,
+        a.cup_main_match_id AS match_id,
+        DATE_FORMAT(SUBSTRING_INDEX(match_date,' ',1 ), '%Y%m%d') AS pdate,
+        a.match_date, a.place,
+
+        SUBSTRING_INDEX(a.match_date,' ',2 ) AS playdate,
+        TIMESTAMPDIFF(minute, CONCAT(DATE_FORMAT(SUBSTRING_INDEX(match_date,' ',1 ), '%Y-%m-%d'), " ", right(a.match_date,5) + ':00'), now()) AS time_diff,
+
+        a.home_id, a.home,  a.home_score, a.home_pk,
+        b.emblem AS home_emblem, b.team_type AS home_type,
+        a.away_id, a.away, a.away_score, a.away_pk,
+        c.emblem AS away_emblem, c.team_type AS away_type,
+        a.match_type, a.reason, a.cup_id
+        ,SUBSTRING(a.match_date, 6) AS parse_date
+        ,'Main' AS match_category
+        ,d.cup_name
+        , a.video_live
+        , e.url_link
+        , CASE
+        WHEN e.type = '0' THEN '하이라이트'
+        WHEN e.type = '1' THEN '다시보기'
+        END AS video_type
+        , '' AS end_flag
+        , img_url
+        , e.show_flag
+        FROM ${cupMainMatchTB} a
+        INNER JOIN ${cupInfoTB} i ON a.cup_id = i.cup_id AND i.use_flag = 0 AND i.play_flag = 0
+        INNER JOIN Team b ON a.home_id = b.team_id
+        INNER JOIN Team c ON a.away_id  = c.team_id
+        INNER JOIN ${cupInfoTB} d ON a.cup_id = d.cup_id
+        LEFT JOIN (
+        SELECT
+        title,
+        media_type,
+        foreign_id,
+        url_link,
+        type,
+        img_url,
+        show_flag
+        FROM
+        Media a
+        INNER JOIN Media_Cross b ON a.media_id = b.media_id AND b.foreign_type = #{cupMainMatchTB}
+        WHERE
+        a.use_flag = 0
+        AND a.delete_flag = 0
+        AND a.media_type = 'Video'
+        /*GROUP BY
+        a.media_id*/
+        ) e ON a.cup_main_match_id = e.foreign_id
+        WHERE a.use_flag = 0
+        AND a.away_id = #{teamId}
+        <choose>
+            <when test="sYear != null and sYear != '' ">
+                AND SUBSTRING_INDEX(a.match_date , ' ', 1) <![CDATA[>=]]> CONCAT(#{sYear},"-01-01 00:00:00")
+                AND SUBSTRING_INDEX(a.match_date , ' ', 1) <![CDATA[<=]]> CONCAT(#{sYear},"-12-31 23:59:59")
+            </when>
+            <otherwise>
+                AND SUBSTRING_INDEX(a.match_date , ' ', 1) <![CDATA[>=]]> CONCAT(YEAR(CURDATE()),"-01-01 00:00:00")
+                AND SUBSTRING_INDEX(a.match_date , ' ', 1) <![CDATA[<=]]> CONCAT(YEAR(CURDATE()),"-12-31 23:59:59")
+            </otherwise>
+        </choose>
+
+        UNION ALL
+
+        SELECT
+        a.cup_tour_match_id,
+        a.cup_tour_match_id AS match_id,
+        DATE_FORMAT(SUBSTRING_INDEX(match_date,' ',1 ), '%Y%m%d') AS pdate,
+        a.match_date, a.place,
+
+        SUBSTRING_INDEX(a.match_date,' ',2 ) AS playdate,
+        TIMESTAMPDIFF(minute, CONCAT(DATE_FORMAT(SUBSTRING_INDEX(match_date,' ',1 ), '%Y-%m-%d'), " ", right(a.match_date,5) + ':00'), now()) AS time_diff,
+
+        a.home_id, a.home,  a.home_score, a.home_pk,
+        b.emblem AS home_emblem, b.team_type AS home_type,
+        a.away_id, a.away, a.away_score, a.away_pk,
+        c.emblem AS away_emblem, c.team_type AS away_type,
+        a.match_type, a.reason, a.cup_id
+        ,SUBSTRING(a.match_date, 6) AS parse_date
+        ,'Tour' AS match_category
+        ,d.cup_name
+        , a.video_live
+        , e.url_link
+        , CASE
+        WHEN e.type = '0' THEN '하이라이트'
+        WHEN e.type = '1' THEN '다시보기'
+        END AS video_type
+        , '' AS end_flag
+        , img_url
+        , e.show_flag
+        FROM ${cupTourMatchTB} a
+        INNER JOIN ${cupInfoTB} i ON a.cup_id = i.cup_id AND i.use_flag = 0 AND i.play_flag = 0
+        INNER JOIN Team b ON a.home_id = b.team_id
+        INNER JOIN Team c ON a.away_id  = c.team_id
+        INNER JOIN ${cupInfoTB} d ON a.cup_id = d.cup_id
+        LEFT JOIN (
+        SELECT
+        title,
+        media_type,
+        foreign_id,
+        url_link,
+        type,
+        img_url,
+        show_flag
+        FROM
+        Media a
+        INNER JOIN Media_Cross b ON a.media_id = b.media_id AND b.foreign_type = #{cupTourMatchTB}
+        WHERE
+        a.use_flag = 0
+        AND a.delete_flag = 0
+        AND a.media_type = 'Video'
+        /*GROUP BY
+        a.media_id*/
+        ) e ON a.cup_tour_match_id = e.foreign_id
+        WHERE a.use_flag = 0
+        AND a.home_id = #{teamId}
+        <choose>
+            <when test="sYear != null and sYear != '' ">
+                AND SUBSTRING_INDEX(a.match_date , ' ', 1) <![CDATA[>=]]> CONCAT(#{sYear},"-01-01 00:00:00")
+                AND SUBSTRING_INDEX(a.match_date , ' ', 1) <![CDATA[<=]]> CONCAT(#{sYear},"-12-31 23:59:59")
+            </when>
+            <otherwise>
+                AND SUBSTRING_INDEX(a.match_date , ' ', 1) <![CDATA[>=]]> CONCAT(YEAR(CURDATE()),"-01-01 00:00:00")
+                AND SUBSTRING_INDEX(a.match_date , ' ', 1) <![CDATA[<=]]> CONCAT(YEAR(CURDATE()),"-12-31 23:59:59")
+            </otherwise>
+        </choose>
+
+        UNION ALL
+
+        SELECT
+        a.cup_tour_match_id,
+        a.cup_tour_match_id AS match_id,
+        DATE_FORMAT(SUBSTRING_INDEX(match_date,' ',1 ), '%Y%m%d') AS pdate,
+        a.match_date, a.place,
+
+        SUBSTRING_INDEX(a.match_date,' ',2 ) AS playdate,
+        TIMESTAMPDIFF(minute, CONCAT(DATE_FORMAT(SUBSTRING_INDEX(match_date,' ',1 ), '%Y-%m-%d'), " ", right(a.match_date,5) + ':00'), now()) AS time_diff,
+
+        a.home_id, a.home,  a.home_score, a.home_pk,
+        b.emblem AS home_emblem, b.team_type AS home_type,
+        a.away_id, a.away, a.away_score, a.away_pk,
+        c.emblem AS away_emblem, c.team_type AS away_type,
+        a.match_type, a.reason, a.cup_id
+        ,SUBSTRING(a.match_date, 6) AS parse_date
+        ,'Tour' AS match_category
+        ,d.cup_name
+        , a.video_live
+        , e.url_link
+        , CASE
+        WHEN e.type = '0' THEN '하이라이트'
+        WHEN e.type = '1' THEN '다시보기'
+        END AS video_type
+        , '' AS end_flag
+        , img_url
+        , e.show_flag
+        FROM ${cupTourMatchTB} a
+        INNER JOIN ${cupInfoTB} i ON a.cup_id = i.cup_id AND i.use_flag = 0 AND i.play_flag = 0
+        INNER JOIN Team b ON a.home_id = b.team_id
+        INNER JOIN Team c ON a.away_id  = c.team_id
+        INNER JOIN ${cupInfoTB} d ON a.cup_id = d.cup_id
+        LEFT JOIN (
+        SELECT
+        title,
+        media_type,
+        foreign_id,
+        url_link,
+        type,
+        img_url,
+        show_flag
+        FROM
+        Media a
+        INNER JOIN Media_Cross b ON a.media_id = b.media_id AND b.foreign_type = #{cupTourMatchTB}
+        WHERE
+        a.use_flag = 0
+        AND a.delete_flag = 0
+        AND a.media_type = 'Video'
+        /*GROUP BY
+        a.media_id*/
+        ) e ON a.cup_tour_match_id = e.foreign_id
+        WHERE a.use_flag = 0
+        AND a.away_id = #{teamId}
+        <choose>
+            <when test="sYear != null and sYear != '' ">
+                AND SUBSTRING_INDEX(a.match_date , ' ', 1) <![CDATA[>=]]> CONCAT(#{sYear},"-01-01 00:00:00")
+                AND SUBSTRING_INDEX(a.match_date , ' ', 1) <![CDATA[<=]]> CONCAT(#{sYear},"-12-31 23:59:59")
+            </when>
+            <otherwise>
+                AND SUBSTRING_INDEX(a.match_date , ' ', 1) <![CDATA[>=]]> CONCAT(YEAR(CURDATE()),"-01-01 00:00:00")
+                AND SUBSTRING_INDEX(a.match_date , ' ', 1) <![CDATA[<=]]> CONCAT(YEAR(CURDATE()),"-12-31 23:59:59")
+            </otherwise>
+        </choose>
+
+        ORDER BY pdate DESC
+    </select>
+
+    <!-- 학원클럽 - 대회정보 - 대회성적 -->
+    <select id="selectTeamCupResultRenewal" parameterType="kr.co.nextplayer.base.cup.model.Cup" resultType="hashmap">
+        SELECT *
+        FROM
+        (
+        SELECT a.cup_id, `result`
+        FROM ${cupResultTB} a
+        INNER JOIN ${cupInfoTB} i ON a.cup_id = i.cup_id AND i.use_flag = 0 AND i.play_flag = 0
+        WHERE a.use_flag = 0
+        AND team_id = #{teamId}
+        ) a INNER JOIN
+        (
+        SELECT cup_id, cup_name,
+        DATE_FORMAT(play_sdate, "%Y-%m-%d") AS play_sdate,
+        DATE_FORMAT(play_edate, "%Y-%m-%d") AS play_edate,
+        <!-- play_sdate, play_edate, -->
+        cup_type,
+        CASE
+        WHEN now() <![CDATA[>]]> play_edate THEN '종료'
+        WHEN now() BETWEEN play_sdate AND play_edate THEN '진행중'
+        WHEN now() <![CDATA[<]]> play_sdate THEN '예정'
+        END AS progress
+
+        FROM ${cupInfoTB}
+        WHERE use_flag = 0
+        AND play_flag = 0
+        ) b
+        ON a.cup_id = b.cup_id
+        GROUP BY
+        b.cup_id
+        ORDER BY b.play_sdate DESC
+    </select>
+
+    <resultMap id="searchMatchResultMap" type="kr.co.nextplayer.base.cup.dto.cup.CupSearchDto">
+        <result column="cup_id" property="cup_id"/>
+        <result column="cup_name" property="cup_name"/>
+        <result column="place" property="place"/>
+        <result column="groups" property="groups"/>
+        <result column="playdate" property="playdate"/>
+        <result column="pdate" property="pdate"/>
+        <result column="place" property="place"/>
+        <result column="time_diff" property="time_diff"/>
+        <result column="video_live" property="video_live"/>
+        <result column="match_id" property="match_id"/>
+        <result column="match_date" property="match_date"/>
+        <result column="match_category" property="match_category"/>
+        <result column="matchType" property="matchType"/>
+        <result column="parse_date" property="parse_date"/>
+        <result column="end_flag" property="end_flag"/>
+
+        <association property="homeAwayTeam" resultMap="homeAwayResultMap" />
+
+        <collection property="mediaList" javaType="kr.co.nextplayer.base.cup.dto.cup.CupMediaDto">
+            <result column="media_id" property="media_id"/>
+            <result column="url_link" property="url_link"/>
+            <result column="media_type" property="media_type"/>
+            <result column="video_type" property="video_type"/>
+        </collection>
+    </resultMap>
+
+    <select id="selectSearchCupMatch" parameterType="kr.co.nextplayer.base.cup.model.Cup" resultMap="searchMatchResultMap">
+        SELECT
+            A.cup_id
+             ,B.cup_sub_match_id AS match_id
+             ,A.cup_name
+             ,B.place
+             ,B.home
+             ,B.home_id
+             ,B.away
+             ,B.away_id
+             ,B.home_score
+             ,B.home_pk
+             ,B.away_pk
+             ,B.away_score
+             ,B.match_date
+             ,DATE_FORMAT(SUBSTRING_INDEX(B.match_date,' ',1 ), '%Y%m%d') AS pdate
+             ,TIMESTAMPDIFF(minute, CONCAT(DATE_FORMAT(SUBSTRING_INDEX(B.match_date,' ',1 ), '%Y-%m-%d'), " ", right(B.match_date,5) + ':00'), now()) AS time_diff
+             ,SUBSTRING(B.match_date, 6) AS parse_date
+             ,C.emblem AS home_emblem
+             ,D.emblem AS away_emblem
+             ,B.video_live
+             ,E.url_link
+             ,E.media_type
+             , CASE
+                   WHEN
+                       E.media_type = 'Video' THEN
+                       CASE
+                           WHEN E.type = '0' THEN '하이라이트'
+                           WHEN E.type = '1' THEN '다시보기'
+                           END
+            END AS video_type
+             ,'Sub' AS match_category
+             ,'Cup' AS matchType
+             ,end_flag
+        FROM
+            ${cupInfoTB} A
+                INNER JOIN ${cupSubMatchTB} B ON A.cup_id = B.cup_id
+                INNER JOIN Team C ON B.home_id = C.team_id
+                INNER JOIN Team D ON B.away_id = D.team_id
+                LEFT JOIN (
+                SELECT
+                    title,
+                    media_type,
+                    foreign_id,
+                    url_link,
+                    type
+                FROM
+                    Media a
+                    INNER JOIN Media_Cross b ON a.media_id = b.media_id AND b.foreign_type = #{cupSubMatchTB}
+                WHERE
+                    a.use_flag = 0
+                  AND a.delete_flag = 0
+                  AND a.media_type = 'Video'
+                /*GROUP BY
+                    a.media_id*/
+            ) E ON B.cup_sub_match_id = E.foreign_id
+        WHERE
+            B.use_flag = 0
+          AND DATE_FORMAT(match_date, '%Y-%m-%d 00:00:00') BETWEEN DATE_FORMAT(#{sDate}, '%Y-%m-%d 00:00:00') AND DATE_FORMAT(#{sDate}, '%Y-%m-%d 23:59:59')
+
+        UNION ALL
+
+        SELECT
+            A.cup_id
+             ,B.cup_main_match_id AS match_id
+             ,A.cup_name
+             ,B.place
+             ,B.home
+             ,B.home_id
+             ,B.away
+             ,B.away_id
+             ,B.home_score
+             ,B.home_pk
+             ,B.away_pk
+             ,B.away_score
+             ,B.match_date
+             ,DATE_FORMAT(SUBSTRING_INDEX(B.match_date,' ',1 ), '%Y%m%d') AS pdate
+             ,TIMESTAMPDIFF(minute, CONCAT(DATE_FORMAT(SUBSTRING_INDEX(B.match_date,' ',1 ), '%Y-%m-%d'), " ", right(B.match_date,5) + ':00'), now()) AS time_diff
+             ,SUBSTRING(B.match_date, 6) AS parse_date
+             ,C.emblem AS home_emblem
+             ,D.emblem AS away_emblem
+             ,B.video_live
+             ,E.url_link
+             ,E.media_type
+             , CASE
+                   WHEN
+                       E.media_type = 'Video' THEN
+                       CASE
+                           WHEN E.type = '0' THEN '하이라이트'
+                           WHEN E.type = '1' THEN '다시보기'
+                           END
+            END AS video_type
+             ,'Main' AS match_category
+             ,'Cup' AS matchType
+             ,'' AS end_flag
+        FROM
+            ${cupInfoTB} A
+                INNER JOIN ${cupMainMatchTB} B ON A.cup_id = B.cup_id
+                INNER JOIN Team C ON B.home_id = C.team_id
+                INNER JOIN Team D ON B.away_id  = D.team_id
+                LEFT JOIN (
+                SELECT
+                    title,
+                    media_type,
+                    foreign_id,
+                    url_link,
+                    type
+                FROM
+                    Media a
+                    INNER JOIN Media_Cross b ON a.media_id = b.media_id AND b.foreign_type = #{cupMainMatchTB}
+                WHERE
+                    a.use_flag = 0
+                  AND a.delete_flag = 0
+                  AND a.media_type = 'Video'
+                /*GROUP BY
+                    a.media_id*/
+            ) E ON B.cup_main_match_id = E.foreign_id
+        WHERE
+            B.use_flag = 0
+          AND DATE_FORMAT(match_date, '%Y-%m-%d 00:00:00') BETWEEN DATE_FORMAT(#{sDate}, '%Y-%m-%d 00:00:00') AND DATE_FORMAT(#{sDate}, '%Y-%m-%d 23:59:59')
+
+        UNION ALL
+
+        SELECT
+            A.cup_id
+             ,B.cup_tour_match_id AS match_id
+             ,A.cup_name
+             ,B.place
+             ,B.home
+             ,B.home_id
+             ,B.away
+             ,B.away_id
+             ,B.home_score
+             ,B.home_pk
+             ,B.away_pk
+             ,B.away_score
+             ,B.match_date
+             ,DATE_FORMAT(SUBSTRING_INDEX(B.match_date,' ',1 ), '%Y%m%d') AS pdate
+             ,TIMESTAMPDIFF(minute, CONCAT(DATE_FORMAT(SUBSTRING_INDEX(B.match_date,' ',1 ), '%Y-%m-%d'), " ", right(B.match_date,5) + ':00'), now()) AS time_diff
+             ,SUBSTRING(B.match_date, 6) AS parse_date
+             ,C.emblem AS home_emblem
+             ,D.emblem AS away_emblem
+             ,B.video_live
+             ,E.url_link
+             ,E.media_type
+             , CASE
+                   WHEN
+                       E.media_type = 'Video' THEN
+                       CASE
+                           WHEN E.type = '0' THEN '하이라이트'
+                           WHEN E.type = '1' THEN '다시보기'
+                           END
+            END AS video_type
+             , 'Tour' AS match_category
+             ,'Cup' AS matchType
+             ,end_flag
+        FROM
+            ${cupInfoTB} A
+                INNER JOIN ${cupTourMatchTB} B ON A.cup_id = B.cup_id
+                INNER JOIN Team C ON B.home_id = C.team_id
+                INNER JOIN Team D ON B.away_id  = D.team_id
+                LEFT JOIN (
+                SELECT
+                    title,
+                    media_type,
+                    foreign_id,
+                    url_link,
+                    type
+                FROM
+                    Media a
+                        INNER JOIN Media_Cross b ON a.media_id = b.media_id AND b.foreign_type = #{cupTourMatchTB}
+                WHERE
+                    a.use_flag = 0
+                  AND a.delete_flag = 0
+                  AND a.media_type = 'Video'
+                /*GROUP BY
+                    a.media_id*/
+            ) E ON B.cup_tour_match_id = E.foreign_id
+        WHERE
+            B.use_flag = 0
+          AND DATE_FORMAT(match_date, '%Y-%m-%d 00:00:00') BETWEEN DATE_FORMAT(#{sDate}, '%Y-%m-%d 00:00:00') AND DATE_FORMAT(#{sDate}, '%Y-%m-%d 23:59:59')
+    </select>
+
+    <select id="selectCupInfoListForMedia" parameterType="kr.co.nextplayer.base.cup.model.Cup" resultType="hashmap">
+        SELECT
+            cup_name
+        FROM
+            ${parentTB} a
+        WHERE
+            a.use_flag = 0
+          AND a.cup_id = #{parentId}
+    </select>
+
+    <select id="selectCupMatchListForMedia" parameterType="kr.co.nextplayer.base.cup.model.Cup" resultType="hashmap">
+        SELECT
+        SUBSTRING_INDEX(a.match_date,' ',2 ) AS playdate,
+        DATE_FORMAT(SUBSTRING_INDEX(match_date,' ',1 ), '%Y%m%d') AS pdate,
+        SUBSTRING_INDEX(a.match_date,' ',-1 ) AS ptime,
+        a.match_date, a.place,
+        a.home_id, a.home,  a.home_score, a.home_pk,
+        b.emblem AS home_emblem, b.team_type AS home_type,
+        a.away_id, a.away, a.away_score, a.away_pk,
+        c.emblem AS away_emblem, c.team_type AS away_type,
+        a.match_type, a.reason, a.cup_id
+        , cup_name , play_sdate , play_edate, b.uage
+        <choose>
+            <when test="childTB != null and (childTB.contains('Sub_Match'))">
+                , a.cup_sub_match_id AS matchId
+            </when>
+            <when test="childTB != null and (childTB.contains('Tour_Match'))">
+                , a.cup_tour_match_id AS matchId
+            </when>
+            <when test="childTB != null and (childTB.contains('Main_Match'))">
+                , a.cup_main_match_id AS matchId
+            </when>
+        </choose>
+        FROM ${childTB} a
+        INNER JOIN Team b ON a.home_id = b.team_id
+        INNER JOIN Team c ON a.away_id  = c.team_id
+        INNER JOIN ${parentTB} d ON a.cup_id = d.cup_id
+        WHERE
+        a.use_flag = 0
+        AND a.cup_id = #{parentId}
+        AND ${childKey} IN ${childId}
+    </select>
+
+    <select id="selectTeamJoinCupLastThreeYear" parameterType="kr.co.nextplayer.base.cup.model.Cup" resultType="hashmap">
+        SELECT
+            B.*
+        FROM
+            (
+                SELECT
+                    @N:= @N +1 AS n
+                FROM
+                    Team, (SELECT @N:= YEAR(CURDATE()) - 3 FROM DUAL) NN
+                WHERE
+                    @N <![CDATA[<]]> DATE_FORMAT(NOW(), '%Y')
+            ) A
+                LEFT JOIN
+            (
+                SELECT
+                    a.cup_id,
+                    a.result,
+                    b.cup_name,
+                    b.play_sdate,
+                    b.play_edate,
+                    b.cup_type,
+                    parse_play_sdate AS year
+                FROM
+                    (
+                    SELECT
+                    a.cup_id, `result`
+                    FROM
+                    ${cupResultTB} a
+                    INNER JOIN ${cupInfoTB} i ON a.cup_id = i.cup_id AND i.use_flag = 0 AND i.play_flag = 0
+                    WHERE
+                    i.use_flag = 0
+                    AND team_id = #{teamId}
+                    ) a
+                    INNER JOIN
+                    (
+                    SELECT
+                    cup_id, cup_name,
+                    DATE_FORMAT(play_sdate, "%Y-%m-%d") AS play_sdate,
+                    DATE_FORMAT(play_edate, "%Y-%m-%d") AS play_edate,
+                    cup_type,
+                    CASE
+                    WHEN now() <![CDATA[>]]> play_edate THEN '종료'
+                    WHEN now() BETWEEN play_sdate AND play_edate THEN '진행중'
+                    WHEN now() <![CDATA[<]]> play_sdate THEN '예정'
+                    END AS progress,
+                    DATE_FORMAT(play_sdate, "%Y") AS parse_play_sdate
+                    FROM
+                    ${cupInfoTB}
+                    WHERE use_flag = 0
+                    AND play_flag = 0
+                    ) b ON a.cup_id = b.cup_id
+                ORDER BY b.play_sdate DESC
+            ) B ON A.n = B.year
+        WHERE
+            B.cup_id IS NOT NULL
+        GROUP BY
+            B.cup_id
+        ORDER BY A.n ASC
+    </select>
+
+    <select id="selectTeamJoinCupThisYear" parameterType="kr.co.nextplayer.base.cup.model.Cup" resultType="hashmap">
+        SELECT
+            a.cup_id,
+            a.result,
+            b.cup_name,
+            b.play_sdate,
+            b.play_edate,
+            b.cup_type,
+            parse_play_sdate AS year
+        FROM
+            (
+            SELECT
+            a.cup_id, `result`
+            FROM
+            ${cupResultTB} a
+            INNER JOIN ${cupInfoTB} i ON a.cup_id = i.cup_id AND i.use_flag = 0 AND i.play_flag = 0
+            WHERE
+            i.use_flag = 0
+            AND team_id = #{teamId}
+            ) a
+            INNER JOIN
+            (
+            SELECT
+            cup_id, cup_name,
+            DATE_FORMAT(play_sdate, "%Y-%m-%d") AS play_sdate,
+            DATE_FORMAT(play_edate, "%Y-%m-%d") AS play_edate,
+            cup_type,
+            CASE
+            WHEN now() <![CDATA[>]]> play_edate THEN '종료'
+            WHEN now() BETWEEN play_sdate AND play_edate THEN '진행중'
+            WHEN now() <![CDATA[<]]> play_sdate THEN '예정'
+            END AS progress,
+            DATE_FORMAT(play_sdate, "%Y") AS parse_play_sdate
+            FROM
+            ${cupInfoTB}
+            WHERE use_flag = 0
+            AND play_flag = 0
+            AND (DATE_FORMAT(play_sdate, "%Y-%m-%d") BETWEEN CONCAT(DATE_FORMAT(NOW(), '%Y'), '-01-01') AND CONCAT(DATE_FORMAT(NOW(), '%Y'), '-12-31')
+            AND DATE_FORMAT(play_edate, "%Y-%m-%d") BETWEEN CONCAT(DATE_FORMAT(NOW(), '%Y'), '-01-01') AND CONCAT(DATE_FORMAT(NOW(), '%Y'), '-12-31'))
+            ) b ON a.cup_id = b.cup_id
+        ORDER BY b.cup_id DESC
+    </select>
+
+    <select id="selectCupSummaryData" parameterType="kr.co.nextplayer.base.cup.model.Cup" resultType="hashmap">
+        SELECT
+            SUM(sub.totalCnt + main.totalCnt + tour.totalCnt) AS totalPlayed,
+            SUM(sub.endCnt + main.endCnt + tour.endCnt) AS totalEndPlayed,
+            SUM(sub.sumScore + main.sumScore + tour.sumScore) AS totalGf,
+            IFNULL((SUM(sub.sumScore + main.sumScore + tour.sumScore)) / (SUM(sub.endCnt + main.endCnt + tour.endCnt)), 0) AS avgGF
+        FROM
+            (
+                SELECT
+                    *
+                FROM
+                    (
+                        SELECT
+                            COUNT(1) AS totalCnt
+                        FROM
+                            ${cupSubMatchTB}
+                        WHERE cup_id = #{cupId}
+                    ) A ,
+                    (
+                        SELECT
+                            COUNT(1) AS endCnt,
+                            IFNULL(SUM(home_score) + SUM(away_score), 0) AS sumScore
+                        FROM
+                            ${cupSubMatchTB}
+                        WHERE
+                            cup_id = #{cupId}
+                          AND end_flag = 1
+                    ) B
+            ) sub,
+            (
+                SELECT
+                    *
+                FROM
+                    (
+                        SELECT
+                            COUNT(1) AS totalCnt
+                        FROM
+                            ${cupMainMatchTB}
+                        WHERE cup_id = #{cupId}
+                    ) A ,
+                    (
+                        SELECT
+                            COUNT(1) AS endCnt,
+                            IFNULL(SUM(home_score) + SUM(away_score), 0) AS sumScore
+                        FROM
+                            ${cupMainMatchTB}
+                        WHERE
+                            cup_id = #{cupId}
+                          AND end_flag = 1
+                    ) B
+            ) main,
+            (
+                SELECT
+                    *
+                FROM
+                    (
+                        SELECT
+                            COUNT(1) AS totalCnt
+                        FROM
+                            ${cupTourMatchTB}
+                        WHERE cup_id = #{cupId}
+                    ) A ,
+                    (
+                        SELECT
+                            COUNT(1) AS endCnt,
+                            IFNULL(SUM(home_score) + SUM(away_score), 0) AS sumScore
+                        FROM
+                            ${cupTourMatchTB}
+                        WHERE
+                            cup_id = #{cupId}
+                          AND end_flag = 1
+                    ) B
+            ) tour
+    </select>
+
+    <resultMap id="searchCupTodayMatchListMap" type="java.util.HashMap">
+        <result column="cup_id" property="cup_id"/>
+        <result column="cup_name" property="cup_name"/>
+        <result column="place" property="place"/>
+        <result column="groups" property="groups"/>
+        <result column="playdate" property="playdate"/>
+        <result column="pdate" property="pdate"/>
+        <result column="place" property="place"/>
+        <result column="time_diff" property="time_diff"/>
+        <result column="video_live" property="video_live"/>
+        <result column="match_date" property="match_date"/>
+        <result column="parse_date" property="parse_date"/>
+        <result column="end_flag" property="end_flag"/>
+        <result column="match_type" property="match_type"/>
+        <result column="score_show_flag" property="score_show_flag"/>
+        <result column="live_show_flag" property="live_show_flag"/>
+        <result column="ageGroup" property="ageGroup"/>
+        <result column="team_type" property="teamType"/>
+
+        <result column="home" property="home"/>
+        <result column="home_id" property="home_id"/>
+        <result column="home_score" property="home_score"/>
+        <result column="home_pk" property="home_pk"/>
+        <result column="home_emblem" property="home_emblem"/>
+
+        <result column="away" property="away"/>
+        <result column="away_id" property="away_id"/>
+        <result column="away_score" property="away_score"/>
+        <result column="away_pk" property="away_pk"/>
+        <result column="away_emblem" property="away_emblem"/>
+    </resultMap>
+
+    <select id="selectCupTodayMatchList" parameterType="hashmap" resultMap="mainPageMatchResultMap">
+        SELECT
+            A.*
+        FROM
+            (
+                SELECT
+                    A.cup_name,
+                    B.cup_sub_match_id,
+                    B.cup_sub_match_id AS match_id,
+                    B.groups, '' AS round,
+                    SUBSTRING_INDEX(B.match_date,' ',2 ) AS playdate,
+                    DATE_FORMAT(SUBSTRING_INDEX(B.match_date,' ',1 ), '%Y%m%d') AS pdate,
+                    SUBSTRING_INDEX(B.match_date,' ',-1 ) AS ptime,
+                    B.match_date, B.place,
+                    TIMESTAMPDIFF(minute, CONCAT(DATE_FORMAT(SUBSTRING_INDEX(B.match_date,' ',1 ), '%Y-%m-%d'), " ", right(B.match_date,5) + ':00'), now()) AS time_diff,
+                    B.video_live,
+                    B.home_id, B.home,  B.home_score, B.home_pk,
+                    C.emblem AS home_emblem, C.team_type AS home_type,
+                    B.away_id, B.away, B.away_score, B.away_pk,
+                    D.emblem AS away_emblem, D.team_type AS away_type,
+                    B.match_type, B.reason, B.cup_id
+                    ,SUBSTRING(B.match_date, 6) AS parse_date
+                    , 'Sub' AS match_category
+                    , B.end_flag
+                    , B.score_show_flag
+                FROM
+                    ${cupInfoTB} A
+                        INNER JOIN ${cupSubMatchTB} B ON A.cup_id = B.cup_id
+                        LEFT JOIN Team C ON B.home_id = C.team_id
+                        LEFT JOIN Team D ON B.away_id = D.team_id
+                WHERE
+                    B.use_flag = 0
+                  AND DATE_FORMAT(match_date, '%Y-%m-%d 00:00:00') BETWEEN DATE_FORMAT(NOW(), '%Y-%m-%d 00:00:00') AND DATE_FORMAT(NOW(), '%Y-%m-%d 23:59:59')
+                  AND B.live_show_flag = 0
+                  AND (B.video_live IS NOT NULL AND B.video_live != '')
+                UNION ALL
+
+                SELECT
+                    A.cup_name,
+                    B.cup_main_match_id,
+                    B.cup_main_match_id AS match_id,
+                    B.groups, '' AS round,
+                    SUBSTRING_INDEX(B.match_date,' ',2 ) AS playdate,
+                    DATE_FORMAT(SUBSTRING_INDEX(B.match_date,' ',1 ), '%Y%m%d') AS pdate,
+                    SUBSTRING_INDEX(B.match_date,' ',-1 ) AS ptime,
+                    B.match_date, B.place,
+                    TIMESTAMPDIFF(minute, CONCAT(DATE_FORMAT(SUBSTRING_INDEX(B.match_date,' ',1 ), '%Y-%m-%d'), " ", right(B.match_date,5) + ':00'), now()) AS time_diff,
+                    B.video_live,
+                    B.home_id, B.home,  B.home_score, B.home_pk,
+                    C.emblem AS home_emblem, C.team_type AS home_type,
+                    B.away_id, B.away, B.away_score, B.away_pk,
+                    D.emblem AS away_emblem, D.team_type AS away_type,
+                    B.match_type, B.reason, B.cup_id
+                    ,SUBSTRING(B.match_date, 6) AS parse_date
+                    , 'Main' AS match_category
+                    , B.end_flag
+                    , B.score_show_flag
+                FROM
+                    ${cupInfoTB} A
+                    INNER JOIN ${cupMainMatchTB} B ON A.cup_id = B.cup_id
+                    LEFT JOIN Team C ON B.home_id = C.team_id
+                    LEFT JOIN Team D ON B.away_id  = D.team_id
+                WHERE
+                    B.use_flag = 0
+                  AND DATE_FORMAT(match_date, '%Y-%m-%d 00:00:00') BETWEEN DATE_FORMAT(NOW(), '%Y-%m-%d 00:00:00') AND DATE_FORMAT(NOW(), '%Y-%m-%d 23:59:59')
+                  AND B.live_show_flag = 0
+                  AND (B.video_live IS NOT NULL AND B.video_live != '')
+                UNION ALL
+
+                SELECT
+                    A.cup_name,
+                    B.cup_tour_match_id,
+                    B.cup_tour_match_id AS match_id,
+                    B.round, '' AS round,
+                    SUBSTRING_INDEX(B.match_date,' ',2 ) AS playdate,
+                    DATE_FORMAT(SUBSTRING_INDEX(B.match_date,' ',1 ), '%Y%m%d') AS pdate,
+                    SUBSTRING_INDEX(B.match_date,' ',-1 ) AS ptime,
+                    B.match_date, B.place,
+                    TIMESTAMPDIFF(minute, CONCAT(DATE_FORMAT(SUBSTRING_INDEX(B.match_date,' ',1 ), '%Y-%m-%d'), " ", right(B.match_date,5) + ':00'), now()) AS time_diff,
+                    B.video_live,
+                    B.home_id, B.home,  B.home_score, B.home_pk,
+                    C.emblem AS home_emblem, C.team_type AS home_type,
+                    B.away_id, B.away, B.away_score, B.away_pk,
+                    D.emblem AS away_emblem, D.team_type AS away_type,
+                    B.match_type, B.reason, B.cup_id
+                    ,SUBSTRING(B.match_date, 6) AS parse_date
+                    , 'Tour' AS match_category
+                    , B.end_flag
+                    , B.score_show_flag
+                FROM
+                    ${cupInfoTB} A
+                        INNER JOIN ${cupTourMatchTB} B ON A.cup_id = B.cup_id
+                        LEFT JOIN Team C ON B.home_id = C.team_id
+                        LEFT JOIN Team D ON B.away_id  = D.team_id
+                WHERE
+                    B.use_flag = 0
+                  AND DATE_FORMAT(match_date, '%Y-%m-%d 00:00:00') BETWEEN DATE_FORMAT(NOW(), '%Y-%m-%d 00:00:00') AND DATE_FORMAT(NOW(), '%Y-%m-%d 23:59:59')
+                  AND B.live_show_flag = 0
+                  AND (B.video_live IS NOT NULL AND B.video_live != '')
+            ) A
+        ORDER BY
+            A.match_date
+    </select>
+
+    <select id="selectIsTodayMatch" parameterType="hashmap" resultType="_int">
+        SELECT
+            A.cnt + B.cnt + C.cnt AS cnt
+        FROM
+            (
+            SELECT
+                COUNT(1) AS cnt
+            FROM
+                (
+                    SELECT
+                        cup_id
+                    FROM
+                        ${uage}_cup_sub_match
+                    WHERE
+                        DATE(DATE_FORMAT(SUBSTRING_INDEX(match_date,' ',1 ), '%Y-%m-%d')) = CURDATE()
+                    LIMIT 1
+                ) A
+            ) A ,
+            (
+            SELECT
+                COUNT(1) AS cnt
+            FROM
+                (
+                    SELECT
+                        cup_id
+                    FROM
+                        ${uage}_cup_tour_match
+                    WHERE
+                        DATE(DATE_FORMAT(SUBSTRING_INDEX(match_date,' ',1 ), '%Y-%m-%d')) = CURDATE()
+                    LIMIT 1
+                ) B
+            ) B ,
+            (
+            SELECT
+                COUNT(1) AS cnt
+            FROM
+                (
+                    SELECT
+                        cup_id
+                    FROM
+                        ${uage}_cup_tour_match
+                    WHERE
+                        DATE(DATE_FORMAT(SUBSTRING_INDEX(match_date,' ',1 ), '%Y-%m-%d')) = CURDATE()
+                    LIMIT 1
+                ) C
+            ) C
+    </select>
+
+    <select id="selectPlayDataCup" parameterType="java.util.Map" resultType="kr.co.nextplayer.base.team.dto.HomeAwayMatchPlayDataDto">
+        select
+               player_number,
+               position,
+               player_name,
+               compete,
+               goal,
+               help,
+               warning,
+               gexit,
+               pso,
+               home_away_gbn,
+               sel_can_gbn,
+               match_id,
+               player_id,
+               captain_flag,
+               reg_date
+        from ${playDataTB}
+        where match_id = #{matchId}
+    </select>
+
+    <select id="selectChangeDataCup" parameterType="java.util.Map" resultType="kr.co.nextplayer.base.team.dto.HomeAwayMatchChangeDataDto">
+        select time, in_player_number, in_player_name, in_player_id, out_player_number, out_player_name, out_player_id, home_away_gbn, match_id, reg_date
+        from ${changeDataTB}
+        where match_id = #{matchId}
+    </select>
+
+    <select id="selectStaffDataCup" parameterType="java.util.Map" resultType="kr.co.nextplayer.base.team.dto.HomeAwayStaffDataDto">
+        select home_away_gbn, match_id, `rank` as staff_rank, staff_name, reg_date
+        from ${staffDataTB}
+        where match_id = #{matchId}
+    </select>
+
+    <select id="selectOwnGoalDataCup" parameterType="java.util.Map" resultType="kr.co.nextplayer.base.team.dto.HomeAwayOwnGoalDataDto">
+        select home_away_gbn, match_id, time, player_number, player_name, player_id, reg_date
+        from ${ownGoalDataTB}
+        where match_id = #{matchId}
+    </select>
+
+    <select id="selectStaffPenaltyDataCup" parameterType="java.util.Map" resultType="kr.co.nextplayer.base.team.dto.HomeAwayStaffPenaltyDataDto">
+        select home_away_gbn, match_id, time, `rank` as penalty_rank, staff_name, penalty_type, reg_date
+        from ${staffPenaltyDataTB}
+        where match_id = #{matchId}
+    </select>
+
+
+</mapper>

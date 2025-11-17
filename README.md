@@ -1,4 +1,4 @@
-# nextplayer-main
+# nextplayer
 
 넥스트플레이어 프로젝트
 

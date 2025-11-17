@@ -3,6 +3,7 @@
 넥스트플레이어 프로젝트
 
 - Spring Webflux
+- Multi-Module
 
 ## 프로젝트 구조
 
